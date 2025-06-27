@@ -404,7 +404,7 @@
     <script type="module">
         // --- Firebase v9+ modular imports ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs, where } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
 
@@ -463,6 +463,7 @@
         let latestCargaData = null;
         let selectedPlanningWeeks = [getWeekId(new Date())];
         let isInitialLoadComplete = false;
+        let prontidaoUnsubscribe, cargaUnsubscribe, fisicoUnsubscribe, campoUnsubscribe;
 
         // --- DOM ELEMENTS ---
         const globalLoader = document.getElementById('globalLoader');
@@ -564,55 +565,42 @@
             isInitialLoadComplete = true; 
             loaderText.textContent = 'Carregando dados...';
             try {
-                const [prontidaoSnap, cargaSnap, fisicoSnap, campoSnap] = await Promise.all([
-                    getDocs(query(prontidaoCollection, orderBy("data", "desc"))),
-                    getDocs(query(cargaCollection, orderBy("data", "desc"))),
-                    getDocs(query(treinosFisicosCollection, orderBy("date", "asc"))),
-                    getDocs(query(treinosCampoCollection, orderBy("date", "asc"))),
-                ]);
-
-                fullProntidaoData = prontidaoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                fullCargaData = cargaSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                treinosFisicos = fisicoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                treinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                
-                renderAllTabs();
-
-                globalLoader.classList.add('hidden');
-                mainContent.classList.remove('hidden');
-
                 setupLiveListeners();
 
             } catch (error) {
-                console.error("Error loading initial data:", error);
+                console.error("Error setting up listeners:", error);
                 loaderText.textContent = "Erro ao carregar os dados. Verifique o console.";
                 showToast("Erro crítico ao carregar os dados iniciais.");
             }
         }
         
         function setupLiveListeners() {
-             onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
+            if (fisicoUnsubscribe) fisicoUnsubscribe();
+            fisicoUnsubscribe = onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderPlanningView();
-                updateDashboardView();
+                renderAllTabs();
             });
 
-            onSnapshot(query(treinosCampoCollection, orderBy("date", "asc")), (snapshot) => {
+            if (campoUnsubscribe) campoUnsubscribe();
+            campoUnsubscribe = onSnapshot(query(treinosCampoCollection, orderBy("date", "asc")), (snapshot) => {
                 treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderPlanningView();
-                updateDashboardView();
+                renderAllTabs();
             });
 
-            onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
+            if (prontidaoUnsubscribe) prontidaoUnsubscribe();
+            prontidaoUnsubscribe = onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
                 fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderFilterProntidao(fullProntidaoData);
-                renderProntidaoTab();
+                renderAllTabs();
+                 if (isInitialLoadComplete) { 
+                    globalLoader.classList.add('hidden');
+                    mainContent.classList.remove('hidden');
+                }
             });
             
-            onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
+            if (cargaUnsubscribe) cargaUnsubscribe();
+            cargaUnsubscribe = onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
                 fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                processAndStoreLoadData();
-                renderCargaTab();
+                renderAllTabs();
             });
         }
 
@@ -658,7 +646,6 @@
         document.getElementById('dataTreinoFisico').addEventListener('change', (e) => {
             const date = e.target.valueAsDate;
             if (date) {
-                // Adjust for timezone offset to get correct UTC date
                 const timezoneOffset = date.getTimezoneOffset() * 60000;
                 const utcDate = new Date(date.getTime() + timezoneOffset);
                 document.getElementById('semanaIdFisico').value = getWeekId(utcDate) || '';
@@ -711,6 +698,8 @@
             }
             placeholderSectionProntidao.classList.add('hidden');
             resultsSection.classList.remove('hidden');
+
+            renderFilterProntidao(fullProntidaoData);
             
             const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
             const selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
@@ -1126,33 +1115,17 @@
         }
 
         function analyzeProntidaoData(data) {
-            const athletesData = data.reduce((acc, row) => {
-                if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
-                acc[row.atleta_id].push(row);
-                return acc;
-            }, {});
-
             let latestDateOverall = null;
-            const individualResults = Object.keys(athletesData).map(athleteId => {
-                const entriesForAthleteInSelection = athletesData[athleteId]
-                    .sort((a, b) => new Date(b.data) - new Date(a.data));
-                
-                if (entriesForAthleteInSelection.length === 0) return null;
-                
-                const latestEntryInSelection = entriesForAthleteInSelection[0];
-
-                if (!latestDateOverall || new Date(latestEntryInSelection.data) > new Date(latestDateOverall)) {
-                    latestDateOverall = latestEntryInSelection.data;
+            const individualResults = data.map(entry => {
+                if (!latestDateOverall || new Date(entry.data) > new Date(latestDateOverall)) {
+                    latestDateOverall = entry.data;
                 }
-                
                 const allHistoricalEntries = fullProntidaoData
-                                            .filter(d => d.atleta_id === athleteId && new Date(d.data) < new Date(latestEntryInSelection.data))
+                                            .filter(d => d.atleta_id === entry.atleta_id && new Date(d.data) < new Date(entry.data))
                                             .sort((a, b) => new Date(b.data) - new Date(a.data));
+                return calculateAthleteReadiness(entry.atleta_id, entry, allHistoricalEntries);
+            }).filter(Boolean).sort((a, b) => new Date(b.latestDate) - new Date(a.latestDate) || a.athleteId.localeCompare(b.athleteId));
 
-                return calculateAthleteReadiness(athleteId, latestEntryInSelection, allHistoricalEntries);
-
-            }).filter(Boolean);
-            
              // Calculate weekly evolution data
             const weeklyData = {};
             data.forEach(row => {
@@ -1161,7 +1134,7 @@
             });
 
             const evolutionData = Object.keys(weeklyData).sort().map(weekId => {
-                const weekResults = analyzeProntidaoData(weeklyData[weekId]).individualResults; // Recursive call for that week
+                const weekResults = analyzeProntidaoData(weeklyData[weekId]).individualResults; 
                 const readyAthletes = weekResults.filter(r => r.status === 'ready');
                 return {
                     semana_id: weekId,
@@ -1172,10 +1145,7 @@
                 };
             });
             
-            // Calculate overall team stats based on the latest entry for each athlete in the selection
-            const latestEntriesByAthlete = individualResults.sort((a, b) => new Date(b.latestDate) - new Date(a.latestDate));
-            
-            const readyAthletes = latestEntriesByAthlete.filter(r => r.status === 'ready');
+            const readyAthletes = individualResults.filter(r => r.status === 'ready');
             const teamStats = {
                 averageIndex: getStats(readyAthletes.map(r => parseFloat(r.index))).mean,
                 averageHooper: getStats(readyAthletes.map(r => r.hooperScore.latest)).mean,
@@ -1186,7 +1156,7 @@
                 }, { green: 0, yellow: 0, red: 0, collecting: 0 }),
                 latestDate: latestDateOverall
             };
-            return { individualResults: latestEntriesByAthlete, teamStats, evolutionData };
+            return { individualResults, teamStats, evolutionData };
         }
 
         function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries) {
@@ -1667,10 +1637,22 @@
                             <div class="flex items-center">
                                 <input id="plan-week-${week}" type="checkbox" value="${week}" class="planning-week-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${selectedPlanningWeeks.includes(week) ? 'checked' : ''}>
                                 <label for="plan-week-${week}" class="ml-2 block text-sm text-gray-900">${week}</label>
+                                 <button class="delete-week-btn ml-2 text-red-500 hover:text-red-700" data-week-id="${week}">&times;</button>
                             </div>
                         `).join('')}
                     </div>
                 </div>`;
+                
+             document.querySelectorAll('.delete-week-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const weekId = e.currentTarget.dataset.weekId;
+                     showConfirmationModal(
+                        `Tem certeza que deseja apagar todos os treinos da semana ${weekId}? Esta ação não pode ser desfeita.`,
+                        () => deleteWeekData(weekId),
+                        'Apagar Semana'
+                    );
+                })
+             })
         }
 
         function renderPlanningView() {
@@ -1801,6 +1783,27 @@
                 showToast("Erro ao remover o treino.");
             }
         };
+        
+        async function deleteWeekData(weekId) {
+            showToast(`Excluindo treinos da semana ${weekId}...`, 'info');
+            try {
+                const batch = writeBatch(db);
+                
+                const qFisico = query(treinosFisicosCollection, where("semana_id", "==", weekId));
+                const fisicoSnap = await getDocs(qFisico);
+                fisicoSnap.forEach(d => batch.delete(d.ref));
+                
+                const qCampo = query(treinosCampoCollection, where("semana_id", "==", weekId));
+                const campoSnap = await getDocs(qCampo);
+                campoSnap.forEach(d => batch.delete(d.ref));
+
+                await batch.commit();
+                showToast(`Treinos da semana ${weekId} excluídos.`, 'success');
+            } catch (error) {
+                 console.error("Error deleting week data:", error);
+                 showToast("Erro ao excluir os treinos da semana.");
+            }
+        }
 
         // --- CLASSIFICATION & LEGENDS ---
         const getHooperClassification = score => {
