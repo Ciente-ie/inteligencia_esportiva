@@ -458,6 +458,7 @@
         let latestProntidaoData = null;
         let latestCargaData = null;
         let selectedPlanningWeeks = [getWeekId(new Date())];
+        let isInitialLoadComplete = false;
 
         // --- DOM ELEMENTS ---
         const globalLoader = document.getElementById('globalLoader');
@@ -534,7 +535,9 @@
                 authStatus.classList.remove('text-red-600');
                 submitTreinoFisicoBtn.disabled = false;
                 submitTreinoCampoBtn.disabled = false;
-                loadInitialData();
+                if (!isInitialLoadComplete) {
+                   loadInitialData();
+                }
             } else {
                 currentUser = null;
                 authStatus.textContent = 'Offline';
@@ -554,6 +557,7 @@
         });
 
         async function loadInitialData() {
+            isInitialLoadComplete = true; // Prevent re-running on auth state changes
             loaderText.textContent = 'Carregando dados...';
             try {
                 const [prontidaoSnap, cargaSnap, fisicoSnap, campoSnap] = await Promise.all([
@@ -702,6 +706,8 @@
             }
             placeholderSectionCarga.classList.add('hidden');
             resultsSectionCarga.classList.remove('hidden');
+            
+            processAndStoreLoadData();
             
             const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
             const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
@@ -1037,15 +1043,15 @@
         
         function getWeekId(date) {
             if (!date) return null;
-            let d = date;
-            if (typeof date.getTime !== 'function') {
-                d = new Date(date + 'T00:00:00'); 
-            }
-            d.setHours(0, 0, 0, 0);
-            const day = d.getDay() || 7;
-            d.setDate(d.getDate() + 4 - day);
-            const yearStart = new Date(d.getFullYear(), 0, 1);
-            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            const d = new Date(date);
+            // Corrige o problema do fuso horário
+            const dUTC = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            // Define a segunda-feira como o primeiro dia da semana (1) e o domingo como o último (7)
+            const dayOfWeek = dUTC.getUTCDay() === 0 ? 7 : dUTC.getUTCDay();
+            dUTC.setUTCDate(dUTC.getUTCDate() + 4 - dayOfWeek);
+            const yearStart = new Date(Date.UTC(dUTC.getUTCFullYear(), 0, 1));
+            // Calcula o número da semana
+            const weekNo = Math.ceil((((dUTC - yearStart) / 86400000) + 1) / 7);
             return `S${String(weekNo).padStart(2, '0')}`;
         }
 
@@ -1088,25 +1094,26 @@
             }, {});
 
             let latestDate = null;
-            const individualResults = Object.keys(athletesData).map(athleteId => {
-                const allEntries = data
-                                    .filter(d => d.atleta_id === athleteId) 
-                                    .sort((a, b) => new Date(b.data) - new Date(a.data));
+            const individualResults = Object.keys(athletesData).flatMap(athleteId => {
+                const entriesForAthleteInSelection = data
+                    .filter(d => d.atleta_id === athleteId)
+                    .sort((a, b) => new Date(b.data) - new Date(a.data));
                 
-                if (allEntries.length === 0) return null;
-
-                const latestEntry = allEntries[0];
-
-                if (!latestDate || new Date(latestEntry.data) > new Date(latestDate)) {
-                    latestDate = latestEntry.data;
-                }
+                if (entriesForAthleteInSelection.length === 0) return [];
                 
-                const allHistoricalEntries = fullProntidaoData
-                                            .filter(d => d.atleta_id === athleteId && new Date(d.data) < new Date(latestEntry.data))
-                                            .sort((a, b) => new Date(b.data) - new Date(a.data));
+                return entriesForAthleteInSelection.map(entry => {
+                    if (!latestDate || new Date(entry.data) > new Date(latestDate)) {
+                        latestDate = entry.data;
+                    }
 
-                return calculateAthleteReadiness(athleteId, latestEntry, allHistoricalEntries);
-            }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
+                    const allHistoricalEntries = fullProntidaoData
+                        .filter(d => d.atleta_id === athleteId && new Date(d.data) < new Date(entry.data))
+                        .sort((a, b) => new Date(b.data) - new Date(a.data));
+
+                    return calculateAthleteReadiness(athleteId, entry, allHistoricalEntries);
+                });
+
+            }).filter(Boolean).sort((a, b) => new Date(b.latestDate) - new Date(a.latestDate) || a.athleteId.localeCompare(b.athleteId));
 
             const readyAthletes = individualResults.filter(r => r.status === 'ready');
             const teamStats = {
@@ -1124,7 +1131,7 @@
         function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries) {
             const getZScore = (key) => {
                 const value = latestEntry[key];
-                const dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null);
+                const dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v));
                 if (value == null || dataPoints.length === 0) return null;
                 const { mean, stdDev } = getStats(dataPoints);
                 return stdDev === 0 ? 0 : (value - mean) / stdDev;
@@ -1206,10 +1213,11 @@
             const saltoClass = result.saltoPercentDiff == null ? 'text-gray-500' : (result.saltoPercentDiff >= 0 ? 'text-green-600' : 'text-red-600');
             const detailsHtml = Object.entries(result.metricsDetail).map(([key, data]) => {
                 if (!METRIC_NAMES[key] || data.latest == null) return '';
-                return `<li class="flex justify-between items-center text-sm py-1 border-b"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${data.latest} <span class="text-xs text-gray-500 font-normal">(Média: ${data.mean.toFixed(1)})</span></span></li>`;
+                const meanValue = (data.mean && !isNaN(data.mean)) ? data.mean.toFixed(1) : 'N/A';
+                return `<li class="flex justify-between items-center text-sm py-1 border-b"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${data.latest} <span class="text-xs text-gray-500 font-normal">(Média: ${meanValue})</span></span></li>`;
             }).join('');
 
-            return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div><div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div><div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div><div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${result.hooperScore.latest}</span></div><div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-prontidao-${result.athleteId}"><svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-prontidao-${result.athleteId}"><div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="font-semibold text-sm mb-2">Detalhes:</h4><ul class="space-y-1">${detailsHtml}</ul></div><div class="bg-blue-50 border p-3 rounded-lg self-start"><h4 class="font-semibold text-sm mb-1">Sugestão:</h4><p class="text-sm">${recommendation}</p></div></div></div></div>`;
+            return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div><div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div><div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div><div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${result.hooperScore.latest}</span></div><div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-prontidao-${result.athleteId}-${result.latestDate}"><svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-prontidao-${result.athleteId}-${result.latestDate}"><div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="font-semibold text-sm mb-2">Detalhes:</h4><ul class="space-y-1">${detailsHtml}</ul></div><div class="bg-blue-50 border p-3 rounded-lg self-start"><h4 class="font-semibold text-sm mb-1">Sugestão:</h4><p class="text-sm">${recommendation}</p></div></div></div></div>`;
         }
 
         // --- CARGA DE TREINO FUNCTIONS ---
