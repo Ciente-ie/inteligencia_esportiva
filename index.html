@@ -93,6 +93,12 @@
                      <div id="authStatusContainer" class="bg-gray-100 p-2 rounded-lg text-sm">
                         <span id="authStatus"></span>
                     </div>
+                     <button id="clearAllDataBtn" class="btn bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition flex items-center text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                        Limpar Dados Importados
+                    </button>
                 </div>
             </div>
             <p class="text-gray-600 mt-2 text-lg">Analise a prontidão, controle a carga e planeje os treinos da sua equipe.</p>
@@ -187,7 +193,6 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
                                 Exportar PDF
                             </button>
-                              <button id="clearProntidaoBtn" class="btn bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition">Limpar Dados de Prontidão</button>
                          </div>
                     </div>
                     <div id="resultsContainer" class="bg-white rounded-lg shadow-md border overflow-hidden"></div>
@@ -248,7 +253,6 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
                                 Exportar PDF
                             </button>
-                            <button id="clearCargaBtn" class="btn bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition">Limpar Dados de Carga</button>
                          </div>
                     </div>
                     <div id="resultsContainerCarga" class="bg-white rounded-lg shadow-md border overflow-hidden"></div>
@@ -404,7 +408,7 @@
     <script type="module">
         // --- Firebase v9+ modular imports ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs, where } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
 
@@ -463,7 +467,6 @@
         let latestCargaData = null;
         let selectedPlanningWeeks = [getWeekId(new Date())];
         let isInitialLoadComplete = false;
-        let prontidaoUnsubscribe, cargaUnsubscribe, fisicoUnsubscribe, campoUnsubscribe;
 
         // --- DOM ELEMENTS ---
         const globalLoader = document.getElementById('globalLoader');
@@ -565,42 +568,55 @@
             isInitialLoadComplete = true; 
             loaderText.textContent = 'Carregando dados...';
             try {
+                const [prontidaoSnap, cargaSnap, fisicoSnap, campoSnap] = await Promise.all([
+                    getDocs(query(prontidaoCollection, orderBy("data", "desc"))),
+                    getDocs(query(cargaCollection, orderBy("data", "desc"))),
+                    getDocs(query(treinosFisicosCollection, orderBy("date", "asc"))),
+                    getDocs(query(treinosCampoCollection, orderBy("date", "asc"))),
+                ]);
+
+                fullProntidaoData = prontidaoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                fullCargaData = cargaSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                treinosFisicos = fisicoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                treinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                
+                renderAllTabs();
+
+                globalLoader.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+
                 setupLiveListeners();
 
             } catch (error) {
-                console.error("Error setting up listeners:", error);
+                console.error("Error loading initial data:", error);
                 loaderText.textContent = "Erro ao carregar os dados. Verifique o console.";
                 showToast("Erro crítico ao carregar os dados iniciais.");
             }
         }
         
         function setupLiveListeners() {
-            if (fisicoUnsubscribe) fisicoUnsubscribe();
-            fisicoUnsubscribe = onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
+             onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderAllTabs();
+                renderPlanningView();
+                updateDashboardView();
             });
 
-            if (campoUnsubscribe) campoUnsubscribe();
-            campoUnsubscribe = onSnapshot(query(treinosCampoCollection, orderBy("date", "asc")), (snapshot) => {
+            onSnapshot(query(treinosCampoCollection, orderBy("date", "asc")), (snapshot) => {
                 treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderAllTabs();
+                renderPlanningView();
+                updateDashboardView();
             });
 
-            if (prontidaoUnsubscribe) prontidaoUnsubscribe();
-            prontidaoUnsubscribe = onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
+            onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
                 fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderAllTabs();
-                 if (isInitialLoadComplete) { 
-                    globalLoader.classList.add('hidden');
-                    mainContent.classList.remove('hidden');
-                }
+                renderFilterProntidao(fullProntidaoData); // Update filter with new data
+                renderProntidaoTab(); // Re-render tab with current filter selection
             });
             
-            if (cargaUnsubscribe) cargaUnsubscribe();
-            cargaUnsubscribe = onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
+            onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
                 fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderAllTabs();
+                processAndStoreLoadData(); // Update data structures
+                renderCargaTab(); // Re-render tab with current filter selection
             });
         }
 
@@ -626,26 +642,13 @@
                 renderCargaTab();
             }
         });
-        document.getElementById('clearCargaBtn').addEventListener('click', () => {
-             showConfirmationModal(
-                'Tem certeza que deseja apagar TODOS os dados de Carga? Esta ação não pode ser desfeita.',
-                () => clearCollectionData(cargaCollection, "Carga"),
-                'Apagar Dados de Carga'
-            );
-        });
-         document.getElementById('clearProntidaoBtn').addEventListener('click', () => {
-             showConfirmationModal(
-                'Tem certeza que deseja apagar TODOS os dados de Prontidão? Esta ação não pode ser desfeita.',
-                () => clearCollectionData(prontidaoCollection, "Prontidão"),
-                'Apagar Dados de Prontidão'
-            );
-        });
         
         formTreinoFisico.addEventListener('submit', handleFormFisicoSubmit);
         formTreinoCampo.addEventListener('submit', handleFormCampoSubmit);
         document.getElementById('dataTreinoFisico').addEventListener('change', (e) => {
             const date = e.target.valueAsDate;
             if (date) {
+                // Adjust for timezone offset to get correct UTC date
                 const timezoneOffset = date.getTimezoneOffset() * 60000;
                 const utcDate = new Date(date.getTime() + timezoneOffset);
                 document.getElementById('semanaIdFisico').value = getWeekId(utcDate) || '';
@@ -670,7 +673,13 @@
         });
         
         exportPdfBtnDashboard.addEventListener('click', () => exportToPDF('dashboard'));
-        
+        document.getElementById('clearAllDataBtn').addEventListener('click', () => {
+             showConfirmationModal(
+                'Tem certeza que deseja apagar TODOS os dados importados de Prontidão e Carga? Esta ação não pode ser desfeita.',
+                () => clearAllImportedData(),
+                'Apagar Todos os Dados'
+            );
+        });
 
 
         // --- INITIALIZATION ---
@@ -698,15 +707,13 @@
             }
             placeholderSectionProntidao.classList.add('hidden');
             resultsSection.classList.remove('hidden');
-
-            renderFilterProntidao(fullProntidaoData);
             
             const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
             const selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
             const filteredData = fullProntidaoData.filter(d => selectedWeeks.includes(d.semana_id));
 
             if (filteredData.length > 0) {
-                displayFilteredProntidaoData(filteredData, selectedWeeks);
+                displayFilteredProntidaoData(filteredData);
             } else {
                 teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s).</p>';
                 resultsContainer.innerHTML = '';
@@ -1034,13 +1041,16 @@
             await batch.commit();
         }
         
-        async function clearCollectionData(collectionRef, collectionName) {
-            showToast(`Limpando dados de ${collectionName}...`, 'success');
-            const snapshot = await getDocs(query(collectionRef));
-            const batch = writeBatch(db);
-            snapshot.docs.forEach(d => batch.delete(d.ref));
-            await batch.commit();
-            showToast(`Todos os dados de ${collectionName} foram removidos.`, 'success');
+        async function clearAllImportedData() {
+            const collectionsToDelete = [prontidaoCollection, cargaCollection];
+            showToast('Limpando dados...', 'success');
+            for(const coll of collectionsToDelete) {
+                const snapshot = await getDocs(query(coll));
+                const batch = writeBatch(db);
+                snapshot.docs.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+            }
+            showToast('Todos os dados importados foram removidos.', 'success');
         }
 
         function handleFileProcessing() {
@@ -1072,14 +1082,17 @@
         function getWeekId(date) {
             if (!date) return null;
             let d = date;
-             if (typeof date.getTime !== 'function') {
-                d = new Date(date + 'T00:00:00'); // Assume local timezone if string is just a date
+            if (typeof date.getTime !== 'function') {
+                d = new Date(date);
             }
-            d.setHours(0, 0, 0, 0);
-            const day = d.getDay() || 7;
-            d.setDate(d.getDate() + 4 - day);
-            const yearStart = new Date(d.getFullYear(), 0, 1);
-            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+             // Adjust for timezone offset to get correct UTC date
+            const timezoneOffset = d.getTimezoneOffset() * 60000;
+            const utcDate = new Date(d.getTime() + timezoneOffset);
+            
+            const day = utcDate.getUTCDay() || 7;
+            utcDate.setUTCDate(utcDate.getUTCDate() + 4 - day);
+            const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
+            const weekNo = Math.ceil((((utcDate - yearStart) / 86400000) + 1) / 7);
             return `S${String(weekNo).padStart(2, '0')}`;
         }
 
@@ -1107,44 +1120,41 @@
                 </div>`;
         }
         
-        function displayFilteredProntidaoData(data, selectedWeeks) {
-            const { individualResults, teamStats, evolutionData } = analyzeProntidaoData(data);
-            latestProntidaoData = { teamStats, latestDate: teamStats.latestDate, evolutionData };
-            renderProntidaoResults(individualResults, teamStats, evolutionData, selectedWeeks);
+        function displayFilteredProntidaoData(data) {
+            const { individualResults, teamStats, latestDate } = analyzeProntidaoData(data);
+            latestProntidaoData = { teamStats, latestDate };
+            renderProntidaoResults(individualResults, teamStats, latestDate);
             updateDashboardView();
         }
 
         function analyzeProntidaoData(data) {
-            let latestDateOverall = null;
-            const individualResults = data.map(entry => {
-                if (!latestDateOverall || new Date(entry.data) > new Date(latestDateOverall)) {
-                    latestDateOverall = entry.data;
+            const athletesData = data.reduce((acc, row) => {
+                if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
+                acc[row.atleta_id].push(row);
+                return acc;
+            }, {});
+
+            let latestDate = null;
+            const individualResults = Object.keys(athletesData).map(athleteId => {
+                const entriesForAthleteInSelection = athletesData[athleteId]
+                    .sort((a, b) => new Date(b.data) - new Date(a.data));
+                
+                if (entriesForAthleteInSelection.length === 0) return null;
+                
+                const latestEntryInSelection = entriesForAthleteInSelection[0];
+
+                if (!latestDate || new Date(latestEntryInSelection.data) > new Date(latestDate)) {
+                    latestDate = latestEntryInSelection.data;
                 }
+                
                 const allHistoricalEntries = fullProntidaoData
-                                            .filter(d => d.atleta_id === entry.atleta_id && new Date(d.data) < new Date(entry.data))
+                                            .filter(d => d.atleta_id === athleteId && new Date(d.data) < new Date(latestEntryInSelection.data))
                                             .sort((a, b) => new Date(b.data) - new Date(a.data));
-                return calculateAthleteReadiness(entry.atleta_id, entry, allHistoricalEntries);
-            }).filter(Boolean).sort((a, b) => new Date(b.latestDate) - new Date(a.latestDate) || a.athleteId.localeCompare(b.athleteId));
 
-             // Calculate weekly evolution data
-            const weeklyData = {};
-            data.forEach(row => {
-                if(!weeklyData[row.semana_id]) weeklyData[row.semana_id] = [];
-                weeklyData[row.semana_id].push(row);
-            });
+                return calculateAthleteReadiness(athleteId, latestEntryInSelection, allHistoricalEntries);
 
-            const evolutionData = Object.keys(weeklyData).sort().map(weekId => {
-                const weekResults = analyzeProntidaoData(weeklyData[weekId]).individualResults; 
-                const readyAthletes = weekResults.filter(r => r.status === 'ready');
-                return {
-                    semana_id: weekId,
-                    averageIndex: getStats(readyAthletes.map(r => parseFloat(r.index))).mean,
-                    averageHooper: getStats(readyAthletes.map(r => r.hooperScore.latest)).mean,
-                    averageSaltoDiff: getStats(readyAthletes.map(r => r.saltoPercentDiff)).mean,
-                    averageRmsddDiff: getStats(readyAthletes.map(r => r.rmssdPercentDiff)).mean,
-                };
-            });
-            
+            }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
+
             const readyAthletes = individualResults.filter(r => r.status === 'ready');
             const teamStats = {
                 averageIndex: getStats(readyAthletes.map(r => parseFloat(r.index))).mean,
@@ -1153,10 +1163,9 @@
                 zoneCounts: individualResults.reduce((acc, r) => {
                     acc[r.zone || 'collecting'] = (acc[r.zone || 'collecting'] || 0) + 1;
                     return acc;
-                }, { green: 0, yellow: 0, red: 0, collecting: 0 }),
-                latestDate: latestDateOverall
+                }, { green: 0, yellow: 0, red: 0, collecting: 0 })
             };
-            return { individualResults, teamStats, evolutionData };
+            return { individualResults, teamStats, latestDate };
         }
 
         function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries) {
@@ -1192,16 +1201,13 @@
             }, {});
 
             const saltoMean = metricsDetail.salto_horizontal_cm?.mean || 0;
-            const saltoDiff = (latestEntry.salto_horizontal_cm && saltoMean > 0) ? ((latestEntry.salto_horizontal_cm - saltoMean) / saltoMean) * 100 : null;
-            
-            const rmssdMean = metricsDetail.vfc_rmssd?.mean || 0;
-            const rmssdDiff = (latestEntry.vfc_rmssd && rmssdMean > 0) ? ((latestEntry.vfc_rmssd - rmssdMean) / rmssdMean) * 100 : null;
+            const saltoDiff = (latestEntry.salto_horizontal_cm && !isNaN(saltoMean)) ? ((latestEntry.salto_horizontal_cm - saltoMean) / saltoMean) * 100 : null;
 
-            return { athleteId, status: 'ready', index: readinessIndex.toFixed(2), zone, metricsDetail, hooperScore: { latest: latestEntry.hooper_score }, saltoPercentDiff: saltoDiff, rmssdPercentDiff: rmssdDiff, latestDate: latestEntry.data };
+            return { athleteId, status: 'ready', index: readinessIndex.toFixed(2), zone, metricsDetail, hooperScore: { latest: latestEntry.hooper_score }, saltoPercentDiff: saltoDiff, latestDate: latestEntry.data };
         }
 
-        function renderProntidaoResults(individualResults, teamStats, evolutionData, selectedWeeks) {
-            teamDashboard.innerHTML = renderTeamDashboardProntidao(teamStats, teamStats.latestDate, false, evolutionData, selectedWeeks);
+        function renderProntidaoResults(individualResults, teamStats, latestDate) {
+            teamDashboard.innerHTML = renderTeamDashboardProntidao(teamStats, latestDate);
             resultsContainer.innerHTML = `
                 <div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0">
                     <div class="w-1/3">Atleta</div>
@@ -1213,15 +1219,9 @@
                 </div>
                 <div>${individualResults.map(createProntidaoResultRow).join('')}</div>`;
             renderLegends('prontidao');
-            
-             if (selectedWeeks.length > 1) {
-                renderTeamIndexChart(evolutionData);
-                renderTeamHooperChart(evolutionData);
-                renderTeamPerformanceChart(evolutionData);
-            }
         }
 
-        function renderTeamDashboardProntidao(stats, latestDate, isForDashboard = false, evolutionData = [], selectedWeeks = []) {
+        function renderTeamDashboardProntidao(stats, latestDate, isForDashboard = false) {
             if(!stats) return '';
             const { green, yellow, red } = stats.zoneCounts;
             const hooperTeamClass = getHooperClassification(stats.averageHooper);
@@ -1229,26 +1229,14 @@
             const saltoTeamClass = stats.averageSaltoDiff >= 0 ? 'text-green-600' : 'text-red-600';
             const formattedDate = latestDate ? new Date(latestDate.replace(/-/g, '/')).toLocaleDateString('pt-BR') : 'N/A';
             const title = isForDashboard ? 'Resumo da Prontidão' : 'Painel da Equipe';
-            
-            let chartsHtml = '';
-            if (!isForDashboard && selectedWeeks.length > 1) {
-                 chartsHtml = `
-                    <div class="col-span-1 md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                        <div class="p-4 bg-gray-50 rounded-lg h-56"><canvas id="team-index-chart"></canvas></div>
-                        <div class="p-4 bg-gray-50 rounded-lg h-56"><canvas id="team-hooper-chart"></canvas></div>
-                        <div class="p-4 bg-gray-50 rounded-lg h-56"><canvas id="team-performance-chart"></canvas></div>
-                    </div>
-                `;
-            }
 
             return `
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(Semanas: ${selectedWeeks.join(', ') || 'N/A'})</span></h2>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(Dados de: ${formattedDate})</span></h2>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
                         <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Índice Geral Médio</p><p class="text-5xl font-bold ${indexTeamClass.class}">${stats.averageIndex ? stats.averageIndex.toFixed(2) : '--'}</p></div>
                         <div class="flex flex-col items-center justify-center p-4 rounded-lg border ${hooperTeamClass.border} ${hooperTeamClass.bg} min-h-[140px]"><p class="text-sm font-medium ${hooperTeamClass.class}">Média de Fadiga (Hooper)</p><p class="text-5xl font-bold ${hooperTeamClass.class}">${stats.averageHooper ? stats.averageHooper.toFixed(1) : '--'}</p></div>
                         <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Recup. Muscular Média</p><p class="text-5xl font-bold ${saltoTeamClass}">${!isNaN(stats.averageSaltoDiff) ? `${stats.averageSaltoDiff >= 0 ? '+' : ''}${stats.averageSaltoDiff.toFixed(1)}%` : '--'}</p></div>
                         <div class="p-4 bg-gray-50 rounded-lg h-full flex flex-col min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2 text-center">Distribuição dos Atletas</p><div class="flex-grow flex items-center justify-around w-full"><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">${green}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-lg">${yellow}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-lg">${red}</div></div></div></div>
-                        ${chartsHtml}
                     </div>`;
         }
 
@@ -1637,22 +1625,10 @@
                             <div class="flex items-center">
                                 <input id="plan-week-${week}" type="checkbox" value="${week}" class="planning-week-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${selectedPlanningWeeks.includes(week) ? 'checked' : ''}>
                                 <label for="plan-week-${week}" class="ml-2 block text-sm text-gray-900">${week}</label>
-                                 <button class="delete-week-btn ml-2 text-red-500 hover:text-red-700" data-week-id="${week}">&times;</button>
                             </div>
                         `).join('')}
                     </div>
                 </div>`;
-                
-             document.querySelectorAll('.delete-week-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const weekId = e.currentTarget.dataset.weekId;
-                     showConfirmationModal(
-                        `Tem certeza que deseja apagar todos os treinos da semana ${weekId}? Esta ação não pode ser desfeita.`,
-                        () => deleteWeekData(weekId),
-                        'Apagar Semana'
-                    );
-                })
-             })
         }
 
         function renderPlanningView() {
@@ -1783,27 +1759,6 @@
                 showToast("Erro ao remover o treino.");
             }
         };
-        
-        async function deleteWeekData(weekId) {
-            showToast(`Excluindo treinos da semana ${weekId}...`, 'info');
-            try {
-                const batch = writeBatch(db);
-                
-                const qFisico = query(treinosFisicosCollection, where("semana_id", "==", weekId));
-                const fisicoSnap = await getDocs(qFisico);
-                fisicoSnap.forEach(d => batch.delete(d.ref));
-                
-                const qCampo = query(treinosCampoCollection, where("semana_id", "==", weekId));
-                const campoSnap = await getDocs(qCampo);
-                campoSnap.forEach(d => batch.delete(d.ref));
-
-                await batch.commit();
-                showToast(`Treinos da semana ${weekId} excluídos.`, 'success');
-            } catch (error) {
-                 console.error("Error deleting week data:", error);
-                 showToast("Erro ao excluir os treinos da semana.");
-            }
-        }
 
         // --- CLASSIFICATION & LEGENDS ---
         const getHooperClassification = score => {
