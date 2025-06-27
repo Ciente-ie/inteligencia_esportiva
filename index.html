@@ -139,8 +139,8 @@
                             <p>atleta_id,data,<strong class="text-blue-600">semana_id</strong>,qualidade_sono,niveis_stress,fadiga_geral,dor_muscular,hooper_score,salto_horizontal_cm,vfc_rmssd</p>
                         </div>
                          <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
-                             <li>O `semana_id` deve ser consistente (ex: "S1", "S2", "Semana 1").</li>
-                             <li>Para a análise, cada atleta deve ter pelo menos <strong>6 registros históricos</strong>.</li>
+                             <li>O `semana_id` deve ser consistente (ex: "S25", "S26").</li>
+                             <li>A análise comparará o dado mais recente de um atleta na semana selecionada com todos os seus dados anteriores.</li>
                         </ul>
                     </div>
 
@@ -199,8 +199,8 @@
                             <p>atleta_id,data,<strong class="text-blue-600">microciclo_id</strong>,pse_sessao,duracao_sessao_min</p>
                         </div>
                         <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
-                            <li>O `microciclo_id` deve ser consistente (ex: "M1", "M2", "Semana 1").</li>
-                            <li>Para o cálculo do AWCR, forneça dados de pelo menos <strong>5 microciclos</strong>.</li>
+                            <li>O `microciclo_id` deve ser consistente (ex: "S25", "S26").</li>
+                            <li>Para o cálculo do AWCR, forneça dados de pelo menos <strong>4 microciclos</strong> anteriores.</li>
                         </ul>
                     </div>
 
@@ -261,6 +261,10 @@
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino Físico</h3>
                         <form id="formTreinoFisico" class="space-y-4">
                             <div>
+                                <label for="semanaIdFisico" class="block text-sm font-medium text-gray-700 mb-1">ID da Semana (ex: S25)</label>
+                                <input type="text" id="semanaIdFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                            </div>
+                            <div>
                                 <label for="dataTreinoFisico" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
                                 <input type="date" id="dataTreinoFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
                             </div>
@@ -300,6 +304,10 @@
                      <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino de Campo</h3>
                         <form id="formTreinoCampo" class="space-y-4">
+                            <div>
+                                <label for="semanaIdCampo" class="block text-sm font-medium text-gray-700 mb-1">ID da Semana (ex: S25)</label>
+                                <input type="text" id="semanaIdCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                            </div>
                            <div>
                                 <label for="dataTreinoCampo" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
                                 <input type="date" id="dataTreinoCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
@@ -432,6 +440,7 @@
         };
         let activeCharts = {};
         let fullProntidaoData = [];
+        let fullCargaData = [];
         let athleteMicrocycleData = {};
         let treinosFisicos = [];
         let treinosCampo = [];
@@ -544,22 +553,12 @@
 
             onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
                 fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                if (fullProntidaoData.length > 0) {
-                    processAndRenderProntidaoData(fullProntidaoData);
-                } else {
-                     placeholderSectionProntidao.classList.remove('hidden');
-                     resultsSection.classList.add('hidden');
-                }
+                processAndRenderProntidaoData();
             });
             
             onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
-                const fullLoadData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                if (fullLoadData.length > 0) {
-                     processAndRenderLoadData(fullLoadData);
-                } else {
-                    placeholderSectionCarga.classList.remove('hidden');
-                    resultsSectionCarga.classList.add('hidden');
-                }
+                fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                processAndRenderLoadData();
             });
         }
 
@@ -654,15 +653,15 @@
         }
 
         function renderDashboardPlanejamento() {
-            const trainingsFisico = treinosFisicos.filter(t => selectedPlanningWeeks.includes(getWeekId(new Date(t.date))));
-            const trainingsCampo = treinosCampo.filter(t => selectedPlanningWeeks.includes(getWeekId(new Date(t.date))));
+            const trainingsFisico = treinosFisicos.filter(t => selectedPlanningWeeks.includes(t.semana_id));
+            const trainingsCampo = treinosCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
             const totalSessions = trainingsFisico.length + trainingsCampo.length;
 
             dashboardPlanejamento.innerHTML = `
                 <h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">Resumo do Planejamento</h2>
                 <p class="text-center text-gray-600 mb-4">Semanas selecionadas: ${selectedPlanningWeeks.join(', ')}</p>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                    <div class="lg:col-span-1 flex flex-col justify-center items-center bg-gray-50 p-6 rounded-lg">
+                    <div class="lg:col-span-1 flex flex-col justify-center items-center bg-gray-50 p-6 rounded-lg min-h-[350px]">
                         <h3 class="font-semibold text-gray-800 mb-2 text-center">Total de Sessões Planejadas</h3>
                         <p class="text-6xl font-bold text-blue-600">${totalSessions}</p>
                     </div>
@@ -692,8 +691,12 @@
 
             const totalObjectives = Object.values(objectiveCounts).reduce((sum, count) => sum + count, 0);
             if (totalObjectives === 0) {
-                ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
-                ctx.getContext('2d').fillText("Sem dados para esta seleção.", ctx.width/2, ctx.height/2);
+                const context = ctx.getContext('2d');
+                context.clearRect(0, 0, ctx.width, ctx.height);
+                context.font = "16px 'Inter'";
+                context.fillStyle = "#6b7280";
+                context.textAlign = "center";
+                context.fillText("Sem dados para esta seleção.", ctx.width / 2, ctx.height / 2);
                 return;
             };
 
@@ -938,14 +941,14 @@
             };
             reader.readAsText(file);
         }
-
+        
         function getWeekId(date) {
             if (!date) return null;
             const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
             d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
             const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
             const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-            return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+            return `S${String(weekNo).padStart(2, '0')}`;
         }
 
 
@@ -971,10 +974,15 @@
              filterContainerProntidao.dispatchEvent(new Event('change', { bubbles: true }));
         }
         
-        function processAndRenderProntidaoData(data) {
+        function processAndRenderProntidaoData() {
+             if (fullProntidaoData.length === 0) {
+                 placeholderSectionProntidao.classList.remove('hidden');
+                 resultsSection.classList.add('hidden');
+                 return;
+             }
              placeholderSectionProntidao.classList.add('hidden');
              resultsSection.classList.remove('hidden');
-             renderFilterProntidao(data);
+             renderFilterProntidao(fullProntidaoData);
         }
         
         function displayFilteredProntidaoData(data) {
@@ -985,7 +993,6 @@
         }
 
         function analyzeProntidaoData(data) {
-            const MIN_RECORDS = 6;
             const athletesData = data.reduce((acc, row) => {
                 if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
                 acc[row.atleta_id].push(row);
@@ -1009,11 +1016,6 @@
                 const allHistoricalEntries = fullProntidaoData
                                             .filter(d => d.atleta_id === athleteId && new Date(d.data) < new Date(latestEntry.data))
                                             .sort((a, b) => new Date(b.data) - new Date(a.data));
-
-
-                if (allHistoricalEntries.length < MIN_RECORDS - 1) {
-                    return { athleteId, status: 'collecting', message: `Dados históricos insuficientes. São necessários ${MIN_RECORDS} registros e o atleta possui ${allHistoricalEntries.length + 1}.` };
-                }
 
                 return calculateAthleteReadiness(athleteId, latestEntry, allHistoricalEntries);
             }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
@@ -1148,10 +1150,16 @@
             reader.readAsText(file);
         }
 
-        function processAndRenderLoadData(data) {
+        function processAndRenderLoadData() {
+            if (fullCargaData.length === 0) {
+                 placeholderSectionCarga.classList.remove('hidden');
+                 resultsSectionCarga.classList.add('hidden');
+                 return;
+            }
             placeholderSectionCarga.classList.add('hidden');
             resultsSectionCarga.classList.remove('hidden');
-            const dataByAthlete = data.reduce((acc, row) => {
+
+            const dataByAthlete = fullCargaData.reduce((acc, row) => {
                 if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
                 acc[row.atleta_id].push(row);
                 return acc;
@@ -1415,6 +1423,7 @@
             const objSecundarioEl = document.getElementById('objSecundarioFisico');
             const treino = {
                 type: 'fisico', date: document.getElementById('dataTreinoFisico').value,
+                semana_id: document.getElementById('semanaIdFisico').value,
                 objPrincipal: document.getElementById('objPrincipalFisico').value,
                 objSecundario: getSelectedOptions(objSecundarioEl),
                 local: document.getElementById('localTreinoFisico').value,
@@ -1442,6 +1451,7 @@
             const objSecundarioEl = document.getElementById('objSecundarioCampo');
             const treino = {
                 type: 'campo', date: document.getElementById('dataTreinoCampo').value,
+                semana_id: document.getElementById('semanaIdCampo').value,
                 objPrincipal: document.getElementById('objPrincipalCampo').value,
                 objSecundario: getSelectedOptions(objSecundarioEl),
                 campo: document.getElementById('campoTreinoCampo').value,
@@ -1463,7 +1473,7 @@
         
         function renderPlanningFilter() {
             const allTrainings = [...treinosFisicos, ...treinosCampo];
-            const existingWeeks = [...new Set(allTrainings.map(t => getWeekId(new Date(t.date))))];
+            const existingWeeks = [...new Set(allTrainings.map(t => t.semana_id))];
             const futureWeeks = Array.from({length: 5}, (_, i) => {
                 const d = new Date();
                 d.setDate(d.getDate() + (i * 7));
@@ -1479,7 +1489,7 @@
                         ${allWeeks.map(week => `
                             <div class="flex items-center">
                                 <input id="plan-week-${week}" type="checkbox" value="${week}" class="planning-week-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${selectedPlanningWeeks.includes(week) ? 'checked' : ''}>
-                                <label for="plan-week-${week}" class="ml-2 block text-sm text-gray-900">${week.replace('-W', ' S')}</label>
+                                <label for="plan-week-${week}" class="ml-2 block text-sm text-gray-900">${week}</label>
                             </div>
                         `).join('')}
                     </div>
@@ -1489,7 +1499,7 @@
         function renderPlanningView() {
             renderPlanningFilter();
             
-            const trainingsForWeek = (data) => data.filter(t => selectedPlanningWeeks.includes(getWeekId(new Date(t.date))));
+            const trainingsForWeek = (data) => data.filter(t => selectedPlanningWeeks.includes(t.semana_id));
 
             const fisicoSemana = trainingsForWeek(treinosFisicos);
             const campoSemana = trainingsForWeek(treinosCampo);
