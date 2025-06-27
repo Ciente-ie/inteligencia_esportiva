@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <!-- PDF Export Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -95,6 +96,7 @@
             <p class="text-gray-600 mt-2 text-lg">Analise a prontidão, controle a carga e planeje os treinos da sua equipe.</p>
         </header>
 
+        <!-- Tabs Navigation -->
         <div class="mb-8">
             <div class="flex border-b border-gray-200">
                 <button id="tabDashboardBtn" class="tab-btn active text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
@@ -112,14 +114,21 @@
             </div>
         </div>
 
+        <!-- NEW Content for Dashboard Tab -->
         <div id="dashboardContent">
             <div class="space-y-10" id="pdf-content-dashboard">
+                <!-- Prontidão Summary -->
                 <div id="dashboardProntidao" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-                     </div>
-                 <div id="dashboardCarga" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-                    </div>
+                     <!-- Content will be injected by JS -->
+                </div>
+                 <!-- Carga Summary -->
+                <div id="dashboardCarga" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+                    <!-- Content will be injected by JS -->
+                </div>
+                 <!-- Planejamento Summary -->
                  <div id="dashboardPlanejamento" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-                    </div>
+                    <!-- Content will be injected by JS -->
+                </div>
             </div>
              <div class="text-center mt-8">
                 <button id="exportPdfBtnDashboard" class="btn bg-red-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-red-700 transition flex items-center mx-auto">
@@ -129,6 +138,7 @@
             </div>
         </div>
 
+        <!-- Content for Prontidão Tab -->
         <div id="prontidaoContent" class="hidden">
              <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
@@ -188,6 +198,7 @@
             </div>
         </div>
 
+        <!-- Content for Carga de Treino Tab -->
         <div id="cargaContent" class="hidden">
            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
@@ -247,11 +258,15 @@
             </div>
         </div>
 
+        <!-- Content for Planejamento Tab -->
         <div id="planejamentoContent" class="hidden">
             <div id="filterContainerPlanejamento" class="mb-6">
-                 </div>
+                 <!-- Filter will be injected here -->
+            </div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Forms Section -->
                 <div class="lg:col-span-1 space-y-8">
+                    <!-- Physical Training Form -->
                     <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino Físico</h3>
                         <form id="formTreinoFisico" class="space-y-4">
@@ -295,7 +310,8 @@
                             <button type="submit" id="submitTreinoFisico" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300" disabled>Adicionar Treino Físico</button>
                         </form>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+                    <!-- Field Training Form -->
+                     <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino de Campo</h3>
                         <form id="formTreinoCampo" class="space-y-4">
                            <div>
@@ -345,8 +361,10 @@
                     </div>
                 </div>
 
+                <!-- Timelines Section -->
                 <div class="lg:col-span-2 space-y-8" id="pdf-content-planejamento">
-                    </div>
+                    <!-- This div will be populated by JS -->
+                </div>
             </div>
         </div>
 
@@ -1019,9 +1037,14 @@
         
         function getWeekId(date) {
             if (!date) return null;
-            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            let d = date;
+            if (typeof date.getTime !== 'function') {
+                d = new Date(date + 'T00:00:00'); 
+            }
+            d.setHours(0, 0, 0, 0);
+            const day = d.getDay() || 7;
+            d.setDate(d.getDate() + 4 - day);
+            const yearStart = new Date(d.getFullYear(), 0, 1);
             const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
             return `S${String(weekNo).padStart(2, '0')}`;
         }
