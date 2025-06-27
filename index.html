@@ -261,12 +261,12 @@
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino Físico</h3>
                         <form id="formTreinoFisico" class="space-y-4">
                             <div>
-                                <label for="semanaIdFisico" class="block text-sm font-medium text-gray-700 mb-1">ID da Semana (ex: S25)</label>
-                                <input type="text" id="semanaIdFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
-                            </div>
-                            <div>
                                 <label for="dataTreinoFisico" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
                                 <input type="date" id="dataTreinoFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                            </div>
+                             <div>
+                                <label for="semanaIdFisico" class="block text-sm font-medium text-gray-700 mb-1">ID da Semana (ex: S25)</label>
+                                <input type="text" id="semanaIdFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-100" readonly>
                             </div>
                             <div>
                                 <label for="objPrincipalFisico" class="block text-sm font-medium text-gray-700 mb-1">Objetivo Principal</label>
@@ -304,13 +304,13 @@
                      <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino de Campo</h3>
                         <form id="formTreinoCampo" class="space-y-4">
-                            <div>
-                                <label for="semanaIdCampo" class="block text-sm font-medium text-gray-700 mb-1">ID da Semana (ex: S25)</label>
-                                <input type="text" id="semanaIdCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
-                            </div>
                            <div>
                                 <label for="dataTreinoCampo" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
                                 <input type="date" id="dataTreinoCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                            </div>
+                             <div>
+                                <label for="semanaIdCampo" class="block text-sm font-medium text-gray-700 mb-1">ID da Semana (ex: S25)</label>
+                                <input type="text" id="semanaIdCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-100" readonly>
                             </div>
                             <div>
                                 <label for="objPrincipalCampo" class="block text-sm font-medium text-gray-700 mb-1">Objetivo Principal</label>
@@ -553,12 +553,12 @@
 
             onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
                 fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                processAndRenderProntidaoData();
+                renderProntidaoTab();
             });
             
             onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
                 fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                processAndRenderLoadData();
+                renderCargaTab();
             });
         }
 
@@ -572,17 +572,7 @@
         processBtn.addEventListener('click', handleFileProcessing);
         exportPdfBtn.addEventListener('click', () => exportToPDF('prontidao'));
         resultsContainer.addEventListener('click', (e) => toggleDetails(e, 'prontidao'));
-        filterContainerProntidao.addEventListener('change', () => {
-             const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
-             const selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
-             const filteredData = fullProntidaoData.filter(d => selectedWeeks.includes(d.semana_id));
-             if (filteredData.length > 0) {
-                displayFilteredProntidaoData(filteredData);
-             } else {
-                 teamDashboard.innerHTML = '';
-                 resultsContainer.innerHTML = '';
-             }
-        });
+        filterContainerProntidao.addEventListener('change', () => renderProntidaoTab());
 
         csvFileInputCarga.addEventListener('change', () => handleFileSelect(csvFileInputCarga, fileNameCargaEl, processBtnCarga));
         processBtnCarga.addEventListener('click', handleFileProcessingCarga);
@@ -590,19 +580,19 @@
         resultsContainerCarga.addEventListener('click', (e) => toggleDetails(e, 'carga'));
         filterContainer.addEventListener('change', (e) => {
             if (e.target.classList.contains('microciclo-checkbox')) {
-                const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
-                const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-                if (selectedIds.length > 0) {
-                    displayFilteredLoadData(selectedIds);
-                } else {
-                    teamDashboardCarga.innerHTML = '';
-                    resultsContainerCarga.innerHTML = '';
-                }
+                renderCargaTab();
             }
         });
         
         formTreinoFisico.addEventListener('submit', handleFormFisicoSubmit);
         formTreinoCampo.addEventListener('submit', handleFormCampoSubmit);
+        document.getElementById('dataTreinoFisico').addEventListener('change', (e) => {
+            document.getElementById('semanaIdFisico').value = getWeekId(e.target.valueAsDate) || '';
+        });
+        document.getElementById('dataTreinoCampo').addEventListener('change', (e) => {
+            document.getElementById('semanaIdCampo').value = getWeekId(e.target.valueAsDate) || '';
+        });
+
         filterContainerPlanejamento.addEventListener('change', (e) => {
              if (e.target.classList.contains('planning-week-checkbox')) {
                 const selectedCheckboxes = document.querySelectorAll('.planning-week-checkbox:checked');
@@ -617,12 +607,64 @@
 
         // --- INITIALIZATION ---
         document.getElementById('dataTreinoFisico').valueAsDate = new Date();
+        document.getElementById('dataTreinoFisico').dispatchEvent(new Event('change'));
         document.getElementById('dataTreinoCampo').valueAsDate = new Date();
+         document.getElementById('dataTreinoCampo').dispatchEvent(new Event('change'));
+
         updateDashboardView();
         renderPlanningView();
 
 
-        // --- DASHBOARD FUNCTIONS ---
+        // --- MAIN RENDER FUNCTIONS ---
+        function renderProntidaoTab() {
+            if (fullProntidaoData.length === 0) {
+                placeholderSectionProntidao.classList.remove('hidden');
+                resultsSection.classList.add('hidden');
+                return;
+            }
+            placeholderSectionProntidao.classList.add('hidden');
+            resultsSection.classList.remove('hidden');
+
+            renderFilterProntidao(fullProntidaoData);
+            
+            const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
+            const selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
+            const filteredData = fullProntidaoData.filter(d => selectedWeeks.includes(d.semana_id));
+
+            if (filteredData.length > 0) {
+                displayFilteredProntidaoData(filteredData);
+            } else {
+                teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s).</p>';
+                resultsContainer.innerHTML = '';
+                latestProntidaoData = null;
+            }
+            updateDashboardView();
+        }
+
+        function renderCargaTab() {
+            if (fullCargaData.length === 0) {
+                placeholderSectionCarga.classList.remove('hidden');
+                resultsSectionCarga.classList.add('hidden');
+                return;
+            }
+            placeholderSectionCarga.classList.add('hidden');
+            resultsSectionCarga.classList.remove('hidden');
+
+            processAndStoreLoadData();
+            
+            const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
+            const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+            if (selectedIds.length > 0) {
+                displayFilteredLoadData(selectedIds);
+            } else {
+                teamDashboardCarga.innerHTML = '<p class="text-center text-gray-500">Nenhum microciclo selecionado.</p>';
+                resultsContainerCarga.innerHTML = '';
+                latestCargaData = null;
+            }
+            updateDashboardView();
+        }
+
         function updateDashboardView() {
             renderDashboardProntidao();
             renderDashboardCarga();
@@ -971,7 +1013,6 @@
                         `).join('')}
                     </div>
                 </div>`;
-             filterContainerProntidao.dispatchEvent(new Event('change', { bubbles: true }));
         }
         
         function processAndRenderProntidaoData() {
@@ -983,6 +1024,7 @@
              placeholderSectionProntidao.classList.add('hidden');
              resultsSection.classList.remove('hidden');
              renderFilterProntidao(fullProntidaoData);
+             renderProntidaoTab();
         }
         
         function displayFilteredProntidaoData(data) {
@@ -1037,7 +1079,7 @@
             const getZScore = (key) => {
                 const value = latestEntry[key];
                 const dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null);
-                if (value == null || dataPoints.length < 5) return null;
+                if (value == null || dataPoints.length === 0) return null;
                 const { mean, stdDev } = getStats(dataPoints);
                 return stdDev === 0 ? 0 : (value - mean) / stdDev;
             };
@@ -1150,15 +1192,7 @@
             reader.readAsText(file);
         }
 
-        function processAndRenderLoadData() {
-            if (fullCargaData.length === 0) {
-                 placeholderSectionCarga.classList.remove('hidden');
-                 resultsSectionCarga.classList.add('hidden');
-                 return;
-            }
-            placeholderSectionCarga.classList.add('hidden');
-            resultsSectionCarga.classList.remove('hidden');
-
+        function processAndStoreLoadData() {
             const dataByAthlete = fullCargaData.reduce((acc, row) => {
                 if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
                 acc[row.atleta_id].push(row);
@@ -1201,10 +1235,32 @@
 
             const sortedMicrocycles = Array.from(allMicrocycles).sort();
             renderFilter(sortedMicrocycles);
-            if (sortedMicrocycles.length > 0) {
-                filterContainer.dispatchEvent(new Event('change', { bubbles: true }));
-            }
         }
+        
+        function renderCargaTab() {
+             if (fullCargaData.length === 0) {
+                 placeholderSectionCarga.classList.remove('hidden');
+                 resultsSectionCarga.classList.add('hidden');
+                 return;
+            }
+            placeholderSectionCarga.classList.add('hidden');
+            resultsSectionCarga.classList.remove('hidden');
+            
+            processAndStoreLoadData();
+            
+            const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
+            const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+            if (selectedIds.length > 0) {
+                displayFilteredLoadData(selectedIds);
+            } else {
+                teamDashboardCarga.innerHTML = '<p class="text-center text-gray-500">Nenhum microciclo selecionado.</p>';
+                resultsContainerCarga.innerHTML = '';
+                latestCargaData = null;
+            }
+            updateDashboardView();
+        }
+
 
         function renderFilter(microcycles) {
             if (microcycles.length === 0) {
@@ -1436,6 +1492,8 @@
                 showToast('Treino Físico adicionado!', 'success');
                 formTreinoFisico.reset();
                 document.getElementById('dataTreinoFisico').valueAsDate = new Date();
+                document.getElementById('dataTreinoFisico').dispatchEvent(new Event('change'));
+
             } catch (error) {
                 showToast("Erro ao salvar o treino físico.");
             } finally {
@@ -1464,6 +1522,7 @@
                 showToast('Treino de Campo adicionado!', 'success');
                 formTreinoCampo.reset();
                 document.getElementById('dataTreinoCampo').valueAsDate = new Date();
+                document.getElementById('dataTreinoCampo').dispatchEvent(new Event('change'));
             } catch (error) {
                 showToast("Erro ao salvar o treino de campo.");
             } finally {
