@@ -358,19 +358,20 @@
 
     <script type="module">
         // --- Firebase v9+ modular imports ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
 
         // --- FIREBASE SETUP ---
+        // Configuração para o projeto "meu-scout-pro"
         const firebaseConfig = {
-            apiKey: "AIzaSyBc8XiZIR3x98T8HX9maUZRBrIUWMTIgZs",
-            authDomain: "inteligenciaesportiva-4aa30.firebaseapp.com",
-            projectId: "inteligenciaesportiva-4aa30",
-            storageBucket: "inteligenciaesportiva-4aa30.appspot.com",
-            messagingSenderId: "591560841073",
-            appId: "1:591560841073:web:43fabba5650a9afeee88d0"
+            apiKey: "AIzaSyCSxaH-QFQbhrCttS-J8KmVN1MXmjXqY1s",
+            authDomain: "meu-scout-pro.firebaseapp.com",
+            projectId: "meu-scout-pro",
+            storageBucket: "meu-scout-pro.appspot.com",
+            messagingSenderId: "303977649743",
+            appId: "1:303977649743:web:4e81e55c7180390ec97c3a"
         };
         
         // Initialize Firebase and services
