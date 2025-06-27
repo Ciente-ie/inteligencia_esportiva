@@ -130,18 +130,17 @@
 
         <!-- Content for Prontidão Tab -->
         <div id="prontidaoContent" class="hidden">
-            <!-- Existing Prontidão Content -->
              <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                     <div>
                         <h2 class="text-xl font-semibold text-gray-800 mb-3">1. Prepare seu arquivo de Prontidão</h2>
-                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo. A `hooper_score` é a principal.</p>
+                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo, incluindo o `semana_id`.</p>
                         <div class="bg-gray-100 p-4 rounded-lg text-sm text-gray-700 font-mono border">
-                            <p>atleta_id,data,qualidade_sono,niveis_stress,fadiga_geral,dor_muscular,<strong class="text-blue-600">hooper_score</strong>,salto_horizontal_cm,vfc_rmssd</p>
+                            <p>atleta_id,data,<strong class="text-blue-600">semana_id</strong>,qualidade_sono,niveis_stress,fadiga_geral,dor_muscular,hooper_score,salto_horizontal_cm,vfc_rmssd</p>
                         </div>
                          <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
-                            <li>A coluna `hooper_score` é a soma dos 4 indicadores de bem-estar.</li>
-                            <li>Para a análise, cada atleta deve ter pelo menos <strong>6 registros (linhas)</strong>.</li>
+                             <li>O `semana_id` deve ser consistente (ex: "S1", "S2", "Semana 1").</li>
+                             <li>Para a análise, cada atleta deve ter pelo menos <strong>6 registros históricos</strong>.</li>
                         </ul>
                     </div>
 
@@ -191,7 +190,6 @@
 
         <!-- Content for Carga de Treino Tab -->
         <div id="cargaContent" class="hidden">
-           <!-- Existing Carga Content -->
            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                     <div>
@@ -252,7 +250,7 @@
 
         <!-- Content for Planejamento Tab -->
         <div id="planejamentoContent" class="hidden">
-            <div id="planejamentoFilterContainer" class="mb-6 flex items-center justify-center gap-4">
+            <div id="filterContainerPlanejamento" class="mb-6">
                  <!-- Filter will be injected here -->
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -440,7 +438,7 @@
         let currentUser = null;
         let latestProntidaoData = null;
         let latestCargaData = null;
-        let selectedPlanningWeekId = getWeekId(new Date());
+        let selectedPlanningWeeks = [getWeekId(new Date())];
 
         // --- DOM ELEMENTS ---
         const authStatus = document.getElementById('authStatus');
@@ -485,7 +483,7 @@
         const formTreinoCampo = document.getElementById('formTreinoCampo');
         const submitTreinoFisicoBtn = document.getElementById('submitTreinoFisico');
         const submitTreinoCampoBtn = document.getElementById('submitTreinoCampo');
-        const planejamentoFilterContainer = document.getElementById('planejamentoFilterContainer');
+        const filterContainerPlanejamento = document.getElementById('filterContainerPlanejamento');
         const pdfContentPlanejamento = document.getElementById('pdf-content-planejamento');
         // Dashboard Elements
         const dashboardProntidao = document.getElementById('dashboardProntidao');
@@ -578,7 +576,7 @@
         filterContainerProntidao.addEventListener('change', () => {
              const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
              const selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
-             const filteredData = fullProntidaoData.filter(d => selectedWeeks.includes(getWeekId(new Date(d.data))));
+             const filteredData = fullProntidaoData.filter(d => selectedWeeks.includes(d.semana_id));
              if (filteredData.length > 0) {
                 displayFilteredProntidaoData(filteredData);
              } else {
@@ -606,10 +604,12 @@
         
         formTreinoFisico.addEventListener('submit', handleFormFisicoSubmit);
         formTreinoCampo.addEventListener('submit', handleFormCampoSubmit);
-        planejamentoFilterContainer.addEventListener('change', (e) => {
-            if (e.target.id === 'weekSelectorPlanejamento') {
-                selectedPlanningWeekId = e.target.value;
+        filterContainerPlanejamento.addEventListener('change', (e) => {
+             if (e.target.classList.contains('planning-week-checkbox')) {
+                const selectedCheckboxes = document.querySelectorAll('.planning-week-checkbox:checked');
+                selectedPlanningWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
                 renderPlanningView();
+                updateDashboardView();
             }
         });
         
@@ -654,41 +654,30 @@
         }
 
         function renderDashboardPlanejamento() {
-            const currentWeekId = getWeekId(new Date());
-            const weeklyTrainingsFisico = treinosFisicos.filter(t => t.date && getWeekId(new Date(t.date)) === currentWeekId);
-            const weeklyTrainingsCampo = treinosCampo.filter(t => t.date && getWeekId(new Date(t.date)) === currentWeekId);
+            const trainingsFisico = treinosFisicos.filter(t => selectedPlanningWeeks.includes(getWeekId(new Date(t.date))));
+            const trainingsCampo = treinosCampo.filter(t => selectedPlanningWeeks.includes(getWeekId(new Date(t.date))));
+            const totalSessions = trainingsFisico.length + trainingsCampo.length;
 
             dashboardPlanejamento.innerHTML = `
-                <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Planejamento da Semana Atual</h2>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">Resumo do Planejamento</h2>
+                <p class="text-center text-gray-600 mb-4">Semanas selecionadas: ${selectedPlanningWeeks.join(', ')}</p>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                    <div class="lg:col-span-1">
-                         <h3 class="font-semibold text-gray-800 mb-3 text-center">Treinos Programados</h3>
-                         <div id="timelineDashboard" class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]"></div>
+                    <div class="lg:col-span-1 flex flex-col justify-center items-center bg-gray-50 p-6 rounded-lg">
+                        <h3 class="font-semibold text-gray-800 mb-2 text-center">Total de Sessões Planejadas</h3>
+                        <p class="text-6xl font-bold text-blue-600">${totalSessions}</p>
                     </div>
                      <div class="lg:col-span-1 grid grid-cols-1 gap-6">
                         <div>
-                            <h3 class="font-semibold text-gray-800 mb-2 text-center">Carga Esperada (Físico)</h3>
-                            <div class="h-48 bg-white p-2 rounded-lg border"><canvas id="dashboardChartFisico"></canvas></div>
-                            <div class="mt-4 h-64 bg-white p-2 rounded-lg border"><canvas id="dashboardObjectiveFisico"></canvas></div>
+                            <div class="h-64 bg-white p-2 rounded-lg border"><canvas id="dashboardObjectiveFisico"></canvas></div>
                         </div>
                         <div>
-                            <h3 class="font-semibold text-gray-800 mb-2 text-center">Carga Esperada (Campo)</h3>
-                            <div class="h-48 bg-white p-2 rounded-lg border"><canvas id="dashboardChartCampo"></canvas></div>
-                            <div class="mt-4 h-64 bg-white p-2 rounded-lg border"><canvas id="dashboardObjectiveCampo"></canvas></div>
+                            <div class="h-64 bg-white p-2 rounded-lg border"><canvas id="dashboardObjectiveCampo"></canvas></div>
                         </div>
                     </div>
                 </div>`;
             
-            if (weeklyTrainingsFisico.length === 0 && weeklyTrainingsCampo.length === 0) {
-                 document.getElementById('timelineDashboard').innerHTML = `<p class="col-span-full text-gray-500 text-center w-full py-8">Nenhum treino planejado para a semana atual.</p>`;
-            } else {
-                renderTimeline(document.getElementById('timelineDashboard'), [...weeklyTrainingsFisico, ...weeklyTrainingsCampo], '');
-            }
-
-            renderDailyLoadChart('dashboardChartFisico', weeklyTrainingsFisico);
-            renderDailyLoadChart('dashboardChartCampo', weeklyTrainingsCampo);
-            renderObjectiveDistributionChart('dashboardObjectiveFisico', weeklyTrainingsFisico, 'Distribuição de Objetivos Físicos');
-            renderObjectiveDistributionChart('dashboardObjectiveCampo', weeklyTrainingsCampo, 'Distribuição de Objetivos de Campo');
+            renderObjectiveDistributionChart('dashboardObjectiveFisico', trainingsFisico, 'Distribuição de Objetivos Físicos (%)');
+            renderObjectiveDistributionChart('dashboardObjectiveCampo', trainingsCampo, 'Distribuição de Objetivos de Campo (%)');
         }
         
         function renderObjectiveDistributionChart(canvasId, trainings, title) {
@@ -704,6 +693,7 @@
             const totalObjectives = Object.values(objectiveCounts).reduce((sum, count) => sum + count, 0);
             if (totalObjectives === 0) {
                 ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+                ctx.getContext('2d').fillText("Sem dados para esta seleção.", ctx.width/2, ctx.height/2);
                 return;
             };
 
@@ -888,7 +878,7 @@
                 headers.forEach((header, index) => {
                     if (header) { 
                         const value = values[index] ? values[index].trim() : null;
-                        if (['atleta_id', 'data', 'microciclo_id'].includes(header)) {
+                        if (['atleta_id', 'data', 'microciclo_id', 'semana_id'].includes(header)) {
                             entry[header] = value;
                         } else {
                             const sanitizedValue = value ? value.replace(',', '.') : null;
@@ -896,7 +886,7 @@
                         }
                     }
                 });
-                if (!entry.atleta_id || !entry.data || (requiredHeaders.includes('microciclo_id') && !entry.microciclo_id)) {
+                if (!entry.atleta_id || !entry.data || (requiredHeaders.includes('microciclo_id') && !entry.microciclo_id) || (requiredHeaders.includes('semana_id') && !entry.semana_id)) {
                     console.warn(`Linha ${i + 2} ignorada por falta de dados essenciais.`);
                     return null;
                 };
@@ -931,7 +921,7 @@
             reader.onload = async (event) => {
                 try {
                     const csvText = event.target.result;
-                    const required = ['atleta_id', 'data', 'hooper_score'];
+                    const required = ['atleta_id', 'data', 'semana_id', 'hooper_score'];
                     const parsedData = parseCSV(csvText, required);
                     await saveBatchData(prontidaoCollection, parsedData);
                     showToast(`${parsedData.length} registros de prontidão salvos com sucesso!`, 'success');
@@ -951,18 +941,16 @@
 
         function getWeekId(date) {
             if (!date) return null;
-            const d = new Date(date.getTime ? date.getTime() : new Date(date).getTime());
-            d.setHours(0, 0, 0, 0);
-            // Monday is day 1, Sunday is day 7
-            const day = d.getDay() || 7;
-            d.setDate(d.getDate() + 4 - day);
-            const yearStart = new Date(d.getFullYear(), 0, 1);
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
             const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-            return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+            return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
         }
 
+
         function renderFilterProntidao(data) {
-            const weekIds = [...new Set(data.map(d => getWeekId(new Date(d.data))).filter(Boolean))].sort().reverse();
+            const weekIds = [...new Set(data.map(d => d.semana_id).filter(Boolean))].sort().reverse();
             if (weekIds.length === 0) {
                 filterContainerProntidao.innerHTML = '';
                 return;
@@ -975,7 +963,7 @@
                         ${weekIds.map(week => `
                             <div class="flex items-center">
                                 <input id="week-${week}" type="checkbox" value="${week}" class="week-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${week === latestWeek ? 'checked' : ''}>
-                                <label for="week-${week}" class="ml-2 block text-sm text-gray-900">${week.replace('-W', ' S')}</label>
+                                <label for="week-${week}" class="ml-2 block text-sm text-gray-900">${week}</label>
                             </div>
                         `).join('')}
                     </div>
@@ -1473,21 +1461,6 @@
             }
         }
         
-        function getWeekFromId(weekId) {
-            const [year, week] = weekId.split('-W').map(Number);
-            const d = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
-            const day = d.getUTCDay();
-            const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
-            return new Date(d.setUTCDate(diff));
-        }
-        
-        function navigateWeek(direction) {
-            const currentWeekDate = getWeekFromId(selectedPlanningWeekId);
-            currentWeekDate.setUTCDate(currentWeekDate.getUTCDate() + (direction * 7));
-            selectedPlanningWeekId = getWeekId(currentWeekDate);
-            renderPlanningView();
-        }
-
         function renderPlanningFilter() {
             const allTrainings = [...treinosFisicos, ...treinosCampo];
             const existingWeeks = [...new Set(allTrainings.map(t => getWeekId(new Date(t.date))))];
@@ -1497,23 +1470,26 @@
                 return getWeekId(d);
             });
 
-            const allWeeks = [...new Set([...existingWeeks, ...futureWeeks])].filter(Boolean).sort();
+            const allWeeks = [...new Set([...existingWeeks, ...futureWeeks, getWeekId(new Date())])].filter(Boolean).sort();
             
-            planejamentoFilterContainer.innerHTML = `
-                <button id="prevWeekBtn" class="btn p-2 rounded-md bg-gray-200 hover:bg-gray-300">&lt; Ant</button>
-                <select id="weekSelectorPlanejamento" class="p-2 border border-gray-300 rounded-md">
-                    ${allWeeks.map(week => `<option value="${week}" ${week === selectedPlanningWeekId ? 'selected' : ''}>${week.replace('-W', ' Semana ')}</option>`).join('')}
-                </select>
-                <button id="nextWeekBtn" class="btn p-2 rounded-md bg-gray-200 hover:bg-gray-300">Próx &gt;</button>`;
-            
-            document.getElementById('prevWeekBtn').addEventListener('click', () => navigateWeek(-1));
-            document.getElementById('nextWeekBtn').addEventListener('click', () => navigateWeek(1));
+            filterContainerPlanejamento.innerHTML = `
+                 <div class="bg-white p-4 rounded-lg border shadow-sm">
+                    <label class="font-semibold text-gray-700 block mb-2">Selecione a(s) Semana(s) para Planejamento:</label>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                        ${allWeeks.map(week => `
+                            <div class="flex items-center">
+                                <input id="plan-week-${week}" type="checkbox" value="${week}" class="planning-week-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${selectedPlanningWeeks.includes(week) ? 'checked' : ''}>
+                                <label for="plan-week-${week}" class="ml-2 block text-sm text-gray-900">${week.replace('-W', ' S')}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
         }
 
         function renderPlanningView() {
             renderPlanningFilter();
             
-            const trainingsForWeek = (data) => data.filter(t => getWeekId(new Date(t.date)) === selectedPlanningWeekId);
+            const trainingsForWeek = (data) => data.filter(t => selectedPlanningWeeks.includes(getWeekId(new Date(t.date))));
 
             const fisicoSemana = trainingsForWeek(treinosFisicos);
             const campoSemana = trainingsForWeek(treinosCampo);
@@ -1536,11 +1512,10 @@
                     <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64"><canvas id="chartCargaCampo"></canvas></div>
                 </div>`;
             
-            // Re-bind the export button event after recreating the element
             document.getElementById('exportPdfBtnPlanejamento').addEventListener('click', () => exportToPDF('planejamento'));
 
-            renderTimeline(document.getElementById('timelineFisico'), fisicoSemana, 'Nenhum treino físico cadastrado para esta semana.');
-            renderTimeline(document.getElementById('timelineCampo'), campoSemana, 'Nenhum treino de campo cadastrado para esta semana.');
+            renderTimeline(document.getElementById('timelineFisico'), fisicoSemana, 'Nenhum treino físico cadastrado para esta seleção.');
+            renderTimeline(document.getElementById('timelineCampo'), campoSemana, 'Nenhum treino de campo cadastrado para esta seleção.');
             renderDailyLoadChart('chartCargaFisico', fisicoSemana);
             renderDailyLoadChart('chartCargaCampo', campoSemana);
         }
