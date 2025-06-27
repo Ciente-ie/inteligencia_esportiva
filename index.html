@@ -567,15 +567,12 @@
                 fullCargaData = cargaSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 treinosFisicos = fisicoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 treinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-
-                // Initial Render
+                
                 renderAllTabs();
 
-                // Show content
                 globalLoader.classList.add('hidden');
                 mainContent.classList.remove('hidden');
 
-                // Setup listeners for real-time updates
                 setupLiveListeners();
 
             } catch (error) {
@@ -1056,13 +1053,15 @@
                 return;
             }
             const latestWeek = weekIds[0];
+            const currentSelection = Array.from(document.querySelectorAll('.week-checkbox:checked')).map(cb => cb.value);
+
             filterContainerProntidao.innerHTML = `
                  <div class="bg-white p-4 rounded-lg border shadow-sm">
                     <label class="font-semibold text-gray-700 block mb-2">Selecione a(s) Semana(s):</label>
                     <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                         ${weekIds.map(week => `
                             <div class="flex items-center">
-                                <input id="week-${week}" type="checkbox" value="${week}" class="week-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${week === latestWeek ? 'checked' : ''}>
+                                <input id="week-${week}" type="checkbox" value="${week}" class="week-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${currentSelection.length > 0 ? (currentSelection.includes(week) ? 'checked' : '') : (week === latestWeek ? 'checked' : '')}>
                                 <label for="week-${week}" class="ml-2 block text-sm text-gray-900">${week}</label>
                             </div>
                         `).join('')}
@@ -1285,6 +1284,7 @@
                 filterContainer.innerHTML = '';
                 return;
             }
+            const currentSelection = Array.from(document.querySelectorAll('.microciclo-checkbox:checked')).map(cb => cb.value);
             const latestMicrocycle = microcycles[microcycles.length - 1];
             filterContainer.innerHTML = `
                 <div class="bg-white p-4 rounded-lg border shadow-sm">
@@ -1292,7 +1292,7 @@
                     <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                         ${microcycles.map(mc => `
                             <div class="flex items-center">
-                                <input id="mc-${mc}" type="checkbox" value="${mc}" class="microciclo-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${mc === latestMicrocycle ? 'checked' : ''}>
+                                <input id="mc-${mc}" type="checkbox" value="${mc}" class="microciclo-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${currentSelection.length > 0 ? (currentSelection.includes(mc) ? 'checked' : '') : (mc === latestMicrocycle ? 'checked' : '')}>
                                 <label for="mc-${mc}" class="ml-2 block text-sm text-gray-900">${mc}</label>
                             </div>
                         `).join('')}
