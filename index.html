@@ -162,7 +162,7 @@
                             <p id="fileName" class="mt-2 text-sm text-gray-500"></p>
                         </div>
                         <button id="processBtn" class="btn mt-4 w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center text-lg" disabled>
-                            <span id="btnText">Processar Prontidão</span>
+                            <span id="btnText">Processar e Salvar Prontidão</span>
                             <div id="btnLoader" class="loader hidden ml-3"></div>
                         </button>
                     </div>
@@ -170,6 +170,7 @@
             </div>
             <div id="resultsSection" class="mt-10 hidden">
                 <div id="pdf-content-prontidao">
+                    <div id="filterContainerProntidao" class="mb-6"></div>
                     <div id="teamDashboard" class="mb-8"></div>
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Resultados Individuais de Prontidão</h2>
@@ -178,7 +179,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
                                 Exportar PDF
                             </button>
-                            <button id="clearBtn" class="btn bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">Limpar Análise</button>
+                            <button id="clearBtn" class="btn bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">Limpar Análise Local</button>
                         </div>
                     </div>
                     <div id="resultsContainer" class="bg-white rounded-lg shadow-md border overflow-hidden"></div>
@@ -188,7 +189,7 @@
             <div id="placeholderSectionProntidao" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
                 <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <h3 class="mt-4 text-xl font-semibold text-gray-800">Aguardando dados de Prontidão</h3>
-                <p class="mt-1 text-gray-500">Importe um arquivo para ver o relatório de prontidão da sua equipe.</p>
+                <p class="mt-1 text-gray-500">Os dados salvos serão carregados automaticamente ou importe um novo arquivo.</p>
             </div>
         </div>
 
@@ -223,7 +224,7 @@
                             <p id="fileNameCarga" class="mt-2 text-sm text-gray-500"></p>
                         </div>
                         <button id="processBtnCarga" class="btn mt-4 w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center text-lg" disabled>
-                            <span id="btnTextCarga">Processar Carga</span>
+                            <span id="btnTextCarga">Processar e Salvar Carga</span>
                             <div id="btnLoaderCarga" class="loader hidden ml-3"></div>
                         </button>
                     </div>
@@ -240,7 +241,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
                                 Exportar PDF
                             </button>
-                            <button id="clearBtnCarga" class="btn bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">Limpar Análise</button>
+                            <button id="clearBtnCarga" class="btn bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">Limpar Análise Local</button>
                         </div>
                     </div>
                     <div id="resultsContainerCarga" class="bg-white rounded-lg shadow-md border overflow-hidden"></div>
@@ -250,7 +251,7 @@
              <div id="placeholderSectionCarga" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
                 <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <h3 class="mt-4 text-xl font-semibold text-gray-800">Aguardando dados de Carga</h3>
-                <p class="mt-1 text-gray-500">Importe um arquivo para ver o relatório de carga de treino da sua equipe.</p>
+                <p class="mt-1 text-gray-500">Os dados salvos serão carregados automaticamente ou importe um novo arquivo.</p>
             </div>
         </div>
 
@@ -389,7 +390,7 @@
     <script type="module">
         // --- Firebase v9+ modular imports ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
 
@@ -417,6 +418,9 @@
         // Firebase Collection References
         const treinosFisicosCollection = collection(db, 'treinosFisicos');
         const treinosCampoCollection = collection(db, 'treinosCampo');
+        const prontidaoCollection = collection(db, 'prontidaoData');
+        const cargaCollection = collection(db, 'cargaData');
+
 
         // --- CONSTANTS AND GLOBAL STATE ---
         const METRIC_NAMES = {
@@ -435,12 +439,13 @@
             maxima: 100
         };
         let activeCharts = {};
+        let fullProntidaoData = [];
         let athleteMicrocycleData = {};
         let treinosFisicos = [];
         let treinosCampo = [];
         let currentUser = null;
-        let latestProntidaoData = null; // Stores team stats for dashboard
-        let latestCargaData = null; // Stores team stats for dashboard
+        let latestProntidaoData = null;
+        let latestCargaData = null;
 
         // --- DOM ELEMENTS ---
         const authStatus = document.getElementById('authStatus');
@@ -461,6 +466,7 @@
         const btnLoader = document.getElementById('btnLoader');
         const resultsSection = document.getElementById('resultsSection');
         const placeholderSectionProntidao = document.getElementById('placeholderSectionProntidao');
+        const filterContainerProntidao = document.getElementById('filterContainerProntidao');
         const teamDashboard = document.getElementById('teamDashboard');
         const resultsContainer = document.getElementById('resultsContainer');
         const clearBtn = document.getElementById('clearBtn');
@@ -504,7 +510,7 @@
         });
 
 
-        // --- AUTHENTICATION ---
+        // --- AUTHENTICATION & DATA LOADING ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
@@ -513,7 +519,7 @@
                 authStatus.classList.remove('text-red-600');
                 submitTreinoFisicoBtn.disabled = false;
                 submitTreinoCampoBtn.disabled = false;
-                listenToTrainings();
+                loadAllData();
             } else {
                 currentUser = null;
                 authStatus.textContent = 'Offline';
@@ -530,30 +536,50 @@
             showToast("Falha na autenticação. Os dados não serão salvos.");
         });
 
-
-        // --- FIREBASE DATA LISTENERS ---
-        function listenToTrainings() {
+        function loadAllData() {
+            // Planning Data
             const qFisico = query(treinosFisicosCollection, orderBy("date", "asc"));
             onSnapshot(qFisico, (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 renderTimelines();
                 updateDashboardView();
-            }, (error) => {
-                console.error("Error listening to physical trainings:", error);
-                showToast("Erro ao carregar treinos físicos.");
-            });
+            }, (error) => showToast("Erro ao carregar treinos físicos."));
 
             const qCampo = query(treinosCampoCollection, orderBy("date", "asc"));
             onSnapshot(qCampo, (snapshot) => {
                 treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 renderTimelines();
                 updateDashboardView();
-            }, (error) => {
-                console.error("Error listening to field trainings:", error);
-                showToast("Erro ao carregar treinos de campo.");
-            });
-        }
+            }, (error) => showToast("Erro ao carregar treinos de campo."));
 
+            // Prontidão Data
+            const qProntidao = query(prontidaoCollection, orderBy("data", "desc"));
+            onSnapshot(qProntidao, (snapshot) => {
+                fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                if (fullProntidaoData.length > 0) {
+                    placeholderSectionProntidao.classList.add('hidden');
+                    resultsSection.classList.remove('hidden');
+                    processAndRenderProntidaoData(fullProntidaoData);
+                } else {
+                     placeholderSectionProntidao.classList.remove('hidden');
+                     resultsSection.classList.add('hidden');
+                }
+            }, (error) => showToast("Erro ao carregar dados de prontidão."));
+            
+             // Carga Data
+            const qCarga = query(cargaCollection, orderBy("data", "desc"));
+            onSnapshot(qCarga, (snapshot) => {
+                const fullLoadData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                if (fullLoadData.length > 0) {
+                     placeholderSectionCarga.classList.add('hidden');
+                     resultsSectionCarga.classList.remove('hidden');
+                     processAndRenderLoadData(fullLoadData);
+                } else {
+                    placeholderSectionCarga.classList.remove('hidden');
+                    resultsSectionCarga.classList.add('hidden');
+                }
+            }, (error) => showToast("Erro ao carregar dados de carga."));
+        }
 
         // --- EVENT LISTENERS ---
         tabDashboardBtn.addEventListener('click', () => switchTab('dashboard'));
@@ -565,6 +591,18 @@
         clearBtn.addEventListener('click', resetView);
         exportPdfBtn.addEventListener('click', () => exportToPDF('prontidao'));
         resultsContainer.addEventListener('click', (e) => toggleDetails(e, 'prontidao'));
+        filterContainerProntidao.addEventListener('change', () => {
+             const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
+             const selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
+             const filteredData = fullProntidaoData.filter(d => selectedWeeks.includes(getWeekId(d.data)));
+             if (filteredData.length > 0) {
+                displayFilteredProntidaoData(filteredData);
+             } else {
+                 teamDashboard.innerHTML = '';
+                 resultsContainer.innerHTML = '';
+             }
+        });
+
         csvFileInputCarga.addEventListener('change', () => handleFileSelect(csvFileInputCarga, fileNameCargaEl, processBtnCarga));
         processBtnCarga.addEventListener('click', handleFileProcessingCarga);
         clearBtnCarga.addEventListener('click', resetViewCarga);
@@ -606,34 +644,22 @@
             if (latestProntidaoData) {
                 dashboardProntidao.innerHTML = renderTeamDashboardProntidao(latestProntidaoData.teamStats, latestProntidaoData.latestDate, true);
             } else {
-                dashboardProntidao.innerHTML = `
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Prontidão</h2>
-                    <div class="text-center py-10 px-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de prontidão carregado</h3>
-                        <p class="mt-1 text-sm text-gray-500">Vá para a aba 'Análise de Prontidão' para importar um arquivo.</p>
-                    </div>`;
+                dashboardProntidao.innerHTML = `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Prontidão</h2><div class="text-center py-10 px-6"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de prontidão carregado</h3><p class="mt-1 text-sm text-gray-500">Vá para a aba 'Análise de Prontidão' para importar um arquivo.</p></div>`;
             }
         }
 
         function renderDashboardCarga() {
             if (latestCargaData) {
                 dashboardCarga.innerHTML = renderTeamDashboardCarga(latestCargaData, true);
+                 if (latestCargaData.selectionCount > 1) {
+                    renderTeamWeeklyLoadChart(latestCargaData.evolutionData, 'dashboard-');
+                    renderTeamAcwrChart(latestCargaData.evolutionData, 'dashboard-');
+                    renderTeamStrainChart(latestCargaData.evolutionData, 'dashboard-');
+                } else if (latestCargaData) {
+                    renderTeamDailyLoadChart(latestCargaData.dailyAverages, 'dashboard-');
+                }
             } else {
-                dashboardCarga.innerHTML = `
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Carga de Treino</h2>
-                    <div class="text-center py-10 px-6">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de carga carregado</h3>
-                        <p class="mt-1 text-sm text-gray-500">Vá para a aba 'Controle de Carga' para importar um arquivo.</p>
-                    </div>`;
-            }
-            if (latestCargaData && latestCargaData.selectionCount > 1) {
-                renderTeamWeeklyLoadChart(latestCargaData.evolutionData, 'dashboard-');
-                renderTeamAcwrChart(latestCargaData.evolutionData, 'dashboard-');
-                renderTeamStrainChart(latestCargaData.evolutionData, 'dashboard-');
-            } else if (latestCargaData) {
-                renderTeamDailyLoadChart(latestCargaData.dailyAverages, 'dashboard-');
+                dashboardCarga.innerHTML = `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Carga de Treino</h2><div class="text-center py-10 px-6"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de carga carregado</h3><p class="mt-1 text-sm text-gray-500">Vá para a aba 'Controle de Carga' para importar um arquivo.</p></div>`;
             }
         }
 
@@ -642,76 +668,33 @@
             const weeklyTrainings = allTrainings.filter(t => t.date && isDateInThisWeek(new Date(t.date + 'T00:00:00')));
 
             if (weeklyTrainings.length === 0) {
-                 dashboardPlanejamento.innerHTML = `
-                    <div class="text-center py-10 px-6 text-gray-500">
-                         <p>Nenhum treino planejado para a semana atual.</p>
-                    </div>`;
+                 dashboardPlanejamento.innerHTML = `<div class="text-center py-10 px-6 text-gray-500"><p>Nenhum treino planejado para a semana atual.</p></div>`;
                 return;
             }
 
-            // Combine timeline and charts for a compact view
             dashboardPlanejamento.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                    <div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <div class="lg:col-span-1">
                          <h3 class="font-semibold text-gray-800 mb-3 text-center">Treinos Programados</h3>
-                         <div id="timelineDashboard" class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]">
-                            <!-- Timeline cards will be injected here -->
-                         </div>
+                         <div id="timelineDashboard" class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]"></div>
                     </div>
-                     <div>
-                        <h3 class="font-semibold text-gray-800 mb-3 text-center">Carga Planejada da Semana</h3>
-                        <div class="h-64 bg-white p-2 rounded-lg border">
-                             <canvas id="dashboardChartCargaConsolidada"></canvas>
+                     <div class="lg:col-span-1 grid grid-cols-1 gap-6">
+                        <div>
+                            <h3 class="font-semibold text-gray-800 mb-2 text-center">Carga Esperada (Físico)</h3>
+                            <div class="h-48 bg-white p-2 rounded-lg border"><canvas id="dashboardChartFisico"></canvas></div>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800 mb-2 text-center">Carga Esperada (Campo)</h3>
+                            <div class="h-48 bg-white p-2 rounded-lg border"><canvas id="dashboardChartCampo"></canvas></div>
                         </div>
                     </div>
-                </div>
-            `;
+                </div>`;
             renderTimeline(document.getElementById('timelineDashboard'), allTrainings, 'Nenhum treino cadastrado.');
-            renderConsolidatedWeeklyChart('dashboardChartCargaConsolidada', treinosFisicos, treinosCampo);
+            renderDailyLoadChart('dashboardChartFisico', treinosFisicos);
+            renderDailyLoadChart('dashboardChartCampo', treinosCampo);
         }
 
-        function renderConsolidatedWeeklyChart(canvasId, fisico, campo) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const getDailyLoads = (treinos) => {
-                const dailyMaxLoad = {};
-                treinos.filter(t => t.date && isDateInThisWeek(new Date(t.date + 'T00:00:00'))).forEach(t => {
-                    const dayOfWeek = new Date(t.date + 'T00:00:00').getDay();
-                    const loadValue = CARGA_PERCENTUAL[t.carga];
-                    if (!dailyMaxLoad[dayOfWeek] || loadValue > dailyMaxLoad[dayOfWeek]) {
-                        dailyMaxLoad[dayOfWeek] = loadValue;
-                    }
-                });
-                 return [1,2,3,4,5,6,0].map(day => dailyMaxLoad[day] || 0);
-            };
-            
-            const fisicoData = getDailyLoads(fisico);
-            const campoData = getDailyLoads(campo);
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-                    datasets: [
-                        { label: 'Treino Físico', data: fisicoData, backgroundColor: 'rgba(59, 130, 246, 0.7)'},
-                        { label: 'Treino de Campo', data: campoData, backgroundColor: 'rgba(22, 163, 74, 0.7)'}
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    scales: {
-                        x: { stacked: true, grid: { display: false } },
-                        y: { stacked: true, beginAtZero: true, min: 0, max: 100, title: { display: true, text: 'Carga Planejada (%)' } }
-                    },
-                    plugins: { legend: { position: 'bottom' }, datalabels: { display: false } }
-                }
-            });
-        }
-
-
-        // --- GENERAL FUNCTIONS ---
+        // --- GENERAL HELPER FUNCTIONS ---
         function showToast(message, type = 'error') {
             toast.textContent = message;
             toast.className = `fixed bottom-5 right-5 text-white py-3 px-6 rounded-lg shadow-xl opacity-0 transition-opacity duration-300 transform translate-y-10 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
@@ -879,13 +862,16 @@
             csvFileInput.value = '';
             fileNameEl.textContent = '';
             processBtn.disabled = true;
-            resultsSection.classList.add('hidden');
-            placeholderSectionProntidao.classList.remove('hidden');
-            resultsContainer.innerHTML = '';
-            teamDashboard.innerHTML = '';
-            activeCharts = {};
-            latestProntidaoData = null;
-            updateDashboardView();
+            // The view will be updated by the onSnapshot listener after data is potentially cleared
+        }
+        
+        async function saveBatchData(collectionRef, data) {
+            const batch = writeBatch(db);
+            data.forEach(item => {
+                const docRef = doc(collectionRef); // Creates a new doc with a random ID
+                batch.set(docRef, item);
+            });
+            await batch.commit();
         }
 
         function handleFileProcessing() {
@@ -893,17 +879,16 @@
             if (!file) return showToast("Por favor, selecione um arquivo de prontidão.");
             toggleLoading(true, 'prontidao');
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
                 try {
                     const csvText = event.target.result;
                     const required = ['atleta_id', 'data', 'hooper_score'];
                     const parsedData = parseCSV(csvText, required);
-                    const { individualResults, teamStats, latestDate } = analyzeProntidaoData(parsedData);
-                    latestProntidaoData = { teamStats, latestDate }; // Save for dashboard
-                    renderProntidaoResults(individualResults, teamStats, latestDate);
-                    updateDashboardView(); // Update dashboard with new data
+                    await saveBatchData(prontidaoCollection, parsedData);
+                    showToast(`${parsedData.length} registros de prontidão salvos com sucesso!`, 'success');
+                    // onSnapshot will handle the rendering
                 } catch (error) {
-                     console.error("Error during prontidao analysis:", error);
+                     console.error("Error during prontidao processing/saving:", error);
                      showToast(`Erro: ${error.message}`);
                 } finally {
                     toggleLoading(false, 'prontidao');
@@ -916,6 +901,51 @@
             reader.readAsText(file);
         }
 
+        function getWeekId(dateString) {
+            if (!dateString) return null;
+            const date = new Date(dateString + 'T00:00:00');
+            const year = date.getFullYear();
+            const firstDayOfYear = new Date(year, 0, 1);
+            const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+            const weekNumber = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+            return `${year}-W${String(weekNumber).padStart(2, '0')}`;
+        }
+
+        function renderFilterProntidao(data) {
+            const weekIds = [...new Set(data.map(d => getWeekId(d.data)).filter(Boolean))].sort().reverse();
+            if (weekIds.length === 0) {
+                filterContainerProntidao.innerHTML = '';
+                return;
+            }
+            const latestWeek = weekIds[0];
+            filterContainerProntidao.innerHTML = `
+                 <div class="bg-white p-4 rounded-lg border shadow-sm">
+                    <label class="font-semibold text-gray-700 block mb-2">Selecione a(s) Semana(s):</label>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                        ${weekIds.map(week => `
+                            <div class="flex items-center">
+                                <input id="week-${week}" type="checkbox" value="${week}" class="week-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${week === latestWeek ? 'checked' : ''}>
+                                <label for="week-${week}" class="ml-2 block text-sm text-gray-900">${week.replace('-W', ' S')}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+             // Trigger the change event to filter by the default latest week
+             filterContainerProntidao.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        
+        function processAndRenderProntidaoData(data) {
+             renderFilterProntidao(data);
+             // Initial display will be triggered by the filter's change event
+        }
+        
+        function displayFilteredProntidaoData(data) {
+            const { individualResults, teamStats, latestDate } = analyzeProntidaoData(data);
+            latestProntidaoData = { teamStats, latestDate };
+            renderProntidaoResults(individualResults, teamStats, latestDate);
+            updateDashboardView();
+        }
+
         function analyzeProntidaoData(data) {
             const MIN_RECORDS = 6;
             const athletesData = data.reduce((acc, row) => {
@@ -926,18 +956,30 @@
 
             let latestDate = null;
             const individualResults = Object.keys(athletesData).map(athleteId => {
-                const allEntries = athletesData[athleteId].sort((a, b) => new Date(b.data) - new Date(a.data));
+                const allEntries = athletesData[athleteId]
+                                    .filter(d => d.atleta_id === athleteId) // Ensure we only use this athlete's data
+                                    .sort((a, b) => new Date(b.data) - new Date(a.data));
+                
+                if (allEntries.length === 0) return null;
 
-                if (allEntries.length < MIN_RECORDS) {
-                    return { athleteId, status: 'collecting', message: `Dados insuficientes. São necessários ${MIN_RECORDS} registros e o arquivo forneceu ${allEntries.length}.` };
+                const latestEntry = allEntries[0];
+
+                if (!latestDate || new Date(latestEntry.data) > new Date(latestDate)) {
+                    latestDate = latestEntry.data;
+                }
+                
+                // For historical data, we should use the full dataset, not just the filtered one
+                const allHistoricalEntries = fullProntidaoData
+                                            .filter(d => d.atleta_id === athleteId && new Date(d.data) < new Date(latestEntry.data))
+                                            .sort((a, b) => new Date(b.data) - new Date(a.data));
+
+
+                if (allHistoricalEntries.length < MIN_RECORDS -1) {
+                    return { athleteId, status: 'collecting', message: `Dados históricos insuficientes. São necessários ${MIN_RECORDS} registros e o atleta possui ${allHistoricalEntries.length + 1}.` };
                 }
 
-                if (allEntries[0].data && (!latestDate || new Date(allEntries[0].data) > new Date(latestDate))) {
-                    latestDate = allEntries[0].data;
-                }
-
-                return calculateAthleteReadiness(athleteId, allEntries);
-            }).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
+                return calculateAthleteReadiness(athleteId, latestEntry, allHistoricalEntries);
+            }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
 
             const readyAthletes = individualResults.filter(r => r.status === 'ready');
             const teamStats = {
@@ -952,10 +994,7 @@
             return { individualResults, teamStats, latestDate };
         }
 
-        function calculateAthleteReadiness(athleteId, allEntries) {
-            const latestEntry = allEntries[0];
-            const historicalEntries = allEntries.slice(1);
-
+        function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries) {
             const getZScore = (key) => {
                 const value = latestEntry[key];
                 const dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null);
@@ -994,8 +1033,6 @@
         }
 
         function renderProntidaoResults(individualResults, teamStats, latestDate) {
-            placeholderSectionProntidao.classList.add('hidden');
-            resultsSection.classList.remove('hidden');
             teamDashboard.innerHTML = renderTeamDashboardProntidao(teamStats, latestDate);
             resultsContainer.innerHTML = `
                 <div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0">
@@ -1053,15 +1090,6 @@
             csvFileInputCarga.value = '';
             fileNameCargaEl.textContent = '';
             processBtnCarga.disabled = true;
-            resultsSectionCarga.classList.add('hidden');
-            placeholderSectionCarga.classList.remove('hidden');
-            filterContainer.innerHTML = '';
-            teamDashboardCarga.innerHTML = '';
-            resultsContainerCarga.innerHTML = '';
-            activeCharts = {};
-            athleteMicrocycleData = {};
-            latestCargaData = null;
-            updateDashboardView();
         }
 
         function handleFileProcessingCarga() {
@@ -1069,17 +1097,16 @@
             if (!file) return showToast("Por favor, selecione um arquivo de carga.");
             toggleLoading(true, 'carga');
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
                 try {
                     const required = ['atleta_id', 'data', 'microciclo_id', 'pse_sessao', 'duracao_sessao_min'];
-                    const fullLoadData = parseCSV(event.target.result, required);
-                    if (fullLoadData.length === 0) throw new Error("Nenhum dado válido encontrado no arquivo.");
-
-                    processAndRenderLoadData(fullLoadData);
+                    const parsedData = parseCSV(event.target.result, required);
+                    await saveBatchData(cargaCollection, parsedData);
+                    showToast(`${parsedData.length} registros de carga salvos com sucesso!`, 'success');
+                    // onSnapshot will handle the rendering
                 } catch (error) {
-                     console.error("Error during carga analysis:", error);
+                     console.error("Error during carga processing/saving:", error);
                      showToast(`Erro na análise: ${error.message}`);
-                     resetViewCarga();
                 } finally {
                     toggleLoading(false, 'carga');
                 }
@@ -1133,13 +1160,10 @@
             }
 
             const sortedMicrocycles = Array.from(allMicrocycles).sort();
-
-            placeholderSectionCarga.classList.add('hidden');
-            resultsSectionCarga.classList.remove('hidden');
-
             renderFilter(sortedMicrocycles);
             if (sortedMicrocycles.length > 0) {
-                displayFilteredLoadData([sortedMicrocycles[sortedMicrocycles.length - 1]]);
+                 // Trigger the change event to filter by the default latest week
+                filterContainer.dispatchEvent(new Event('change', { bubbles: true }));
             }
         }
 
@@ -1165,9 +1189,6 @@
 
         function displayFilteredLoadData(selectedIds) {
             if (!selectedIds || selectedIds.length === 0) return;
-
-            Object.values(activeCharts).forEach(chart => chart.destroy());
-            activeCharts = {};
 
             const individualResults = [];
             let allEntriesInCycles = [];
@@ -1252,8 +1273,8 @@
                 microcicloId: selectedIds.join(', ')
             };
             
-            latestCargaData = teamStats; // Save for dashboard
-            updateDashboardView(); // Update dashboard with new data
+            latestCargaData = teamStats;
+            updateDashboardView();
 
             individualResults.sort((a, b) => (b.awcr ?? -1) - (a.awcr ?? -1));
 
@@ -1639,6 +1660,7 @@
         }
 
         window.removeTraining = async (id, type) => {
+            if(!confirm("Tem certeza que deseja remover este treino?")) return;
             showToast(`Removendo treino...`, 'success');
             try {
                 const collectionName = type === 'fisico' ? 'treinosFisicos' : 'treinosCampo';
