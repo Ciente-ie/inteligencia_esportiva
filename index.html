@@ -568,9 +568,27 @@
             isInitialLoadComplete = true; 
             loaderText.textContent = 'Carregando dados...';
             try {
+                const [prontidaoSnap, cargaSnap, fisicoSnap, campoSnap] = await Promise.all([
+                    getDocs(query(prontidaoCollection, orderBy("data", "desc"))),
+                    getDocs(query(cargaCollection, orderBy("data", "desc"))),
+                    getDocs(query(treinosFisicosCollection, orderBy("date", "asc"))),
+                    getDocs(query(treinosCampoCollection, orderBy("date", "asc"))),
+                ]);
+
+                fullProntidaoData = prontidaoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                fullCargaData = cargaSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                treinosFisicos = fisicoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                treinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                
+                renderAllTabs();
+
+                globalLoader.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+
                 setupLiveListeners();
+
             } catch (error) {
-                console.error("Error setting up listeners:", error);
+                console.error("Error loading initial data:", error);
                 loaderText.textContent = "Erro ao carregar os dados. Verifique o console.";
                 showToast("Erro crítico ao carregar os dados iniciais.");
             }
@@ -591,18 +609,14 @@
 
             onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
                 fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderFilterProntidao(fullProntidaoData);
-                renderProntidaoTab();
-                 if (isInitialLoadComplete) { // Only hide loader after all initial loads
-                    globalLoader.classList.add('hidden');
-                    mainContent.classList.remove('hidden');
-                }
+                renderFilterProntidao(fullProntidaoData); // Update filter with new data
+                renderProntidaoTab(); // Re-render tab with current filter selection
             });
             
             onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
                 fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                processAndStoreLoadData();
-                renderCargaTab();
+                processAndStoreLoadData(); // Update data structures
+                renderCargaTab(); // Re-render tab with current filter selection
             });
         }
 
@@ -632,10 +646,21 @@
         formTreinoFisico.addEventListener('submit', handleFormFisicoSubmit);
         formTreinoCampo.addEventListener('submit', handleFormCampoSubmit);
         document.getElementById('dataTreinoFisico').addEventListener('change', (e) => {
-            document.getElementById('semanaIdFisico').value = getWeekId(e.target.valueAsDate) || '';
+            const date = e.target.valueAsDate;
+            if (date) {
+                // Adjust for timezone offset to get correct UTC date
+                const timezoneOffset = date.getTimezoneOffset() * 60000;
+                const utcDate = new Date(date.getTime() + timezoneOffset);
+                document.getElementById('semanaIdFisico').value = getWeekId(utcDate) || '';
+            }
         });
         document.getElementById('dataTreinoCampo').addEventListener('change', (e) => {
-            document.getElementById('semanaIdCampo').value = getWeekId(e.target.valueAsDate) || '';
+            const date = e.target.valueAsDate;
+            if (date) {
+                const timezoneOffset = date.getTimezoneOffset() * 60000;
+                const utcDate = new Date(date.getTime() + timezoneOffset);
+                document.getElementById('semanaIdCampo').value = getWeekId(utcDate) || '';
+            }
         });
 
         filterContainerPlanejamento.addEventListener('change', (e) => {
@@ -1060,13 +1085,14 @@
             if (typeof date.getTime !== 'function') {
                 d = new Date(date);
             }
-             // Adiciona 12 horas para evitar problemas de fuso horário na virada do dia
-            d.setHours(d.getHours() + 12);
+             // Adjust for timezone offset to get correct UTC date
+            const timezoneOffset = d.getTimezoneOffset() * 60000;
+            const utcDate = new Date(d.getTime() + timezoneOffset);
             
-            const day = d.getUTCDay() || 7;
-            d.setUTCDate(d.getUTCDate() + 4 - day);
-            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            const day = utcDate.getUTCDay() || 7;
+            utcDate.setUTCDate(utcDate.getUTCDate() + 4 - day);
+            const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
+            const weekNo = Math.ceil((((utcDate - yearStart) / 86400000) + 1) / 7);
             return `S${String(weekNo).padStart(2, '0')}`;
         }
 
@@ -1175,7 +1201,7 @@
             }, {});
 
             const saltoMean = metricsDetail.salto_horizontal_cm?.mean || 0;
-            const saltoDiff = (latestEntry.salto_horizontal_cm && saltoMean) ? ((latestEntry.salto_horizontal_cm - saltoMean) / saltoMean) * 100 : null;
+            const saltoDiff = (latestEntry.salto_horizontal_cm && !isNaN(saltoMean)) ? ((latestEntry.salto_horizontal_cm - saltoMean) / saltoMean) * 100 : null;
 
             return { athleteId, status: 'ready', index: readinessIndex.toFixed(2), zone, metricsDetail, hooperScore: { latest: latestEntry.hooper_score }, saltoPercentDiff: saltoDiff, latestDate: latestEntry.data };
         }
@@ -1201,7 +1227,7 @@
             const hooperTeamClass = getHooperClassification(stats.averageHooper);
             const indexTeamClass = getIndexClassification(stats.averageIndex);
             const saltoTeamClass = stats.averageSaltoDiff >= 0 ? 'text-green-600' : 'text-red-600';
-            const formattedDate = latestDate ? new Date(latestDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
+            const formattedDate = latestDate ? new Date(latestDate.replace(/-/g, '/')).toLocaleDateString('pt-BR') : 'N/A';
             const title = isForDashboard ? 'Resumo da Prontidão' : 'Painel da Equipe';
 
             return `
@@ -1209,7 +1235,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
                         <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Índice Geral Médio</p><p class="text-5xl font-bold ${indexTeamClass.class}">${stats.averageIndex ? stats.averageIndex.toFixed(2) : '--'}</p></div>
                         <div class="flex flex-col items-center justify-center p-4 rounded-lg border ${hooperTeamClass.border} ${hooperTeamClass.bg} min-h-[140px]"><p class="text-sm font-medium ${hooperTeamClass.class}">Média de Fadiga (Hooper)</p><p class="text-5xl font-bold ${hooperTeamClass.class}">${stats.averageHooper ? stats.averageHooper.toFixed(1) : '--'}</p></div>
-                        <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Recup. Muscular Média</p><p class="text-5xl font-bold ${saltoTeamClass}">${stats.averageSaltoDiff ? `${stats.averageSaltoDiff >= 0 ? '+' : ''}${stats.averageSaltoDiff.toFixed(1)}%` : '--'}</p></div>
+                        <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Recup. Muscular Média</p><p class="text-5xl font-bold ${saltoTeamClass}">${!isNaN(stats.averageSaltoDiff) ? `${stats.averageSaltoDiff >= 0 ? '+' : ''}${stats.averageSaltoDiff.toFixed(1)}%` : '--'}</p></div>
                         <div class="p-4 bg-gray-50 rounded-lg h-full flex flex-col min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2 text-center">Distribuição dos Atletas</p><div class="flex-grow flex items-center justify-around w-full"><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">${green}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-lg">${yellow}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-lg">${red}</div></div></div></div>
                     </div>`;
         }
