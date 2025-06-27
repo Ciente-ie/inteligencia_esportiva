@@ -542,7 +542,8 @@
 
         // --- FIREBASE DATA LISTENERS ---
         function listenToTrainings() {
-            const qFisico = query(treinosFisicosCollection, orderBy("createdAt", "desc"));
+            // Corrected query to order by the training date, ensuring consistency
+            const qFisico = query(treinosFisicosCollection, orderBy("date", "desc"));
             onSnapshot(qFisico, (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 updatePlanejamentoView();
@@ -551,7 +552,8 @@
                 showToast("Erro ao carregar treinos físicos.");
             });
 
-            const qCampo = query(treinosCampoCollection, orderBy("createdAt", "desc"));
+            // Corrected query to order by the training date
+            const qCampo = query(treinosCampoCollection, orderBy("date", "desc"));
             onSnapshot(qCampo, (snapshot) => {
                 treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 updatePlanejamentoView();
@@ -719,13 +721,27 @@
         }
 
         function switchTab(tab) {
-            prontidaoContent.classList.toggle('hidden', tab !== 'prontidao');
-            cargaContent.classList.toggle('hidden', tab !== 'carga');
-            planejamentoContent.classList.toggle('hidden', tab !== 'planejamento');
+            // Hide all content
+            prontidaoContent.classList.add('hidden');
+            cargaContent.classList.add('hidden');
+            planejamentoContent.classList.add('hidden');
 
-            tabProntidaoBtn.classList.toggle('active', tab === 'prontidao');
-            tabCargaBtn.classList.toggle('active', tab === 'carga');
-            tabPlanejamentoBtn.classList.toggle('active', tab === 'planejamento');
+            // Deactivate all buttons
+            tabProntidaoBtn.classList.remove('active');
+            tabCargaBtn.classList.remove('active');
+            tabPlanejamentoBtn.classList.remove('active');
+
+            // Show the selected content and activate the button
+            if (tab === 'prontidao') {
+                prontidaoContent.classList.remove('hidden');
+                tabProntidaoBtn.classList.add('active');
+            } else if (tab === 'carga') {
+                cargaContent.classList.remove('hidden');
+                tabCargaBtn.classList.add('active');
+            } else if (tab === 'planejamento') {
+                planejamentoContent.classList.remove('hidden');
+                tabPlanejamentoBtn.classList.add('active');
+            }
         }
 
         function handleFileSelect(fileInput, fileNameEl, processBtn) {
