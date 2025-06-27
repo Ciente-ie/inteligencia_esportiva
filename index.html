@@ -713,7 +713,8 @@
             const filteredData = fullProntidaoData.filter(d => selectedWeeks.includes(d.semana_id));
 
             if (filteredData.length > 0) {
-                displayFilteredProntidaoData(filteredData);
+                // MODIFICATION: Pass selectedWeeks to display function
+                displayFilteredProntidaoData(filteredData, selectedWeeks);
             } else {
                 teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s).</p>';
                 resultsContainer.innerHTML = '';
@@ -755,8 +756,11 @@
         }
 
         function renderDashboardProntidao() {
+             // MODIFICATION: Get selected weeks count for dashboard title
+            const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
+            const selectedWeeksCount = selectedCheckboxes.length;
             if (latestProntidaoData) {
-                dashboardProntidao.innerHTML = renderTeamDashboardProntidao(latestProntidaoData.teamStats, latestProntidaoData.latestDate, true);
+                dashboardProntidao.innerHTML = renderTeamDashboardProntidao(latestProntidaoData.teamStats, latestProntidaoData.latestDate, true, selectedWeeksCount);
             } else {
                 dashboardProntidao.innerHTML = `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Prontidão</h2><div class="text-center py-10 px-6"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de prontidão carregado</h3><p class="mt-1 text-sm text-gray-500">Vá para a aba 'Análise de Prontidão' para importar um arquivo.</p></div>`;
             }
@@ -1120,38 +1124,54 @@
                 </div>`;
         }
         
-        function displayFilteredProntidaoData(data) {
+        // MODIFICATION: Added selectedWeeks parameter
+        function displayFilteredProntidaoData(data, selectedWeeks) {
             const { individualResults, teamStats, latestDate } = analyzeProntidaoData(data);
             latestProntidaoData = { teamStats, latestDate };
-            renderProntidaoResults(individualResults, teamStats, latestDate);
+            // MODIFICATION: Pass selectedWeeks.length to rendering functions
+            renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeks.length);
             updateDashboardView();
         }
 
-        function analyzeProntidaoData(data) {
+        // MODIFICATION: Heavily modified to average results for selected weeks
+        function analyzeProntidaoData(data) { // 'data' is already filtered by the selected weeks
             const athletesData = data.reduce((acc, row) => {
                 if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
                 acc[row.atleta_id].push(row);
                 return acc;
             }, {});
 
-            let latestDate = null;
+            let latestDateOverall = null;
+
             const individualResults = Object.keys(athletesData).map(athleteId => {
-                const entriesForAthleteInSelection = athletesData[athleteId]
-                    .sort((a, b) => new Date(b.data) - new Date(a.data));
+                const entriesInSelection = athletesData[athleteId];
+                if (entriesInSelection.length === 0) return null;
                 
-                if (entriesForAthleteInSelection.length === 0) return null;
+                // Determine cutoff date for historical data: the date of the first entry in the selection
+                const firstDateInSelection = entriesInSelection.reduce((minDate, entry) => {
+                    const entryDate = new Date(entry.data);
+                    return entryDate < minDate ? entryDate : minDate;
+                }, new Date());
                 
-                const latestEntryInSelection = entriesForAthleteInSelection[0];
+                // Find the latest date in selection for display purposes
+                const latestDateInSelection = entriesInSelection.reduce((maxDate, entry) => {
+                    const entryDate = new Date(entry.data);
+                    if (!latestDateOverall || entryDate > latestDateOverall) latestDateOverall = entryDate;
+                    return entryDate > maxDate ? entryDate : maxDate;
+                }, new Date(0));
 
-                if (!latestDate || new Date(latestEntryInSelection.data) > new Date(latestDate)) {
-                    latestDate = latestEntryInSelection.data;
-                }
-                
                 const allHistoricalEntries = fullProntidaoData
-                                            .filter(d => d.atleta_id === athleteId && new Date(d.data) < new Date(latestEntryInSelection.data))
-                                            .sort((a, b) => new Date(b.data) - new Date(a.data));
+                    .filter(d => d.atleta_id === athleteId && new Date(d.data) < firstDateInSelection)
+                    .sort((a, b) => new Date(b.data) - new Date(a.data));
 
-                return calculateAthleteReadiness(athleteId, latestEntryInSelection, allHistoricalEntries);
+                // Create a single representative entry by averaging the values from the selection
+                const representativeEntry = Object.keys(METRIC_NAMES).reduce((acc, key) => {
+                    acc[key] = getStats(entriesInSelection.map(e => e[key])).mean;
+                    return acc;
+                }, {});
+                
+                // Pass the latest date from the selection to be used in the UI row
+                return calculateAthleteReadiness(athleteId, representativeEntry, allHistoricalEntries, latestDateInSelection.toISOString().split('T')[0]);
 
             }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
 
@@ -1165,10 +1185,14 @@
                     return acc;
                 }, { green: 0, yellow: 0, red: 0, collecting: 0 })
             };
+            
+            const latestDate = latestDateOverall ? latestDateOverall.toISOString().split('T')[0] : null;
+
             return { individualResults, teamStats, latestDate };
         }
 
-        function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries) {
+        // MODIFICATION: Added displayDate parameter and changed saltoDiff logic
+        function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, displayDate) {
             const getZScore = (key) => {
                 const value = latestEntry[key];
                 const dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v));
@@ -1199,15 +1223,28 @@
                 acc[key] = { latest: latestEntry[key], mean: getStats(dataPoints).mean };
                 return acc;
             }, {});
+            
+            // Compare the average of the selection with the average of the history
+            const saltoMeanHistorical = metricsDetail.salto_horizontal_cm?.mean || 0;
+            const saltoMeanSelection = latestEntry.salto_horizontal_cm;
+            const saltoDiff = (saltoMeanSelection && !isNaN(saltoMeanHistorical) && saltoMeanHistorical > 0) ? ((saltoMeanSelection - saltoMeanHistorical) / saltoMeanHistorical) * 100 : null;
 
-            const saltoMean = metricsDetail.salto_horizontal_cm?.mean || 0;
-            const saltoDiff = (latestEntry.salto_horizontal_cm && !isNaN(saltoMean)) ? ((latestEntry.salto_horizontal_cm - saltoMean) / saltoMean) * 100 : null;
 
-            return { athleteId, status: 'ready', index: readinessIndex.toFixed(2), zone, metricsDetail, hooperScore: { latest: latestEntry.hooper_score }, saltoPercentDiff: saltoDiff, latestDate: latestEntry.data };
+            return { 
+                athleteId, 
+                status: 'ready', 
+                index: readinessIndex.toFixed(2), 
+                zone, 
+                metricsDetail, 
+                hooperScore: { latest: latestEntry.hooper_score }, 
+                saltoPercentDiff: saltoDiff, 
+                latestDate: displayDate // Pass the date through for UI rendering
+            };
         }
 
-        function renderProntidaoResults(individualResults, teamStats, latestDate) {
-            teamDashboard.innerHTML = renderTeamDashboardProntidao(teamStats, latestDate);
+        // MODIFICATION: Added selectedWeeksCount parameter
+        function renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeksCount = 1) {
+            teamDashboard.innerHTML = renderTeamDashboardProntidao(teamStats, latestDate, false, selectedWeeksCount);
             resultsContainer.innerHTML = `
                 <div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0">
                     <div class="w-1/3">Atleta</div>
@@ -1221,7 +1258,8 @@
             renderLegends('prontidao');
         }
 
-        function renderTeamDashboardProntidao(stats, latestDate, isForDashboard = false) {
+        // MODIFICATION: Added selectedWeeksCount and logic for title
+        function renderTeamDashboardProntidao(stats, latestDate, isForDashboard = false, selectedWeeksCount = 1) {
             if(!stats) return '';
             const { green, yellow, red } = stats.zoneCounts;
             const hooperTeamClass = getHooperClassification(stats.averageHooper);
@@ -1229,9 +1267,13 @@
             const saltoTeamClass = stats.averageSaltoDiff >= 0 ? 'text-green-600' : 'text-red-600';
             const formattedDate = latestDate ? new Date(latestDate.replace(/-/g, '/')).toLocaleDateString('pt-BR') : 'N/A';
             const title = isForDashboard ? 'Resumo da Prontidão' : 'Painel da Equipe';
+            
+            const dateText = selectedWeeksCount > 1 
+                ? `Média de ${selectedWeeksCount} semanas` 
+                : `Dados de: ${formattedDate}`;
 
             return `
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(Dados de: ${formattedDate})</span></h2>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(${dateText})</span></h2>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
                         <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Índice Geral Médio</p><p class="text-5xl font-bold ${indexTeamClass.class}">${stats.averageIndex ? stats.averageIndex.toFixed(2) : '--'}</p></div>
                         <div class="flex flex-col items-center justify-center p-4 rounded-lg border ${hooperTeamClass.border} ${hooperTeamClass.bg} min-h-[140px]"><p class="text-sm font-medium ${hooperTeamClass.class}">Média de Fadiga (Hooper)</p><p class="text-5xl font-bold ${hooperTeamClass.class}">${stats.averageHooper ? stats.averageHooper.toFixed(1) : '--'}</p></div>
@@ -1253,17 +1295,22 @@
             else if (result.zone === 'yellow') { zoneClass = 'text-yellow-600'; statusText = 'Zona de Atenção'; recommendation = "Sinais de alerta. A carga deve ser ajustada."; }
             else { zoneClass = 'text-red-600'; statusText = 'Zona Crítica'; recommendation = "Risco Elevado. Priorizar recuperação ativa."; }
 
+            const hooperScoreValue = result.hooperScore.latest ? result.hooperScore.latest.toFixed(1) : '--';
             const hooperClass = getHooperClassification(result.hooperScore.latest);
             const saltoClass = result.saltoPercentDiff == null ? 'text-gray-500' : (result.saltoPercentDiff >= 0 ? 'text-green-600' : 'text-red-600');
+            
+            // Show averaged values in the details view
             const detailsHtml = Object.entries(result.metricsDetail).map(([key, data]) => {
                 if (!METRIC_NAMES[key] || data.latest == null) return '';
+                const latestValue = (data.latest && !isNaN(data.latest)) ? data.latest.toFixed(1) : 'N/A';
                 const meanValue = (data.mean && !isNaN(data.mean)) ? data.mean.toFixed(1) : 'N/A';
-                return `<li class="flex justify-between items-center text-sm py-1 border-b"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${data.latest} <span class="text-xs text-gray-500 font-normal">(Média: ${meanValue})</span></span></li>`;
+                const label = document.querySelectorAll('.week-checkbox:checked').length > 1 ? 'Média Seleção' : 'Último Valor';
+                return `<li class="flex justify-between items-center text-sm py-1 border-b"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${latestValue} <span class="text-xs text-gray-500 font-normal">(${label}: ${latestValue} / Média Hist.: ${meanValue})</span></span></li>`;
             }).join('');
             
             const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
 
-            return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate.replace(/-/g, '/')).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div><div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div><div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div><div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${result.hooperScore.latest}</span></div><div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-prontidao-${uniqueId}"><svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-prontidao-${uniqueId}"><div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="font-semibold text-sm mb-2">Detalhes:</h4><ul class="space-y-1">${detailsHtml}</ul></div><div class="bg-blue-50 border p-3 rounded-lg self-start"><h4 class="font-semibold text-sm mb-1">Sugestão:</h4><p class="text-sm">${recommendation}</p></div></div></div></div>`;
+            return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate.replace(/-/g, '/')).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div><div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div><div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div><div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${hooperScoreValue}</span></div><div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-prontidao-${uniqueId}"><svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-prontidao-${uniqueId}"><div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="font-semibold text-sm mb-2">Detalhes (Valores médios da seleção):</h4><ul class="space-y-1">${detailsHtml}</ul></div><div class="bg-blue-50 border p-3 rounded-lg self-start"><h4 class="font-semibold text-sm mb-1">Sugestão:</h4><p class="text-sm">${recommendation}</p></div></div></div></div>`;
         }
 
         // --- CARGA DE TREINO FUNCTIONS ---
