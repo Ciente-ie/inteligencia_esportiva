@@ -802,15 +802,23 @@
             const trainingsCampo = treinosCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
             const totalSessions = trainingsFisico.length + trainingsCampo.length;
 
-            dashboardPlanejamento.innerHTML = `
-                <h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">Resumo do Planejamento</h2>
-                <p class="text-center text-gray-600 mb-4">Semanas selecionadas: ${selectedPlanningWeeks.join(', ')}</p>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                    <div class="lg:col-span-1 flex flex-col justify-center items-center bg-gray-50 p-6 rounded-lg min-h-[350px]">
-                        <h3 class="font-semibold text-gray-800 mb-2 text-center">Total de Sessões Planejadas</h3>
-                        <p class="text-6xl font-bold text-blue-600">${totalSessions}</p>
+            let detailsHtml = '';
+            if (selectedPlanningWeeks.length === 1) {
+                detailsHtml = `
+                    <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-600 text-sm text-center mb-2">Treinos Físicos (${trainingsFisico.length})</h4>
+                            <div class="h-24 bg-gray-50 p-1 rounded-md"><canvas id="dashboardLoadChartFisico"></canvas></div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-600 text-sm text-center mb-2">Treinos de Campo (${trainingsCampo.length})</h4>
+                            <div class="h-24 bg-gray-50 p-1 rounded-md"><canvas id="dashboardLoadChartCampo"></canvas></div>
+                        </div>
                     </div>
-                     <div class="lg:col-span-1 grid grid-cols-1 gap-6">
+                `;
+            } else {
+                 detailsHtml = `
+                    <div class="lg:col-span-1 grid grid-cols-1 gap-6">
                         <div>
                             <div class="h-64 bg-white p-2 rounded-lg border"><canvas id="dashboardObjectiveFisico"></canvas></div>
                         </div>
@@ -818,10 +826,38 @@
                             <div class="h-64 bg-white p-2 rounded-lg border"><canvas id="dashboardObjectiveCampo"></canvas></div>
                         </div>
                     </div>
+                 `;
+            }
+            
+            const mainContentHtml = selectedPlanningWeeks.length === 1 ? `
+                 <div class="lg:col-span-2 flex flex-col justify-center items-center bg-gray-50 p-6 rounded-lg">
+                    <h3 class="font-semibold text-gray-800 mb-2 text-center">Total de Sessões Planejadas</h3>
+                    <p class="text-6xl font-bold text-blue-600">${totalSessions}</p>
+                    ${detailsHtml}
+                </div>
+            ` : `
+                <div class="lg:col-span-1 flex flex-col justify-center items-center bg-gray-50 p-6 rounded-lg min-h-[350px]">
+                    <h3 class="font-semibold text-gray-800 mb-2 text-center">Total de Sessões Planejadas</h3>
+                    <p class="text-6xl font-bold text-blue-600">${totalSessions}</p>
+                </div>
+                ${detailsHtml}
+            `;
+
+
+            dashboardPlanejamento.innerHTML = `
+                <h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">Resumo do Planejamento</h2>
+                <p class="text-center text-gray-600 mb-4">Semanas selecionadas: ${selectedPlanningWeeks.join(', ')}</p>
+                <div class="grid grid-cols-1 ${selectedPlanningWeeks.length === 1 ? 'lg:grid-cols-2' : 'lg:grid-cols-2'} gap-8 items-start">
+                   ${mainContentHtml}
                 </div>`;
             
-            renderObjectiveDistributionChart('dashboardObjectiveFisico', trainingsFisico, 'Distribuição de Objetivos Físicos (%)');
-            renderObjectiveDistributionChart('dashboardObjectiveCampo', trainingsCampo, 'Distribuição de Objetivos de Campo (%)');
+            if (selectedPlanningWeeks.length === 1) {
+                renderDailyLoadChart('dashboardLoadChartFisico', trainingsFisico, true);
+                renderDailyLoadChart('dashboardLoadChartCampo', trainingsCampo, true);
+            } else {
+                renderObjectiveDistributionChart('dashboardObjectiveFisico', trainingsFisico, 'Distribuição de Objetivos Físicos (%)');
+                renderObjectiveDistributionChart('dashboardObjectiveCampo', trainingsCampo, 'Distribuição de Objetivos de Campo (%)');
+            }
         }
         
         function renderObjectiveDistributionChart(canvasId, trainings, title) {
@@ -912,10 +948,10 @@
             if (isOpen && type === 'carga' && button.dataset.chartdata) {
                  const athleteId = button.dataset.athlete;
                  const canvasId = `chart-${athleteId}`;
-                 if (!activeCharts[canvasId]) {
+                 // if (!activeCharts[canvasId]) {
                      const data = JSON.parse(button.dataset.chartdata);
                      renderAthleteChart(canvasId, data, 'Carga de Treino Diária (u.a.)');
-                 }
+                 // }
             }
         }
 
@@ -1023,7 +1059,7 @@
                              // Fix for date parsing
                              if (header === 'data' && value && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
                                 const parts = value.split('/');
-                                entry[header] = `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert DD/MM/YYYY to YYYY-MM-DD
+                                entry[header] = `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert DD/MM/YYYY to燜燜-MM-DD
                             } else {
                                 entry[header] = value;
                             }
@@ -1193,6 +1229,7 @@
                 const athletesInWeek = [...new Set(dataForThisWeek.map(d => d.atleta_id))];
                 const resultsForThisWeek = athletesInWeek.map(athleteId => {
                     const entriesInWeek = dataForThisWeek.filter(d => d.atleta_id === athleteId);
+                    if (entriesInWeek.length === 0) return null;
                     const latestEntryInWeek = entriesInWeek.sort((a,b) => new Date(`${b.data}T00:00:00`) - new Date(`${a.data}T00:00:00`))[0];
                     const historicalEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < new Date(`${latestEntryInWeek.data}T00:00:00`));
                     return calculateAthleteReadiness(athleteId, latestEntryInWeek, historicalEntries, latestEntryInWeek.data);
@@ -1226,7 +1263,14 @@
         function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, displayDate) {
             const getZScore = (key) => {
                 const value = latestEntry[key];
-                const dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v));
+                let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v));
+                if (dataPoints.length === 0) {
+                     // If no historical data, use all data except the latest entry as history
+                     dataPoints = fullProntidaoData
+                        .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
+                        .map(e => e[key]).filter(v => v != null && !isNaN(v));
+                }
+
                 if (value == null || dataPoints.length === 0) return null;
                 const { mean, stdDev } = getStats(dataPoints);
                 return stdDev === 0 ? 0 : (value - mean) / stdDev;
@@ -1255,9 +1299,15 @@
                 return acc;
             }, {});
             
-            const saltoMeanHistorical = metricsDetail.salto_horizontal_cm?.mean || 0;
-            const saltoMeanSelection = latestEntry.salto_horizontal_cm;
-            const saltoDiff = (saltoMeanSelection && !isNaN(saltoMeanHistorical) && saltoMeanHistorical > 0) ? ((saltoMeanSelection - saltoMeanHistorical) / saltoMeanHistorical) * 100 : null;
+            let saltoMeanHistorical = metricsDetail.salto_horizontal_cm?.mean;
+            if (saltoMeanHistorical === undefined || saltoMeanHistorical === 0) {
+                 saltoMeanHistorical = getStats(fullProntidaoData
+                        .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
+                        .map(e => e.salto_horizontal_cm)).mean;
+            }
+            const saltoLatest = latestEntry.salto_horizontal_cm;
+            const saltoDiff = (saltoLatest && saltoMeanHistorical > 0) ? ((saltoLatest - saltoMeanHistorical) / saltoMeanHistorical) * 100 : null;
+
 
             return { 
                 athleteId, status: 'ready', index: readinessIndex.toFixed(2), zone, 
@@ -1942,7 +1992,7 @@
             });
         }
 
-        function renderDailyLoadChart(canvasId, treinos) {
+        function renderDailyLoadChart(canvasId, treinos, isDashboard = false) {
             const ctx = document.getElementById(canvasId);
             if (!ctx) return;
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
@@ -1956,18 +2006,40 @@
                 }
             });
 
-            const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-            const data = [dailyMaxLoad[1]||0, dailyMaxLoad[2]||0, dailyMaxLoad[3]||0, dailyMaxLoad[4]||0, dailyMaxLoad[5]||0, dailyMaxLoad[6]||0, dailyMaxLoad[0]||0];
-
+            const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            const data = [dailyMaxLoad[0]||0, dailyMaxLoad[1]||0, dailyMaxLoad[2]||0, dailyMaxLoad[3]||0, dailyMaxLoad[4]||0, dailyMaxLoad[5]||0, dailyMaxLoad[6]||0];
             const backgroundColors = data.map(load => {
                 if (load === 100) return 'rgba(239, 68, 68, 0.7)'; if (load === 90) return 'rgba(249, 115, 22, 0.7)';
                 if (load === 70) return 'rgba(245, 158, 11, 0.7)'; if (load > 0) return 'rgba(59, 130, 246, 0.7)';
                 return '#e5e7eb';
             });
+            
+            const options = {
+                 responsive: true, maintainAspectRatio: false, 
+                 scales: { 
+                    y: { 
+                        beginAtZero: true, min: 0, max: 100, 
+                        display: !isDashboard,
+                        title: { display: !isDashboard, text: 'Carga (%)' } 
+                    }, 
+                    x: { 
+                        grid: { display: false },
+                        ticks: { font: { size: isDashboard ? 8 : 12 } }
+                    } 
+                 }, 
+                 plugins: { 
+                    legend: { display: false }, 
+                    datalabels: { display: false } 
+                 } 
+            };
+            if(isDashboard){
+                 options.scales.y.ticks = { display: false };
+            }
+
 
             activeCharts[canvasId] = new Chart(ctx, {
                 type: 'bar', data: { labels, datasets: [{ label: 'Carga Planejada (%)', data, backgroundColor: backgroundColors }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, min: 0, max: 100, title: { display: true, text: 'Carga (%)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { display: false } } }
+                options: options
             });
         }
 
