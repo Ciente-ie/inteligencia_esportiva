@@ -1044,14 +1044,10 @@
         function getWeekId(date) {
             if (!date) return null;
             const d = new Date(date);
-            // Corrige o problema do fuso horário
-            const dUTC = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-            // Define a segunda-feira como o primeiro dia da semana (1) e o domingo como o último (7)
-            const dayOfWeek = dUTC.getUTCDay() === 0 ? 7 : dUTC.getUTCDay();
-            dUTC.setUTCDate(dUTC.getUTCDate() + 4 - dayOfWeek);
-            const yearStart = new Date(Date.UTC(dUTC.getUTCFullYear(), 0, 1));
-            // Calcula o número da semana
-            const weekNo = Math.ceil((((dUTC - yearStart) / 86400000) + 1) / 7);
+            const day = d.getUTCDay() || 7;
+            if (day !== 1) d.setHours(-24 * (day - 1));
+            const yearStart = new Date(d.getFullYear(), 0, 1);
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
             return `S${String(weekNo).padStart(2, '0')}`;
         }
 
@@ -1094,26 +1090,25 @@
             }, {});
 
             let latestDate = null;
-            const individualResults = Object.keys(athletesData).flatMap(athleteId => {
-                const entriesForAthleteInSelection = data
-                    .filter(d => d.atleta_id === athleteId)
+            const individualResults = Object.keys(athletesData).map(athleteId => {
+                const entriesForAthleteInSelection = athletesData[athleteId]
                     .sort((a, b) => new Date(b.data) - new Date(a.data));
                 
-                if (entriesForAthleteInSelection.length === 0) return [];
+                if (entriesForAthleteInSelection.length === 0) return null;
                 
-                return entriesForAthleteInSelection.map(entry => {
-                    if (!latestDate || new Date(entry.data) > new Date(latestDate)) {
-                        latestDate = entry.data;
-                    }
+                const latestEntryInSelection = entriesForAthleteInSelection[0];
 
-                    const allHistoricalEntries = fullProntidaoData
-                        .filter(d => d.atleta_id === athleteId && new Date(d.data) < new Date(entry.data))
-                        .sort((a, b) => new Date(b.data) - new Date(a.data));
+                if (!latestDate || new Date(latestEntryInSelection.data) > new Date(latestDate)) {
+                    latestDate = latestEntryInSelection.data;
+                }
+                
+                const allHistoricalEntries = fullProntidaoData
+                                            .filter(d => d.atleta_id === athleteId && new Date(d.data) < new Date(latestEntryInSelection.data))
+                                            .sort((a, b) => new Date(b.data) - new Date(a.data));
 
-                    return calculateAthleteReadiness(athleteId, entry, allHistoricalEntries);
-                });
+                return calculateAthleteReadiness(athleteId, latestEntryInSelection, allHistoricalEntries);
 
-            }).filter(Boolean).sort((a, b) => new Date(b.latestDate) - new Date(a.latestDate) || a.athleteId.localeCompare(b.athleteId));
+            }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
 
             const readyAthletes = individualResults.filter(r => r.status === 'ready');
             const teamStats = {
