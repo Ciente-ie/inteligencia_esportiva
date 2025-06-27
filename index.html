@@ -189,7 +189,7 @@
                                 </svg>
                                 Limpar Dados de Prontidão
                             </button>
-                            <button id="exportPdfBtn" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
+                            <button id="exportPdfBtnProntidao" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
                                 Exportar PDF
                             </button>
@@ -388,7 +388,7 @@
         Powered by Ciente - Inteligência Esportiva
     </footer>
 
-    <div id="toast" class="fixed bottom-5 right-5 bg-red-500 text-white py-3 px-6 rounded-lg shadow-xl opacity-0 transition-opacity duration-300 transform translate-y-10"></div>
+    <div id="toast" class="fixed bottom-5 right-5 bg-red-500 text-white py-3 px-6 rounded-lg shadow-xl opacity-0 transition-all duration-300 transform translate-y-10"></div>
     
     <div id="confirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
@@ -473,6 +473,7 @@
         let latestCargaData = null;
         let selectedPlanningWeeks = [getWeekId(new Date())];
         let isInitialLoadComplete = false;
+        let toastTimeout = null; 
 
         // --- DOM ELEMENTS ---
         const globalLoader = document.getElementById('globalLoader');
@@ -500,7 +501,7 @@
         const filterContainerProntidao = document.getElementById('filterContainerProntidao');
         const teamDashboard = document.getElementById('teamDashboard');
         const resultsContainer = document.getElementById('resultsContainer');
-        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        const exportPdfBtnProntidao = document.getElementById('exportPdfBtnProntidao');
         const legendsProntidao = document.getElementById('legendsProntidao');
         const clearProntidaoDataBtn = document.getElementById('clearProntidaoDataBtn');
         // Carga Elements
@@ -637,7 +638,7 @@
         
         csvFileInput.addEventListener('change', () => handleFileSelect(csvFileInput, fileNameEl, processBtn));
         processBtn.addEventListener('click', handleFileProcessing);
-        exportPdfBtn.addEventListener('click', () => exportToPDF('prontidao'));
+        exportPdfBtnProntidao.addEventListener('click', () => exportToPDF('prontidao'));
         resultsContainer.addEventListener('click', (e) => toggleDetails(e, 'prontidao'));
         filterContainerProntidao.addEventListener('change', () => renderProntidaoTab());
         clearProntidaoDataBtn.addEventListener('click', clearProntidaoData);
@@ -802,22 +803,41 @@
             const trainingsCampo = treinosCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
             const totalSessions = trainingsFisico.length + trainingsCampo.length;
 
-            let detailsHtml = '';
+            let mainContentHtml;
+
             if (selectedPlanningWeeks.length === 1) {
-                detailsHtml = `
-                    <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                const weekTrainingsFisico = trainingsFisico.map(t => `<li class="text-xs text-gray-700 truncate" title="${t.objPrincipal}: ${t.objSecundario.join(', ')}">${t.objPrincipal}</li>`).join('');
+                const weekTrainingsCampo = trainingsCampo.map(t => `<li class="text-xs text-gray-700 truncate" title="${t.objPrincipal}: ${t.objSecundario.join(', ')}">${t.objPrincipal}</li>`).join('');
+
+                const detailsHtml = `
+                    <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                         <div>
-                            <h4 class="font-semibold text-gray-600 text-sm text-center mb-2">Treinos Físicos (${trainingsFisico.length})</h4>
-                            <div class="h-24 bg-gray-50 p-1 rounded-md"><canvas id="dashboardLoadChartFisico"></canvas></div>
+                            <h4 class="font-semibold text-gray-600 text-sm text-center mb-1">Treinos Físicos (${trainingsFisico.length})</h4>
+                            <ul class="text-left space-y-1 mb-2 h-16 overflow-y-auto p-2 bg-white rounded-md border">${weekTrainingsFisico || '<li class="text-xs text-gray-400">Nenhum treino físico.</li>'}</ul>
+                            <div class="h-24"><canvas id="dashboardLoadChartFisico"></canvas></div>
                         </div>
                         <div>
-                            <h4 class="font-semibold text-gray-600 text-sm text-center mb-2">Treinos de Campo (${trainingsCampo.length})</h4>
-                            <div class="h-24 bg-gray-50 p-1 rounded-md"><canvas id="dashboardLoadChartCampo"></canvas></div>
+                            <h4 class="font-semibold text-gray-600 text-sm text-center mb-1">Treinos de Campo (${trainingsCampo.length})</h4>
+                            <ul class="text-left space-y-1 mb-2 h-16 overflow-y-auto p-2 bg-white rounded-md border">${weekTrainingsCampo || '<li class="text-xs text-gray-400">Nenhum treino de campo.</li>'}</ul>
+                            <div class="h-24"><canvas id="dashboardLoadChartCampo"></canvas></div>
                         </div>
                     </div>
                 `;
+
+                mainContentHtml = `
+                    <div class="lg:col-span-2 flex flex-col justify-center bg-gray-50 p-6 rounded-lg">
+                        <h3 class="font-semibold text-gray-800 text-center">Total de Sessões na Semana</h3>
+                        <p class="text-6xl font-bold text-blue-600 text-center">${totalSessions}</p>
+                        ${detailsHtml}
+                    </div>
+                `;
             } else {
-                 detailsHtml = `
+                // Multi-week view
+                mainContentHtml = `
+                    <div class="lg:col-span-1 flex flex-col justify-center items-center bg-gray-50 p-6 rounded-lg min-h-[350px]">
+                        <h3 class="font-semibold text-gray-800 mb-2 text-center">Total de Sessões Planejadas</h3>
+                        <p class="text-6xl font-bold text-blue-600">${totalSessions}</p>
+                    </div>
                     <div class="lg:col-span-1 grid grid-cols-1 gap-6">
                         <div>
                             <div class="h-64 bg-white p-2 rounded-lg border"><canvas id="dashboardObjectiveFisico"></canvas></div>
@@ -826,28 +846,13 @@
                             <div class="h-64 bg-white p-2 rounded-lg border"><canvas id="dashboardObjectiveCampo"></canvas></div>
                         </div>
                     </div>
-                 `;
+                `;
             }
-            
-            const mainContentHtml = selectedPlanningWeeks.length === 1 ? `
-                 <div class="lg:col-span-2 flex flex-col justify-center items-center bg-gray-50 p-6 rounded-lg">
-                    <h3 class="font-semibold text-gray-800 mb-2 text-center">Total de Sessões Planejadas</h3>
-                    <p class="text-6xl font-bold text-blue-600">${totalSessions}</p>
-                    ${detailsHtml}
-                </div>
-            ` : `
-                <div class="lg:col-span-1 flex flex-col justify-center items-center bg-gray-50 p-6 rounded-lg min-h-[350px]">
-                    <h3 class="font-semibold text-gray-800 mb-2 text-center">Total de Sessões Planejadas</h3>
-                    <p class="text-6xl font-bold text-blue-600">${totalSessions}</p>
-                </div>
-                ${detailsHtml}
-            `;
-
 
             dashboardPlanejamento.innerHTML = `
                 <h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">Resumo do Planejamento</h2>
                 <p class="text-center text-gray-600 mb-4">Semanas selecionadas: ${selectedPlanningWeeks.join(', ')}</p>
-                <div class="grid grid-cols-1 ${selectedPlanningWeeks.length === 1 ? 'lg:grid-cols-2' : 'lg:grid-cols-2'} gap-8 items-start">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                    ${mainContentHtml}
                 </div>`;
             
@@ -918,11 +923,19 @@
 
         // --- GENERAL HELPER FUNCTIONS ---
         function showToast(message, type = 'error') {
+            if (toastTimeout) {
+                clearTimeout(toastTimeout);
+            }
             toast.textContent = message;
-            toast.className = `fixed bottom-5 right-5 text-white py-3 px-6 rounded-lg shadow-xl opacity-0 transition-opacity duration-300 transform translate-y-10 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
-            toast.classList.remove('opacity-0', 'translate-y-10');
-            toast.classList.add('opacity-100', 'translate-y-0');
+            toast.className = `fixed bottom-5 right-5 text-white py-3 px-6 rounded-lg shadow-xl opacity-0 transition-all duration-300 transform translate-y-10 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+            
             setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-10');
+                toast.classList.add('opacity-100', 'translate-y-0');
+            }, 10);
+
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
                 toast.classList.add('opacity-0', 'translate-y-10');
             }, 5000);
         }
@@ -948,21 +961,25 @@
             if (isOpen && type === 'carga' && button.dataset.chartdata) {
                  const athleteId = button.dataset.athlete;
                  const canvasId = `chart-${athleteId}`;
-                 // if (!activeCharts[canvasId]) {
-                     const data = JSON.parse(button.dataset.chartdata);
-                     renderAthleteChart(canvasId, data, 'Carga de Treino Diária (u.a.)');
-                 // }
+                 const data = JSON.parse(button.dataset.chartdata);
+                 renderAthleteChart(canvasId, data, 'Carga de Treino Diária (u.a.)');
             }
         }
 
         async function exportToPDF(type) {
-            const contentId = `pdf-content-${type}`;
-            const pdfButtonId = `exportPdfBtn${type === 'dashboard' ? 'Dashboard' : type.charAt(0).toUpperCase() + type.slice(1)}`;
+            let pdfButtonId;
+            if (type === 'prontidao') {
+                pdfButtonId = 'exportPdfBtnProntidao';
+            } else {
+                 pdfButtonId = `exportPdfBtn${type === 'dashboard' ? 'Dashboard' : type.charAt(0).toUpperCase() + type.slice(1)}`;
+            }
+            
             const pdfButton = document.getElementById(pdfButtonId);
             if (!pdfButton) {
                 console.error(`PDF button with id ${pdfButtonId} not found.`);
                 return;
             }
+            const contentId = `pdf-content-${type}`;
             const fileName = `relatorio_${type}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
             const contentToPrint = document.getElementById(contentId);
             if (!contentToPrint) {
@@ -974,10 +991,9 @@
             pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
             pdfButton.disabled = true;
             
-            // Open all details sections to ensure they are captured in the PDF
             const detailsSections = contentToPrint.querySelectorAll('.details-section');
             detailsSections.forEach(el => el.classList.add('open'));
-            await new Promise(resolve => setTimeout(resolve, 500)); // Wait for sections to open
+            await new Promise(resolve => setTimeout(resolve, 500)); 
 
             try {
                 const { jsPDF } = window.jspdf;
@@ -1009,7 +1025,7 @@
             } finally {
                 pdfButton.innerHTML = originalText;
                 pdfButton.disabled = false;
-                detailsSections.forEach(el => el.classList.remove('open')); // Close details sections again
+                detailsSections.forEach(el => el.classList.remove('open')); 
             }
         }
 
@@ -1056,10 +1072,9 @@
                     if (header) { 
                         const value = values[index] ? values[index].trim() : null;
                         if (['atleta_id', 'data', 'microciclo_id', 'semana_id'].includes(header)) {
-                             // Fix for date parsing
                              if (header === 'data' && value && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
                                 const parts = value.split('/');
-                                entry[header] = `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert DD/MM/YYYY to燜燜-MM-DD
+                                entry[header] = `${parts[2]}-${parts[1]}-${parts[0]}`; 
                             } else {
                                 entry[header] = value;
                             }
@@ -1265,7 +1280,6 @@
                 const value = latestEntry[key];
                 let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v));
                 if (dataPoints.length === 0) {
-                     // If no historical data, use all data except the latest entry as history
                      dataPoints = fullProntidaoData
                         .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
                         .map(e => e[key]).filter(v => v != null && !isNaN(v));
