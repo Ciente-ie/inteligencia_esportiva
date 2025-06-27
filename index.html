@@ -1052,9 +1052,9 @@
                 filterContainerProntidao.innerHTML = '';
                 return;
             }
-            const latestWeek = weekIds[0];
             const currentSelection = Array.from(document.querySelectorAll('.week-checkbox:checked')).map(cb => cb.value);
-
+            const latestWeek = weekIds[0];
+            
             filterContainerProntidao.innerHTML = `
                  <div class="bg-white p-4 rounded-lg border shadow-sm">
                     <label class="font-semibold text-gray-700 block mb-2">Selecione a(s) Semana(s):</label>
@@ -1456,7 +1456,7 @@
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
             activeCharts[canvasId] = new Chart(ctx, {
-                type: 'line', data: { labels: evolutionData.map(d => d.microciclo_id), datasets: [{ label: 'Strain', data: evolutionData.map(d => d.strain), borderColor: 'rgb(239, 68, 68)', fill: false, tension: 0.1 }] },
+                type: 'line', data: { labels: evolutionData.map(d => d.strain), datasets: [{ label: 'Strain', data: evolutionData.map(d => d.strain), borderColor: 'rgb(239, 68, 68)', fill: false, tension: 0.1 }] },
                 options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, min: 0, max: 15000 }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { align: 'top' } } }
             });
         }
