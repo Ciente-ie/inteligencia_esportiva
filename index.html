@@ -116,11 +116,8 @@
                     <!-- Content will be injected by JS -->
                 </div>
                  <!-- Planejamento Summary -->
-                 <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Planejamento da Semana</h2>
-                    <div id="dashboardPlanejamento">
-                         <!-- Content will be injected by JS -->
-                    </div>
+                 <div id="dashboardPlanejamento" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+                    <!-- Content will be injected by JS -->
                 </div>
             </div>
              <div class="text-center mt-8">
@@ -443,7 +440,7 @@
         let currentUser = null;
         let latestProntidaoData = null;
         let latestCargaData = null;
-        let selectedPlanningWeekId = getWeekId(new Date().toISOString().split('T')[0]);
+        let selectedPlanningWeekId = getWeekId(new Date());
 
         // --- DOM ELEMENTS ---
         const authStatus = document.getElementById('authStatus');
@@ -490,7 +487,6 @@
         const submitTreinoCampoBtn = document.getElementById('submitTreinoCampo');
         const planejamentoFilterContainer = document.getElementById('planejamentoFilterContainer');
         const pdfContentPlanejamento = document.getElementById('pdf-content-planejamento');
-        const exportPdfBtnPlanejamento = document.getElementById('exportPdfBtnPlanejamento');
         // Dashboard Elements
         const dashboardProntidao = document.getElementById('dashboardProntidao');
         const dashboardCarga = document.getElementById('dashboardCarga');
@@ -536,44 +532,37 @@
         });
 
         function loadAllData() {
-            // Planning Data
             onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 renderPlanningView();
                 updateDashboardView();
-            }, (error) => showToast("Erro ao carregar treinos físicos."));
+            });
 
             onSnapshot(query(treinosCampoCollection, orderBy("date", "asc")), (snapshot) => {
                 treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 renderPlanningView();
                 updateDashboardView();
-            }, (error) => showToast("Erro ao carregar treinos de campo."));
+            });
 
-            // Prontidão Data
             onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
                 fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 if (fullProntidaoData.length > 0) {
-                    placeholderSectionProntidao.classList.add('hidden');
-                    resultsSection.classList.remove('hidden');
                     processAndRenderProntidaoData(fullProntidaoData);
                 } else {
                      placeholderSectionProntidao.classList.remove('hidden');
                      resultsSection.classList.add('hidden');
                 }
-            }, (error) => showToast("Erro ao carregar dados de prontidão."));
+            });
             
-             // Carga Data
             onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
                 const fullLoadData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 if (fullLoadData.length > 0) {
-                     placeholderSectionCarga.classList.add('hidden');
-                     resultsSectionCarga.classList.remove('hidden');
                      processAndRenderLoadData(fullLoadData);
                 } else {
                     placeholderSectionCarga.classList.remove('hidden');
                     resultsSectionCarga.classList.add('hidden');
                 }
-            }, (error) => showToast("Erro ao carregar dados de carga."));
+            });
         }
 
         // --- EVENT LISTENERS ---
@@ -589,7 +578,7 @@
         filterContainerProntidao.addEventListener('change', () => {
              const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
              const selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
-             const filteredData = fullProntidaoData.filter(d => selectedWeeks.includes(getWeekId(d.data)));
+             const filteredData = fullProntidaoData.filter(d => selectedWeeks.includes(getWeekId(new Date(d.data))));
              if (filteredData.length > 0) {
                 displayFilteredProntidaoData(filteredData);
              } else {
@@ -624,7 +613,6 @@
             }
         });
         
-        exportPdfBtnPlanejamento.addEventListener('click', () => exportToPDF('planejamento'));
         exportPdfBtnDashboard.addEventListener('click', () => exportToPDF('dashboard'));
 
 
@@ -666,35 +654,93 @@
         }
 
         function renderDashboardPlanejamento() {
-            const allTrainings = [...treinosFisicos, ...treinosCampo];
-            const weeklyTrainings = allTrainings.filter(t => t.date && getWeekId(t.date) === getWeekId(new Date().toISOString().split('T')[0]));
-
-            if (weeklyTrainings.length === 0) {
-                 dashboardPlanejamento.innerHTML = `<div class="text-center py-10 px-6 text-gray-500"><p>Nenhum treino planejado para a semana atual.</p></div>`;
-                return;
-            }
+            const currentWeekId = getWeekId(new Date());
+            const weeklyTrainingsFisico = treinosFisicos.filter(t => t.date && getWeekId(new Date(t.date)) === currentWeekId);
+            const weeklyTrainingsCampo = treinosCampo.filter(t => t.date && getWeekId(new Date(t.date)) === currentWeekId);
 
             dashboardPlanejamento.innerHTML = `
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Planejamento da Semana Atual</h2>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                     <div class="lg:col-span-1">
-                         <h3 class="font-semibold text-gray-800 mb-3 text-center">Treinos da Semana Atual</h3>
+                         <h3 class="font-semibold text-gray-800 mb-3 text-center">Treinos Programados</h3>
                          <div id="timelineDashboard" class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]"></div>
                     </div>
                      <div class="lg:col-span-1 grid grid-cols-1 gap-6">
                         <div>
                             <h3 class="font-semibold text-gray-800 mb-2 text-center">Carga Esperada (Físico)</h3>
                             <div class="h-48 bg-white p-2 rounded-lg border"><canvas id="dashboardChartFisico"></canvas></div>
+                            <div class="mt-4 h-64 bg-white p-2 rounded-lg border"><canvas id="dashboardObjectiveFisico"></canvas></div>
                         </div>
                         <div>
                             <h3 class="font-semibold text-gray-800 mb-2 text-center">Carga Esperada (Campo)</h3>
                             <div class="h-48 bg-white p-2 rounded-lg border"><canvas id="dashboardChartCampo"></canvas></div>
+                            <div class="mt-4 h-64 bg-white p-2 rounded-lg border"><canvas id="dashboardObjectiveCampo"></canvas></div>
                         </div>
                     </div>
                 </div>`;
-            renderTimeline(document.getElementById('timelineDashboard'), weeklyTrainings, 'Nenhum treino cadastrado.');
-            renderDailyLoadChart('dashboardChartFisico', treinosFisicos.filter(t => getWeekId(t.date) === getWeekId(new Date().toISOString().split('T')[0])));
-            renderDailyLoadChart('dashboardChartCampo', treinosCampo.filter(t => getWeekId(t.date) === getWeekId(new Date().toISOString().split('T')[0])));
+            
+            if (weeklyTrainingsFisico.length === 0 && weeklyTrainingsCampo.length === 0) {
+                 document.getElementById('timelineDashboard').innerHTML = `<p class="col-span-full text-gray-500 text-center w-full py-8">Nenhum treino planejado para a semana atual.</p>`;
+            } else {
+                renderTimeline(document.getElementById('timelineDashboard'), [...weeklyTrainingsFisico, ...weeklyTrainingsCampo], '');
+            }
+
+            renderDailyLoadChart('dashboardChartFisico', weeklyTrainingsFisico);
+            renderDailyLoadChart('dashboardChartCampo', weeklyTrainingsCampo);
+            renderObjectiveDistributionChart('dashboardObjectiveFisico', weeklyTrainingsFisico, 'Distribuição de Objetivos Físicos');
+            renderObjectiveDistributionChart('dashboardObjectiveCampo', weeklyTrainingsCampo, 'Distribuição de Objetivos de Campo');
         }
+        
+        function renderObjectiveDistributionChart(canvasId, trainings, title) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+
+            const objectiveCounts = trainings.flatMap(t => t.objSecundario || []).reduce((acc, obj) => {
+                acc[obj] = (acc[obj] || 0) + 1;
+                return acc;
+            }, {});
+
+            const totalObjectives = Object.values(objectiveCounts).reduce((sum, count) => sum + count, 0);
+            if (totalObjectives === 0) {
+                ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+                return;
+            };
+
+            const labels = Object.keys(objectiveCounts);
+            const data = labels.map(label => (objectiveCounts[label] / totalObjectives) * 100);
+
+            activeCharts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '% de Frequência',
+                        data: data,
+                        backgroundColor: 'rgba(22, 163, 74, 0.7)',
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { beginAtZero: true, max: 100, ticks: { callback: (value) => `${value}%` } },
+                        y: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: title },
+                        datalabels: {
+                            anchor: 'end', align: 'end',
+                            formatter: (value) => `${value.toFixed(1)}%`,
+                            color: '#4b5563'
+                        }
+                    }
+                }
+            });
+        }
+
 
         // --- GENERAL HELPER FUNCTIONS ---
         function showToast(message, type = 'error') {
@@ -739,10 +785,15 @@
             const contentId = `pdf-content-${type}`;
             const pdfButton = document.getElementById(`exportPdfBtn${type.charAt(0).toUpperCase() + type.slice(1)}`);
             const fileName = `relatorio_${type}.pdf`;
+            const contentToPrint = document.getElementById(contentId);
+            if (!contentToPrint) return;
 
             const originalText = pdfButton.innerHTML;
             pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
             pdfButton.disabled = true;
+
+            const truncatedElements = contentToPrint.querySelectorAll('.truncate');
+            truncatedElements.forEach(el => el.classList.remove('truncate'));
 
             if (type === 'prontidao' || type === 'carga') {
                 document.querySelectorAll(`#${contentId} .details-section`).forEach(el => el.classList.add('open'));
@@ -762,7 +813,6 @@
 
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const contentToPrint = document.getElementById(contentId);
 
             try {
                 const canvas = await html2canvas(contentToPrint, { scale: 2, useCORS: true, backgroundColor: '#f9fafb' });
@@ -789,6 +839,7 @@
             } finally {
                 pdfButton.innerHTML = originalText;
                 pdfButton.disabled = false;
+                truncatedElements.forEach(el => el.classList.add('truncate'));
                  if (type === 'prontidao' || type === 'carga') {
                     document.querySelectorAll(`#${contentId} .details-section`).forEach(el => el.classList.remove('open'));
                 }
@@ -823,12 +874,11 @@
 
             const firstLine = lines[0];
             const separator = firstLine.includes(';') ? ';' : ',';
-            // BUG FIX: Filter out empty headers that might result from trailing separators.
             const headers = firstLine.split(separator).map(h => h.trim().toLowerCase()).filter(h => h);
             
             const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
             if (missingHeaders.length > 0) {
-                throw new Error(`Cabeçalho inválido. Verifique se as colunas: ${missingHeaders.join(', ')} existem.`);
+                throw new Error(`Cabeçalho inválido. Colunas ausentes: ${missingHeaders.join(', ')}.`);
             }
 
             return lines.slice(1).map((line, i) => {
@@ -836,7 +886,6 @@
                 const values = line.split(separator);
                 const entry = {};
                 headers.forEach((header, index) => {
-                    // BUG FIX: Ensure header is not empty before assigning.
                     if (header) { 
                         const value = values[index] ? values[index].trim() : null;
                         if (['atleta_id', 'data', 'microciclo_id'].includes(header)) {
@@ -900,18 +949,20 @@
             reader.readAsText(file);
         }
 
-        function getWeekId(dateString) {
-            if (!dateString) return null;
-            const date = new Date(dateString.includes('T') ? dateString : dateString + 'T00:00:00');
-            const year = date.getUTCFullYear();
-            const firstDayOfYear = new Date(Date.UTC(year, 0, 1));
-            const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
-            const weekNumber = Math.ceil((pastDaysOfYear + firstDayOfYear.getUTCDay() + 1) / 7);
-            return `${year}-W${String(weekNumber).padStart(2, '0')}`;
+        function getWeekId(date) {
+            if (!date) return null;
+            const d = new Date(date.getTime ? date.getTime() : new Date(date).getTime());
+            d.setHours(0, 0, 0, 0);
+            // Monday is day 1, Sunday is day 7
+            const day = d.getDay() || 7;
+            d.setDate(d.getDate() + 4 - day);
+            const yearStart = new Date(d.getFullYear(), 0, 1);
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
         }
 
         function renderFilterProntidao(data) {
-            const weekIds = [...new Set(data.map(d => getWeekId(d.data)).filter(Boolean))].sort().reverse();
+            const weekIds = [...new Set(data.map(d => getWeekId(new Date(d.data))).filter(Boolean))].sort().reverse();
             if (weekIds.length === 0) {
                 filterContainerProntidao.innerHTML = '';
                 return;
@@ -933,6 +984,8 @@
         }
         
         function processAndRenderProntidaoData(data) {
+             placeholderSectionProntidao.classList.add('hidden');
+             resultsSection.classList.remove('hidden');
              renderFilterProntidao(data);
         }
         
@@ -1108,6 +1161,8 @@
         }
 
         function processAndRenderLoadData(data) {
+            placeholderSectionCarga.classList.add('hidden');
+            resultsSectionCarga.classList.remove('hidden');
             const dataByAthlete = data.reduce((acc, row) => {
                 if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
                 acc[row.atleta_id].push(row);
@@ -1420,25 +1475,26 @@
         
         function getWeekFromId(weekId) {
             const [year, week] = weekId.split('-W').map(Number);
-            const date = new Date(year, 0, 1 + (week - 1) * 7);
-            date.setDate(date.getDate() + (1 - date.getDay()));
-            return date;
+            const d = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
+            const day = d.getUTCDay();
+            const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
+            return new Date(d.setUTCDate(diff));
         }
         
         function navigateWeek(direction) {
             const currentWeekDate = getWeekFromId(selectedPlanningWeekId);
-            currentWeekDate.setDate(currentWeekDate.getDate() + (direction * 7));
-            selectedPlanningWeekId = getWeekId(currentWeekDate.toISOString());
+            currentWeekDate.setUTCDate(currentWeekDate.getUTCDate() + (direction * 7));
+            selectedPlanningWeekId = getWeekId(currentWeekDate);
             renderPlanningView();
         }
 
         function renderPlanningFilter() {
             const allTrainings = [...treinosFisicos, ...treinosCampo];
-            const existingWeeks = [...new Set(allTrainings.map(t => getWeekId(t.date)))];
+            const existingWeeks = [...new Set(allTrainings.map(t => getWeekId(new Date(t.date))))];
             const futureWeeks = Array.from({length: 5}, (_, i) => {
                 const d = new Date();
                 d.setDate(d.getDate() + (i * 7));
-                return getWeekId(d.toISOString());
+                return getWeekId(d);
             });
 
             const allWeeks = [...new Set([...existingWeeks, ...futureWeeks])].filter(Boolean).sort();
@@ -1457,7 +1513,7 @@
         function renderPlanningView() {
             renderPlanningFilter();
             
-            const trainingsForWeek = (data) => data.filter(t => getWeekId(t.date) === selectedPlanningWeekId);
+            const trainingsForWeek = (data) => data.filter(t => getWeekId(new Date(t.date)) === selectedPlanningWeekId);
 
             const fisicoSemana = trainingsForWeek(treinosFisicos);
             const campoSemana = trainingsForWeek(treinosCampo);
@@ -1480,6 +1536,9 @@
                     <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64"><canvas id="chartCargaCampo"></canvas></div>
                 </div>`;
             
+            // Re-bind the export button event after recreating the element
+            document.getElementById('exportPdfBtnPlanejamento').addEventListener('click', () => exportToPDF('planejamento'));
+
             renderTimeline(document.getElementById('timelineFisico'), fisicoSemana, 'Nenhum treino físico cadastrado para esta semana.');
             renderTimeline(document.getElementById('timelineCampo'), campoSemana, 'Nenhum treino de campo cadastrado para esta semana.');
             renderDailyLoadChart('chartCargaFisico', fisicoSemana);
