@@ -38,7 +38,7 @@
             transition: max-height 0.5s ease-in-out;
         }
         .details-section.open {
-            max-height: 2000px; /* Adjust as needed for dashboard content */
+            max-height: 1000px; /* Adjust as needed */
         }
         .tab-btn {
             transition: all 0.3s ease;
@@ -56,7 +56,7 @@
         .carga-moderada { border-color: #f59e0b; } /* Amarelo */
         .carga-alta { border-color: #f97316; } /* Laranja */
         .carga-maxima { border-color: #ef4444; } /* Vermelho */
-        
+
         /* Custom styling for multi-select */
         select[multiple] {
             height: 100px;
@@ -88,8 +88,11 @@
 
         <!-- Tabs Navigation -->
         <div class="mb-8">
-            <div class="flex border-b border-gray-200 flex-wrap">
-                <button id="tabProntidaoBtn" class="tab-btn active text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
+            <div class="flex border-b border-gray-200">
+                <button id="tabDashboardBtn" class="tab-btn active text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
+                    Dashboard Geral
+                </button>
+                <button id="tabProntidaoBtn" class="tab-btn text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
                     Análise de Prontidão
                 </button>
                 <button id="tabCargaBtn" class="tab-btn text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
@@ -101,8 +104,35 @@
             </div>
         </div>
 
+        <!-- NEW Content for Dashboard Tab -->
+        <div id="dashboardContent">
+            <div class="space-y-10" id="pdf-content-dashboard">
+                <!-- Prontidão Summary -->
+                <div id="dashboardProntidao" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+                     <!-- Content will be injected by JS -->
+                </div>
+                 <!-- Carga Summary -->
+                <div id="dashboardCarga" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+                    <!-- Content will be injected by JS -->
+                </div>
+                 <!-- Planejamento Summary -->
+                 <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Planejamento da Semana</h2>
+                    <div id="dashboardPlanejamento">
+                         <!-- Content will be injected by JS -->
+                    </div>
+                </div>
+            </div>
+             <div class="text-center mt-8">
+                <button id="exportPdfBtnDashboard" class="btn bg-red-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-red-700 transition flex items-center mx-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
+                    Exportar Dashboard como PDF
+                </button>
+            </div>
+        </div>
+
         <!-- Content for Prontidão Tab -->
-        <div id="prontidaoContent">
+        <div id="prontidaoContent" class="hidden">
             <!-- Existing Prontidão Content -->
              <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
@@ -316,77 +346,32 @@
                     </div>
                 </div>
 
-                <!-- Timelines & Dashboard Section -->
-                <div class="lg:col-span-2 space-y-8">
-                    <!-- Discreet Dashboard Section -->
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
-                        <button id="toggleDashboardBtn" class="flex justify-between items-center w-full text-left">
-                            <h3 class="text-xl font-bold text-gray-800">Resumo da Temporada</h3>
-                            <svg id="dashboardArrow" class="w-6 h-6 text-gray-500 transform transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div id="dashboardContainer" class="details-section mt-6 pt-6 border-t border-gray-200 space-y-8">
-                            <!-- Dashboard Físico Content -->
-                            <div>
-                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Análise dos Treinos Físicos</h4>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                    <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center min-h-[100px] border">
-                                        <span id="totalSessoesFisico" class="text-4xl font-bold text-blue-600">0</span>
-                                        <span class="text-sm font-medium text-gray-500 mt-1 text-center">Sessões Físicas</span>
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div class="bg-gray-50 p-4 rounded-lg border h-80"><canvas id="chartObjPrincipalFisico"></canvas></div>
-                                    <div class="bg-gray-50 p-4 rounded-lg border h-80"><canvas id="chartLocalFisico"></canvas></div>
-                                    <div class="bg-gray-50 p-4 rounded-lg border h-80"><canvas id="chartObjSecundarioFisico"></canvas></div>
-                                </div>
-                            </div>
-                             <hr class="my-6 border-gray-200">
-                             <!-- Dashboard Campo Content -->
-                            <div>
-                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Análise dos Treinos de Campo</h4>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                     <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center min-h-[100px] border">
-                                        <span id="totalSessoesCampo" class="text-4xl font-bold text-green-600">0</span>
-                                        <span class="text-sm font-medium text-gray-500 mt-1 text-center">Sessões de Campo</span>
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                     <div class="bg-gray-50 p-4 rounded-lg border h-80"><canvas id="chartObjPrincipalCampo"></canvas></div>
-                                     <div class="bg-gray-50 p-4 rounded-lg border h-80"><canvas id="chartObjSecundarioCampo"></canvas></div>
-                                </div>
-                            </div>
+                <!-- Timelines Section -->
+                <div class="lg:col-span-2 space-y-8" id="pdf-content-planejamento">
+                    <!-- Physical Training Timeline -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                             <h3 class="text-2xl font-bold text-gray-900">Treinos Físicos da Semana</h3>
+                             <button id="exportPdfBtnPlanejamento" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
+                                Exportar PDF
+                            </button>
+                        </div>
+                        <div id="timelineFisico" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]">
+                           <!-- Cards will be injected here -->
+                        </div>
+                        <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64">
+                             <canvas id="chartCargaFisico"></canvas>
                         </div>
                     </div>
-
-                    <!-- Timelines Section (for PDF export) -->
-                    <div id="pdf-content-planejamento">
-                        <!-- Physical Training Timeline -->
-                        <div>
-                            <div class="flex justify-between items-center mb-4">
-                                 <h3 class="text-2xl font-bold text-gray-900">Treinos Físicos da Semana</h3>
-                                 <button id="exportPdfBtnPlanejamento" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
-                                    Exportar PDF da Semana
-                                </button>
-                            </div>
-                            <div id="timelineFisico" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]">
-                               <!-- Cards will be injected here -->
-                            </div>
-                            <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64">
-                                 <canvas id="chartCargaFisico"></canvas>
-                            </div>
+                     <!-- Field Training Timeline -->
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Treinos de Campo da Semana</h3>
+                        <div id="timelineCampo" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]">
+                           <!-- Cards will be injected here -->
                         </div>
-                         <!-- Field Training Timeline -->
-                        <div>
-                            <h3 class="text-2xl font-bold text-gray-900 mb-4 mt-8">Treinos de Campo da Semana</h3>
-                            <div id="timelineCampo" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]">
-                               <!-- Cards will be injected here -->
-                            </div>
-                             <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64">
-                                 <canvas id="chartCargaCampo"></canvas>
-                            </div>
+                         <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64">
+                             <canvas id="chartCargaCampo"></canvas>
                         </div>
                     </div>
                 </div>
@@ -394,7 +379,7 @@
         </div>
 
     </div>
-    
+
     <footer class="text-center py-4 text-xs text-gray-400">
         Powered by Ciente - Inteligência Esportiva
     </footer>
@@ -409,7 +394,6 @@
 
 
         // --- FIREBASE SETUP ---
-        // Configuração para o projeto "meu-scout-pro"
         const firebaseConfig = {
             apiKey: "AIzaSyCSxaH-QFQbhrCttS-J8KmVN1MXmjXqY1s",
             authDomain: "meu-scout-pro.firebaseapp.com",
@@ -418,7 +402,7 @@
             messagingSenderId: "303977649743",
             appId: "1:303977649743:web:4e81e55c7180390ec97c3a"
         };
-        
+
         // Initialize Firebase and services
         let db, auth;
         try {
@@ -450,19 +434,23 @@
             alta: 90,
             maxima: 100
         };
-        let activeCharts = {}; 
-        let athleteMicrocycleData = {}; 
+        let activeCharts = {};
+        let athleteMicrocycleData = {};
         let treinosFisicos = [];
         let treinosCampo = [];
         let currentUser = null;
+        let latestProntidaoData = null; // Stores team stats for dashboard
+        let latestCargaData = null; // Stores team stats for dashboard
 
         // --- DOM ELEMENTS ---
         const authStatus = document.getElementById('authStatus');
         const submitTreinoFisicoBtn = document.getElementById('submitTreinoFisico');
         const submitTreinoCampoBtn = document.getElementById('submitTreinoCampo');
+        const tabDashboardBtn = document.getElementById('tabDashboardBtn');
         const tabProntidaoBtn = document.getElementById('tabProntidaoBtn');
         const tabCargaBtn = document.getElementById('tabCargaBtn');
         const tabPlanejamentoBtn = document.getElementById('tabPlanejamentoBtn');
+        const dashboardContent = document.getElementById('dashboardContent');
         const prontidaoContent = document.getElementById('prontidaoContent');
         const cargaContent = document.getElementById('cargaContent');
         const planejamentoContent = document.getElementById('planejamentoContent');
@@ -498,9 +486,11 @@
         const timelineFisico = document.getElementById('timelineFisico');
         const timelineCampo = document.getElementById('timelineCampo');
         const exportPdfBtnPlanejamento = document.getElementById('exportPdfBtnPlanejamento');
-        const toggleDashboardBtn = document.getElementById('toggleDashboardBtn');
-        const dashboardContainer = document.getElementById('dashboardContainer');
-        const dashboardArrow = document.getElementById('dashboardArrow');
+        // Dashboard DOM Elements
+        const dashboardProntidao = document.getElementById('dashboardProntidao');
+        const dashboardCarga = document.getElementById('dashboardCarga');
+        const dashboardPlanejamento = document.getElementById('dashboardPlanejamento');
+        const exportPdfBtnDashboard = document.getElementById('exportPdfBtnDashboard');
 
 
         // --- SETUP ---
@@ -540,35 +530,33 @@
             showToast("Falha na autenticação. Os dados não serão salvos.");
         });
 
+
         // --- FIREBASE DATA LISTENERS ---
         function listenToTrainings() {
-            const qFisico = query(treinosFisicosCollection, orderBy("date", "desc"));
+            const qFisico = query(treinosFisicosCollection, orderBy("date", "asc"));
             onSnapshot(qFisico, (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                updatePlanejamentoView();
+                renderTimelines();
+                updateDashboardView();
             }, (error) => {
                 console.error("Error listening to physical trainings:", error);
                 showToast("Erro ao carregar treinos físicos.");
             });
 
-            const qCampo = query(treinosCampoCollection, orderBy("date", "desc"));
+            const qCampo = query(treinosCampoCollection, orderBy("date", "asc"));
             onSnapshot(qCampo, (snapshot) => {
                 treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                updatePlanejamentoView();
+                renderTimelines();
+                updateDashboardView();
             }, (error) => {
                 console.error("Error listening to field trainings:", error);
                 showToast("Erro ao carregar treinos de campo.");
             });
         }
 
-        // --- GLOBAL VIEW UPDATER ---
-        function updatePlanejamentoView() {
-            renderTimelines();
-            renderPlanningDashboards();
-        }
-
 
         // --- EVENT LISTENERS ---
+        tabDashboardBtn.addEventListener('click', () => switchTab('dashboard'));
         tabProntidaoBtn.addEventListener('click', () => switchTab('prontidao'));
         tabCargaBtn.addEventListener('click', () => switchTab('carga'));
         tabPlanejamentoBtn.addEventListener('click', () => switchTab('planejamento'));
@@ -594,21 +582,133 @@
                 }
             }
         });
-        
         formTreinoFisico.addEventListener('submit', handleFormFisicoSubmit);
         formTreinoCampo.addEventListener('submit', handleFormCampoSubmit);
         exportPdfBtnPlanejamento.addEventListener('click', () => exportToPDF('planejamento'));
-        
-        toggleDashboardBtn.addEventListener('click', () => {
-            dashboardContainer.classList.toggle('open');
-            dashboardArrow.classList.toggle('rotate-180');
-        });
+        exportPdfBtnDashboard.addEventListener('click', () => exportToPDF('dashboard'));
 
 
         // --- INITIALIZATION ---
         document.getElementById('dataTreinoFisico').valueAsDate = new Date();
         document.getElementById('dataTreinoCampo').valueAsDate = new Date();
-        updatePlanejamentoView();
+        updateDashboardView(); // Initial render for dashboard placeholders
+        renderTimelines(); // Initial render for planning tab
+
+
+        // --- DASHBOARD FUNCTIONS ---
+        function updateDashboardView() {
+            renderDashboardProntidao();
+            renderDashboardCarga();
+            renderDashboardPlanejamento();
+        }
+
+        function renderDashboardProntidao() {
+            if (latestProntidaoData) {
+                dashboardProntidao.innerHTML = renderTeamDashboardProntidao(latestProntidaoData.teamStats, latestProntidaoData.latestDate, true);
+            } else {
+                dashboardProntidao.innerHTML = `
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Prontidão</h2>
+                    <div class="text-center py-10 px-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de prontidão carregado</h3>
+                        <p class="mt-1 text-sm text-gray-500">Vá para a aba 'Análise de Prontidão' para importar um arquivo.</p>
+                    </div>`;
+            }
+        }
+
+        function renderDashboardCarga() {
+            if (latestCargaData) {
+                dashboardCarga.innerHTML = renderTeamDashboardCarga(latestCargaData, true);
+            } else {
+                dashboardCarga.innerHTML = `
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Carga de Treino</h2>
+                    <div class="text-center py-10 px-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de carga carregado</h3>
+                        <p class="mt-1 text-sm text-gray-500">Vá para a aba 'Controle de Carga' para importar um arquivo.</p>
+                    </div>`;
+            }
+            if (latestCargaData && latestCargaData.selectionCount > 1) {
+                renderTeamWeeklyLoadChart(latestCargaData.evolutionData, 'dashboard-');
+                renderTeamAcwrChart(latestCargaData.evolutionData, 'dashboard-');
+                renderTeamStrainChart(latestCargaData.evolutionData, 'dashboard-');
+            } else if (latestCargaData) {
+                renderTeamDailyLoadChart(latestCargaData.dailyAverages, 'dashboard-');
+            }
+        }
+
+        function renderDashboardPlanejamento() {
+            const allTrainings = [...treinosFisicos, ...treinosCampo];
+            const weeklyTrainings = allTrainings.filter(t => t.date && isDateInThisWeek(new Date(t.date + 'T00:00:00')));
+
+            if (weeklyTrainings.length === 0) {
+                 dashboardPlanejamento.innerHTML = `
+                    <div class="text-center py-10 px-6 text-gray-500">
+                         <p>Nenhum treino planejado para a semana atual.</p>
+                    </div>`;
+                return;
+            }
+
+            // Combine timeline and charts for a compact view
+            dashboardPlanejamento.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    <div>
+                         <h3 class="font-semibold text-gray-800 mb-3 text-center">Treinos Programados</h3>
+                         <div id="timelineDashboard" class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]">
+                            <!-- Timeline cards will be injected here -->
+                         </div>
+                    </div>
+                     <div>
+                        <h3 class="font-semibold text-gray-800 mb-3 text-center">Carga Planejada da Semana</h3>
+                        <div class="h-64 bg-white p-2 rounded-lg border">
+                             <canvas id="dashboardChartCargaConsolidada"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+            renderTimeline(document.getElementById('timelineDashboard'), allTrainings, 'Nenhum treino cadastrado.');
+            renderConsolidatedWeeklyChart('dashboardChartCargaConsolidada', treinosFisicos, treinosCampo);
+        }
+
+        function renderConsolidatedWeeklyChart(canvasId, fisico, campo) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+
+            const getDailyLoads = (treinos) => {
+                const dailyMaxLoad = {};
+                treinos.filter(t => t.date && isDateInThisWeek(new Date(t.date + 'T00:00:00'))).forEach(t => {
+                    const dayOfWeek = new Date(t.date + 'T00:00:00').getDay();
+                    const loadValue = CARGA_PERCENTUAL[t.carga];
+                    if (!dailyMaxLoad[dayOfWeek] || loadValue > dailyMaxLoad[dayOfWeek]) {
+                        dailyMaxLoad[dayOfWeek] = loadValue;
+                    }
+                });
+                 return [1,2,3,4,5,6,0].map(day => dailyMaxLoad[day] || 0);
+            };
+            
+            const fisicoData = getDailyLoads(fisico);
+            const campoData = getDailyLoads(campo);
+
+            activeCharts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                    datasets: [
+                        { label: 'Treino Físico', data: fisicoData, backgroundColor: 'rgba(59, 130, 246, 0.7)'},
+                        { label: 'Treino de Campo', data: campoData, backgroundColor: 'rgba(22, 163, 74, 0.7)'}
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, beginAtZero: true, min: 0, max: 100, title: { display: true, text: 'Carga Planejada (%)' } }
+                    },
+                    plugins: { legend: { position: 'bottom' }, datalabels: { display: false } }
+                }
+            });
+        }
 
 
         // --- GENERAL FUNCTIONS ---
@@ -621,7 +721,7 @@
                 toast.classList.add('opacity-0', 'translate-y-10');
             }, 5000);
         }
-        
+
         function getStats(data) {
             const filteredData = data.filter(d => typeof d === 'number' && !isNaN(d));
             if (filteredData.length === 0) return { mean: 0, stdDev: 0, sum: 0, count: 0 };
@@ -630,7 +730,7 @@
             const stdDev = Math.sqrt(filteredData.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / (filteredData.length > 1 ? filteredData.length - 1 : 1));
             return { mean, stdDev, sum, count: filteredData.length };
         }
-        
+
         function toggleDetails(event, type) {
             const button = event.target.closest('.toggle-details-btn');
             if (!button) return;
@@ -649,25 +749,17 @@
                  }
             }
         }
-        
+
         async function exportToPDF(type) {
-            const contentId = type === 'prontidao' ? 'pdf-content-prontidao' 
-                            : type === 'carga' ? 'pdf-content-carga' 
-                            : 'pdf-content-planejamento';
-                            
-            const pdfButton = type === 'prontidao' ? exportPdfBtn 
-                            : type === 'carga' ? exportPdfBtnCarga 
-                            : exportPdfBtnPlanejamento;
-                            
-            const fileName = type === 'prontidao' ? 'relatorio_prontidao.pdf' 
-                           : type === 'carga' ? 'relatorio_carga.pdf'
-                           : 'relatorio_planejamento.pdf';
+            const contentId = `pdf-content-${type}`;
+            const pdfButton = document.getElementById(`exportPdfBtn${type.charAt(0).toUpperCase() + type.slice(1)}`);
+            const fileName = `relatorio_${type}.pdf`;
 
             const originalText = pdfButton.innerHTML;
             pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
             pdfButton.disabled = true;
-            
-            if (type !== 'planejamento') {
+
+            if (type === 'prontidao' || type === 'carga') {
                 document.querySelectorAll(`#${contentId} .details-section`).forEach(el => el.classList.add('open'));
                 document.querySelectorAll(`#${contentId} .toggle-details-btn`).forEach(button => {
                     if (button.dataset.chartdata) {
@@ -680,16 +772,16 @@
                     }
                 });
             }
-            
-            await new Promise(resolve => setTimeout(resolve, 500)); 
+
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             const contentToPrint = document.getElementById(contentId);
-            
+
             try {
                 const canvas = await html2canvas(contentToPrint, { scale: 2, useCORS: true, backgroundColor: '#f9fafb' });
-                const imgData = canvas.toDataURL('image/jpeg', 0.9); 
+                const imgData = canvas.toDataURL('image/jpeg', 0.9);
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = pdf.internal.pageSize.getHeight();
                 const imgProps = pdf.getImageProperties(imgData);
@@ -712,24 +804,22 @@
             } finally {
                 pdfButton.innerHTML = originalText;
                 pdfButton.disabled = false;
-                if (type !== 'planejamento') {
+                 if (type === 'prontidao' || type === 'carga') {
                     document.querySelectorAll(`#${contentId} .details-section`).forEach(el => el.classList.remove('open'));
                 }
             }
         }
 
-        function switchTab(targetTab) {
-            const tabs = {
-                prontidao: { content: prontidaoContent, btn: tabProntidaoBtn },
-                carga: { content: cargaContent, btn: tabCargaBtn },
-                planejamento: { content: planejamentoContent, btn: tabPlanejamentoBtn }
-            };
+        function switchTab(tab) {
+            dashboardContent.classList.toggle('hidden', tab !== 'dashboard');
+            prontidaoContent.classList.toggle('hidden', tab !== 'prontidao');
+            cargaContent.classList.toggle('hidden', tab !== 'carga');
+            planejamentoContent.classList.toggle('hidden', tab !== 'planejamento');
 
-            for (const tabName in tabs) {
-                const isTarget = tabName === targetTab;
-                tabs[tabName].content.classList.toggle('hidden', !isTarget);
-                tabs[tabName].btn.classList.toggle('active', isTarget);
-            }
+            tabDashboardBtn.classList.toggle('active', tab === 'dashboard');
+            tabProntidaoBtn.classList.toggle('active', tab === 'prontidao');
+            tabCargaBtn.classList.toggle('active', tab === 'carga');
+            tabPlanejamentoBtn.classList.toggle('active', tab === 'planejamento');
         }
 
         function handleFileSelect(fileInput, fileNameEl, processBtn) {
@@ -745,11 +835,11 @@
         function parseCSV(text, requiredHeaders) {
             const lines = text.trim().replace(/\r/g, '').split('\n');
             if (lines.length < 2) throw new Error("O arquivo CSV está vazio ou contém apenas o cabeçalho.");
-            
+
             const firstLine = lines[0];
             const separator = firstLine.includes(';') ? ';' : ',';
             const headers = firstLine.split(separator).map(h => h.trim().toLowerCase());
-            
+
             if (!requiredHeaders.every(h => headers.includes(h))) {
                 throw new Error(`Cabeçalho inválido. Verifique se as colunas: ${requiredHeaders.join(', ')} existem.`);
             }
@@ -774,7 +864,7 @@
                 return entry;
             }).filter(Boolean);
         }
-        
+
         // --- PRONTIDÃO FUNCTIONS ---
         function toggleLoading(isLoading, type = 'prontidao') {
             const textEl = type === 'prontidao' ? btnText : btnTextCarga;
@@ -794,6 +884,8 @@
             resultsContainer.innerHTML = '';
             teamDashboard.innerHTML = '';
             activeCharts = {};
+            latestProntidaoData = null;
+            updateDashboardView();
         }
 
         function handleFileProcessing() {
@@ -807,7 +899,9 @@
                     const required = ['atleta_id', 'data', 'hooper_score'];
                     const parsedData = parseCSV(csvText, required);
                     const { individualResults, teamStats, latestDate } = analyzeProntidaoData(parsedData);
+                    latestProntidaoData = { teamStats, latestDate }; // Save for dashboard
                     renderProntidaoResults(individualResults, teamStats, latestDate);
+                    updateDashboardView(); // Update dashboard with new data
                 } catch (error) {
                      console.error("Error during prontidao analysis:", error);
                      showToast(`Erro: ${error.message}`);
@@ -833,7 +927,7 @@
             let latestDate = null;
             const individualResults = Object.keys(athletesData).map(athleteId => {
                 const allEntries = athletesData[athleteId].sort((a, b) => new Date(b.data) - new Date(a.data));
-                
+
                 if (allEntries.length < MIN_RECORDS) {
                     return { athleteId, status: 'collecting', message: `Dados insuficientes. São necessários ${MIN_RECORDS} registros e o arquivo forneceu ${allEntries.length}.` };
                 }
@@ -844,7 +938,7 @@
 
                 return calculateAthleteReadiness(athleteId, allEntries);
             }).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
-            
+
             const readyAthletes = individualResults.filter(r => r.status === 'ready');
             const teamStats = {
                 averageIndex: getStats(readyAthletes.map(r => parseFloat(r.index))).mean,
@@ -869,24 +963,24 @@
                 const { mean, stdDev } = getStats(dataPoints);
                 return stdDev === 0 ? 0 : (value - mean) / stdDev;
             };
-            
+
             const cap = (val) => Math.max(-2.5, Math.min(2.5, val));
             const performanceScores = [getZScore('salto_horizontal_cm'), getZScore('vfc_rmssd')].filter(s => s != null);
             const performancePillar = performanceScores.length > 0 ? cap(getStats(performanceScores).mean) : 0;
-            
+
             let hooperAdjustment = 0;
             if (latestEntry.hooper_score != null) {
                 if (latestEntry.hooper_score <= 9) hooperAdjustment = 0.25;
                 else if (latestEntry.hooper_score <= 17) hooperAdjustment = -0.25;
                 else hooperAdjustment = -0.50;
             }
-            
+
             const readinessIndex = performancePillar + hooperAdjustment;
             let zone;
             if (readinessIndex < -1.5) zone = 'red';
             else if (readinessIndex < -0.5) zone = 'yellow';
             else zone = 'green';
-            
+
             const metricsDetail = Object.keys(METRIC_NAMES).reduce((acc, key) => {
                 const dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null);
                 acc[key] = { latest: latestEntry[key], mean: getStats(dataPoints).mean };
@@ -902,7 +996,7 @@
         function renderProntidaoResults(individualResults, teamStats, latestDate) {
             placeholderSectionProntidao.classList.add('hidden');
             resultsSection.classList.remove('hidden');
-            renderTeamDashboardProntidao(teamStats, latestDate);
+            teamDashboard.innerHTML = renderTeamDashboardProntidao(teamStats, latestDate);
             resultsContainer.innerHTML = `
                 <div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0">
                     <div class="w-1/3">Atleta</div>
@@ -915,25 +1009,26 @@
                 <div>${individualResults.map(createProntidaoResultRow).join('')}</div>`;
             renderLegends('prontidao');
         }
-        
-        function renderTeamDashboardProntidao(stats, latestDate) {
+
+        function renderTeamDashboardProntidao(stats, latestDate, isForDashboard = false) {
+            if(!stats) return '';
             const { green, yellow, red } = stats.zoneCounts;
             const hooperTeamClass = getHooperClassification(stats.averageHooper);
             const indexTeamClass = getIndexClassification(stats.averageIndex);
             const saltoTeamClass = stats.averageSaltoDiff >= 0 ? 'text-green-600' : 'text-red-600';
             const formattedDate = latestDate ? new Date(latestDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
-            teamDashboard.innerHTML = `
-                <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Painel da Equipe <span class="text-base font-normal text-gray-500">(Dados de: ${formattedDate})</span></h2>
+            const title = isForDashboard ? 'Resumo da Prontidão' : 'Painel da Equipe';
+
+            return `
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(Dados de: ${formattedDate})</span></h2>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
                         <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Índice Geral Médio</p><p class="text-5xl font-bold ${indexTeamClass.class}">${stats.averageIndex ? stats.averageIndex.toFixed(2) : '--'}</p></div>
                         <div class="flex flex-col items-center justify-center p-4 rounded-lg border ${hooperTeamClass.border} ${hooperTeamClass.bg} min-h-[140px]"><p class="text-sm font-medium ${hooperTeamClass.class}">Média de Fadiga (Hooper)</p><p class="text-5xl font-bold ${hooperTeamClass.class}">${stats.averageHooper ? stats.averageHooper.toFixed(1) : '--'}</p></div>
                         <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Recup. Muscular Média</p><p class="text-5xl font-bold ${saltoTeamClass}">${stats.averageSaltoDiff ? `${stats.averageSaltoDiff >= 0 ? '+' : ''}${stats.averageSaltoDiff.toFixed(1)}%` : '--'}</p></div>
                         <div class="p-4 bg-gray-50 rounded-lg h-full flex flex-col min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2 text-center">Distribuição dos Atletas</p><div class="flex-grow flex items-center justify-around w-full"><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">${green}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-lg">${yellow}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-lg">${red}</div></div></div></div>
-                    </div>
-                </div>`;
+                    </div>`;
         }
-        
+
         function createProntidaoResultRow(result) {
             if (result.status === 'collecting') {
                 return `<div class="flex items-center p-4 border-b last:border-b-0"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}</div><div class="w-2/3 text-gray-500 text-sm">${result.message}</div></div>`;
@@ -942,14 +1037,14 @@
             if (result.zone === 'green') { zoneClass = 'text-green-600'; statusText = 'Zona Ótima'; recommendation = "Atleta em bom estado. Treinar conforme o plano."; }
             else if (result.zone === 'yellow') { zoneClass = 'text-yellow-600'; statusText = 'Zona de Atenção'; recommendation = "Sinais de alerta. A carga deve ser ajustada."; }
             else { zoneClass = 'text-red-600'; statusText = 'Zona Crítica'; recommendation = "Risco Elevado. Priorizar recuperação ativa."; }
-            
+
             const hooperClass = getHooperClassification(result.hooperScore.latest);
             const saltoClass = result.saltoPercentDiff == null ? 'text-gray-500' : (result.saltoPercentDiff >= 0 ? 'text-green-600' : 'text-red-600');
             const detailsHtml = Object.entries(result.metricsDetail).map(([key, data]) => {
                 if (!METRIC_NAMES[key] || data.latest == null) return '';
                 return `<li class="flex justify-between items-center text-sm py-1 border-b"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${data.latest} <span class="text-xs text-gray-500 font-normal">(Média: ${data.mean.toFixed(1)})</span></span></li>`;
             }).join('');
-            
+
             return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div><div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div><div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div><div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${result.hooperScore.latest}</span></div><div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-prontidao-${result.athleteId}"><svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-prontidao-${result.athleteId}"><div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="font-semibold text-sm mb-2">Detalhes:</h4><ul class="space-y-1">${detailsHtml}</ul></div><div class="bg-blue-50 border p-3 rounded-lg self-start"><h4 class="font-semibold text-sm mb-1">Sugestão:</h4><p class="text-sm">${recommendation}</p></div></div></div></div>`;
         }
 
@@ -965,8 +1060,10 @@
             resultsContainerCarga.innerHTML = '';
             activeCharts = {};
             athleteMicrocycleData = {};
+            latestCargaData = null;
+            updateDashboardView();
         }
-        
+
         function handleFileProcessingCarga() {
             const file = csvFileInputCarga.files[0];
             if (!file) return showToast("Por favor, selecione um arquivo de carga.");
@@ -977,7 +1074,7 @@
                     const required = ['atleta_id', 'data', 'microciclo_id', 'pse_sessao', 'duracao_sessao_min'];
                     const fullLoadData = parseCSV(event.target.result, required);
                     if (fullLoadData.length === 0) throw new Error("Nenhum dado válido encontrado no arquivo.");
-                    
+
                     processAndRenderLoadData(fullLoadData);
                 } catch (error) {
                      console.error("Error during carga analysis:", error);
@@ -1026,9 +1123,9 @@
                         const loadStats = getStats(dailyEntries.map(e => e.load));
                         const monotony = loadStats.mean > 0 && loadStats.stdDev > 0 ? loadStats.mean / loadStats.stdDev : 0;
                         return {
-                            microciclo_id: id, 
-                            totalLoad: loadStats.sum, 
-                            monotony, 
+                            microciclo_id: id,
+                            totalLoad: loadStats.sum,
+                            monotony,
                             strain: loadStats.sum * monotony,
                             dailyEntries: dailyEntries
                         };
@@ -1036,7 +1133,7 @@
             }
 
             const sortedMicrocycles = Array.from(allMicrocycles).sort();
-            
+
             placeholderSectionCarga.classList.add('hidden');
             resultsSectionCarga.classList.remove('hidden');
 
@@ -1071,7 +1168,7 @@
 
             Object.values(activeCharts).forEach(chart => chart.destroy());
             activeCharts = {};
-        
+
             const individualResults = [];
             let allEntriesInCycles = [];
             let weeklyTeamData = [];
@@ -1080,7 +1177,7 @@
 
             for (const athleteId in athleteMicrocycleData) {
                 const allAthleteCycles = athleteMicrocycleData[athleteId];
-                
+
                 if (selectedIds.length > 1) {
                     sortedSelectedIds.forEach(mc_id => {
                         const cycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === mc_id);
@@ -1101,7 +1198,7 @@
 
                 const selectedCycles = allAthleteCycles.filter(c => selectedIds.includes(c.microciclo_id));
                 if(selectedCycles.length === 0) continue;
-                
+
                 const aggregatedDailyEntries = selectedCycles.flatMap(c => c.dailyEntries);
                 const aggregatedLoadStats = getStats(aggregatedDailyEntries.map(e => e.load));
                 const aggregatedMonotony = aggregatedLoadStats.mean > 0 && aggregatedLoadStats.stdDev > 0 ? aggregatedLoadStats.mean / aggregatedLoadStats.stdDev : 0;
@@ -1110,23 +1207,23 @@
                 const chronicLoadForTable = getStats(chronicCyclesForTable.map(c => c.totalLoad)).mean;
                 const acuteLoadForTable = aggregatedLoadStats.sum;
                 const awcrForTable = chronicLoadForTable > 0 ? acuteLoadForTable / (chronicLoadForTable * selectedIds.length) : null;
-                
-                individualResults.push({ 
-                    athleteId, 
+
+                individualResults.push({
+                    athleteId,
                     totalLoad: acuteLoadForTable,
                     monotony: aggregatedMonotony,
                     strain: acuteLoadForTable * aggregatedMonotony,
-                    awcr: awcrForTable, 
+                    awcr: awcrForTable,
                     hasEnoughDataForAwcr: chronicCyclesForTable.length >= 4,
                     chartData: {
                         labels: aggregatedDailyEntries.sort((a,b) => new Date(a.date) - new Date(b.date)).map(e => new Date(e.date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})),
                         loads: aggregatedDailyEntries.sort((a,b) => new Date(a.date) - new Date(b.date)).map(e => e.load)
                     }
                 });
-                
+
                 allEntriesInCycles.push(...aggregatedDailyEntries);
             }
-            
+
             const loadsByDayOfWeek = allEntriesInCycles.reduce((acc, entry) => {
                 const dayOfWeek = new Date(entry.date + 'T00:00:00').getDay();
                 if (!acc[dayOfWeek]) acc[dayOfWeek] = [];
@@ -1135,7 +1232,7 @@
             }, {});
 
             const dailyAverages = [0,1,2,3,4,5,6].map(day => getStats(loadsByDayOfWeek[day] || []).mean);
-            
+
             const evolutionData = sortedSelectedIds.map(mc_id => {
                 const weekData = weeklyTeamData.filter(d => d.microciclo_id === mc_id);
                 return {
@@ -1145,7 +1242,7 @@
                     awcr: getStats(weekData.filter(d=>d.awcr != null).map(d=>d.awcr)).mean
                 };
             });
-            
+
             const teamStats = {
                 avgAcwr: getStats(individualResults.filter(r => r.awcr != null).map(r => r.awcr)).mean,
                 avgStrain: getStats(individualResults.map(r => r.strain)).mean,
@@ -1155,9 +1252,12 @@
                 microcicloId: selectedIds.join(', ')
             };
             
+            latestCargaData = teamStats; // Save for dashboard
+            updateDashboardView(); // Update dashboard with new data
+
             individualResults.sort((a, b) => (b.awcr ?? -1) - (a.awcr ?? -1));
 
-            renderTeamDashboardCarga(teamStats);
+            teamDashboardCarga.innerHTML = renderTeamDashboardCarga(teamStats);
             renderLoadTable(individualResults);
             renderLegends('carga');
 
@@ -1166,48 +1266,50 @@
                 renderTeamAcwrChart(teamStats.evolutionData);
                 renderTeamStrainChart(teamStats.evolutionData);
             } else {
-                 renderTeamDailyLoadChart(teamStats.dailyAverages); 
+                 renderTeamDailyLoadChart(teamStats.dailyAverages);
             }
         }
 
-        function renderTeamDashboardCarga(stats) {
+        function renderTeamDashboardCarga(stats, isForDashboard = false) {
+             if(!stats) return '';
             const avgAcwr = stats.avgAcwr ? stats.avgAcwr.toFixed(2) : '--';
             const avgStrain = stats.avgStrain ? Math.round(stats.avgStrain) : '--';
+            const title = isForDashboard ? 'Resumo da Carga de Treino' : 'Painel da Equipe';
+            const prefix = isForDashboard ? 'dashboard-' : '';
 
             let chartsHtml = '';
             if (stats.selectionCount > 1) {
                  chartsHtml = `
-                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">Carga Aguda por Semana</p><div class="w-full h-28"><canvas id="team-weekly-load-chart"></canvas></div></div>
-                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">AWCR por Semana</p><div class="w-full h-28"><canvas id="team-acwr-chart"></canvas></div></div>
-                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">Strain por Semana</p><div class="w-full h-28"><canvas id="team-strain-chart"></canvas></div></div>
+                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">Carga Aguda por Semana</p><div class="w-full h-28"><canvas id="${prefix}team-weekly-load-chart"></canvas></div></div>
+                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">AWCR por Semana</p><div class="w-full h-28"><canvas id="${prefix}team-acwr-chart"></canvas></div></div>
+                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">Strain por Semana</p><div class="w-full h-28"><canvas id="${prefix}team-strain-chart"></canvas></div></div>
                 `;
             } else {
                 chartsHtml = `
-                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2">Média Diária de Carga</p><div class="w-full h-24"><canvas id="team-daily-chart"></canvas></div></div>
+                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2">Média Diária de Carga</p><div class="w-full h-24"><canvas id="${prefix}team-daily-chart"></canvas></div></div>
                     <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">ACWR Médio</p><p class="text-5xl font-bold ${getAwcrClassification(stats.avgAcwr).class}">${avgAcwr}</p></div>
                     <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Strain Médio</p><p class="text-5xl font-bold ${getStrainClassification(stats.avgStrain).class}">${avgStrain}</p></div>
                 `;
             }
 
-            teamDashboardCarga.innerHTML = `
-                 <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Painel da Equipe <span class="text-base font-normal text-gray-500">(Microciclo(s): ${stats.microcicloId})</span></h2>
+            return `
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(Microciclo(s): ${stats.microcicloId})</span></h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         ${chartsHtml}
-                    </div>
-                </div>`;
+                    </div>`;
         }
 
-        function renderTeamDailyLoadChart(dailyData) {
-            const ctx = document.getElementById('team-daily-chart');
+        function renderTeamDailyLoadChart(dailyData, prefix = '') {
+            const canvasId = `${prefix}team-daily-chart`;
+            const ctx = document.getElementById(canvasId);
             if (!ctx) return;
-            if (activeCharts['team-daily-chart']) activeCharts['team-daily-chart'].destroy();
-            
+            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+
             const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
             const data = [dailyData[1], dailyData[2], dailyData[3], dailyData[4], dailyData[5], dailyData[6], dailyData[0]];
             const backgroundColors = data.map(load => getCargaAgudaChartColor(load));
 
-            activeCharts['team-daily-chart'] = new Chart(ctx, {
+            activeCharts[canvasId] = new Chart(ctx, {
                 type: 'bar',
                 data: { labels, datasets: [{ label: 'Média Diária', data, backgroundColor: backgroundColors }] },
                 options: {
@@ -1220,17 +1322,18 @@
                 }
             });
         }
-        
-        function renderTeamWeeklyLoadChart(evolutionData) {
-             const ctx = document.getElementById('team-weekly-load-chart');
+
+        function renderTeamWeeklyLoadChart(evolutionData, prefix = '') {
+            const canvasId = `${prefix}team-weekly-load-chart`;
+            const ctx = document.getElementById(canvasId);
             if (!ctx) return;
-            if (activeCharts['team-weekly-load-chart']) activeCharts['team-weekly-load-chart'].destroy();
-            
+            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+
             const labels = evolutionData.map(d => d.microciclo_id);
             const data = evolutionData.map(d => d.totalLoad);
             const backgroundColors = data.map(load => getCargaAgudaChartColor(load));
 
-            activeCharts['team-weekly-load-chart'] = new Chart(ctx, {
+            activeCharts[canvasId] = new Chart(ctx, {
                 type: 'bar',
                 data: { labels, datasets: [{ label: 'Carga Semanal', data, backgroundColor: backgroundColors }] },
                 options: {
@@ -1244,12 +1347,13 @@
             });
         }
 
-        function renderTeamAcwrChart(evolutionData) {
-            const ctx = document.getElementById('team-acwr-chart');
+        function renderTeamAcwrChart(evolutionData, prefix = '') {
+            const canvasId = `${prefix}team-acwr-chart`;
+            const ctx = document.getElementById(canvasId);
             if (!ctx) return;
-            if (activeCharts['team-acwr-chart']) activeCharts['team-acwr-chart'].destroy();
-            
-            activeCharts['team-acwr-chart'] = new Chart(ctx, {
+            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+
+            activeCharts[canvasId] = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: evolutionData.map(d => d.microciclo_id),
@@ -1267,12 +1371,13 @@
             });
         }
 
-        function renderTeamStrainChart(evolutionData) {
-            const ctx = document.getElementById('team-strain-chart');
+        function renderTeamStrainChart(evolutionData, prefix = '') {
+            const canvasId = `${prefix}team-strain-chart`;
+            const ctx = document.getElementById(canvasId);
             if (!ctx) return;
-            if (activeCharts['team-strain-chart']) activeCharts['team-strain-chart'].destroy();
-            
-            activeCharts['team-strain-chart'] = new Chart(ctx, {
+            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+
+            activeCharts[canvasId] = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: evolutionData.map(d => d.microciclo_id),
@@ -1289,7 +1394,7 @@
                 }
             });
         }
-        
+
         function renderLoadTable(results) {
              resultsContainerCarga.innerHTML = `
                 <div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0">
@@ -1302,7 +1407,7 @@
                 </div>
                 <div>${results.map(createLoadResultRow).join('')}</div>`;
         }
-        
+
         function createLoadResultRow(result) {
             const cleanAthleteId = result.athleteId.replace(/\s+/g, '-');
             const awcrText = result.awcr != null ? result.awcr.toFixed(2) : '--';
@@ -1324,16 +1429,16 @@
                 },
                 options: {
                     maintainAspectRatio: false,
-                    scales: { 
-                        y: { 
-                            beginAtZero: true, 
+                    scales: {
+                        y: {
+                            beginAtZero: true,
                             min: 0,
                             max: 1000,
-                            title: { display: true, text: 'Carga (PSE x Duração)' } 
-                        }, 
-                        x: { title: { display: true, text: 'Data' } } 
+                            title: { display: true, text: 'Carga (PSE x Duração)' }
+                        },
+                        x: { title: { display: true, text: 'Data' } }
                     },
-                    plugins: { 
+                    plugins: {
                         legend: { display: false },
                         datalabels: { anchor: 'end', align: 'top' }
                     }
@@ -1341,7 +1446,7 @@
             });
         }
 
-        // --- PLANEJAMENTO FUNCTIONS (MODIFIED FOR FIREBASE) ---
+        // --- PLANEJAMENTO FUNCTIONS ---
         function getSelectedOptions(selectElement) {
             return Array.from(selectElement.selectedOptions).map(option => option.value);
         }
@@ -1360,7 +1465,7 @@
                 local: document.getElementById('localTreinoFisico').value,
                 carga: document.getElementById('cargaTreinoFisico').value,
                 cargaText: document.getElementById('cargaTreinoFisico').options[document.getElementById('cargaTreinoFisico').selectedIndex].text,
-                createdAt: serverTimestamp() // Adds a server-side timestamp
+                createdAt: serverTimestamp()
             };
             try {
                 await addDoc(treinosFisicosCollection, treino);
@@ -1379,7 +1484,7 @@
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true;
-            
+
             const objSecundarioEl = document.getElementById('objSecundarioCampo');
             const treino = {
                 type: 'campo',
@@ -1411,10 +1516,11 @@
         }
 
         function renderTimeline(container, treinos, emptyMessage) {
-            container.innerHTML = ''; 
-            
+            if (!container) return;
+            container.innerHTML = '';
+
             const treinosDaSemana = treinos.filter(t => t.date && isDateInThisWeek(new Date(t.date + 'T00:00:00')));
-            
+
             if (treinosDaSemana.length === 0) {
                  container.innerHTML = `<p class="col-span-full text-gray-500 text-center w-full py-8">${emptyMessage}</p>`;
                 return;
@@ -1430,36 +1536,26 @@
                 const formattedDate = new Date(treino.date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
 
                 const objSecundarioText = Array.isArray(treino.objSecundario) ? treino.objSecundario.join(', ') : '';
+                const bgColor = treino.type === 'fisico' ? 'bg-blue-50' : 'bg-green-50';
 
-                if (treino.type === 'fisico') {
-                    cardContent = `
-                        <p class="font-semibold text-gray-800 text-sm">${treino.objPrincipal}</p>
-                        <p class="text-xs text-gray-600 truncate mt-1" title="${objSecundarioText}">${objSecundarioText}</p>
-                        <p class="text-xs text-gray-500 mt-1">Local: ${treino.local}</p>
-                        <p class="text-xs font-semibold mt-2">${treino.cargaText}</p>
-                    `;
-                } else { // 'campo'
-                     cardContent = `
-                        <p class="font-semibold text-gray-800 text-sm">${treino.objPrincipal}</p>
-                        <p class="text-xs text-gray-600 truncate mt-1" title="${objSecundarioText}">${objSecundarioText}</p>
-                        <p class="text-xs text-gray-500 mt-1">Campo: ${treino.campo}</p>
-                        <p class="text-xs font-semibold mt-2">${treino.cargaText}</p>
-                    `;
-                }
-                
-                card.className = `timeline-card ${borderColorClass} bg-white p-2 rounded-lg shadow-sm`;
+                cardContent = `
+                    <p class="font-semibold text-gray-800 text-sm">${treino.objPrincipal}</p>
+                    <p class="text-xs text-gray-600 truncate mt-1" title="${objSecundarioText}">${objSecundarioText}</p>
+                    <p class="text-xs text-gray-500 mt-1">${treino.local || treino.campo}</p>
+                    <p class="text-xs font-semibold mt-2">${treino.cargaText}</p>
+                `;
+
+                card.className = `timeline-card ${borderColorClass} ${bgColor} p-2 rounded-lg shadow-sm relative`;
                 card.innerHTML = `
-                    <div class="relative">
-                        <p class="text-xs font-bold text-gray-500 mb-1">${formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}</p>
-                        ${cardContent}
-                        <button onclick="window.removeTraining('${treino.id}', '${treino.type}')" class="absolute top-0 right-0 text-gray-400 hover:text-red-500 text-lg font-bold leading-none p-1">&times;</button>
-                    </div>
+                    <p class="text-xs font-bold text-gray-500 mb-1">${formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}</p>
+                    ${cardContent}
+                    <button onclick="window.removeTraining('${treino.id}', '${treino.type}')" class="absolute top-0 right-0 text-gray-400 hover:text-red-500 text-lg font-bold leading-none p-1">&times;</button>
                 `;
 
                 container.appendChild(card);
             });
         }
-        
+
         function renderWeeklyLoadCharts() {
             renderDailyLoadChart('chartCargaFisico', treinosFisicos);
             renderDailyLoadChart('chartCargaCampo', treinosCampo);
@@ -1471,7 +1567,7 @@
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
             const treinosDaSemana = treinos.filter(t => t.date && isDateInThisWeek(new Date(t.date + 'T00:00:00')));
-            const dailyMaxLoad = {}; 
+            const dailyMaxLoad = {}; // 0=Sun, 1=Mon, ..., 6=Sat
 
             treinosDaSemana.forEach(t => {
                 const dayOfWeek = new Date(t.date + 'T00:00:00').getDay();
@@ -1480,19 +1576,25 @@
                     dailyMaxLoad[dayOfWeek] = loadValue;
                 }
             });
-            
+
+            // Adjust for week starting on Monday for the chart
             const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
             const data = [
-                dailyMaxLoad[1] || 0, dailyMaxLoad[2] || 0, dailyMaxLoad[3] || 0,
-                dailyMaxLoad[4] || 0, dailyMaxLoad[5] || 0, dailyMaxLoad[6] || 0, dailyMaxLoad[0] || 0
+                dailyMaxLoad[1] || 0, // Mon
+                dailyMaxLoad[2] || 0, // Tue
+                dailyMaxLoad[3] || 0, // Wed
+                dailyMaxLoad[4] || 0, // Thu
+                dailyMaxLoad[5] || 0, // Fri
+                dailyMaxLoad[6] || 0, // Sat
+                dailyMaxLoad[0] || 0  // Sun
             ];
-            
+
             const backgroundColors = data.map(load => {
-                if (load === 100) return 'rgba(239, 68, 68, 0.7)';
-                if (load === 90) return 'rgba(249, 115, 22, 0.7)';
-                if (load === 70) return 'rgba(245, 158, 11, 0.7)';
-                if (load > 0) return 'rgba(59, 130, 246, 0.7)';
-                return '#e5e7eb';
+                if (load === 100) return 'rgba(239, 68, 68, 0.7)'; // Maxima
+                if (load === 90) return 'rgba(249, 115, 22, 0.7)'; // Alta
+                if (load === 70) return 'rgba(245, 158, 11, 0.7)'; // Moderada
+                if (load > 0) return 'rgba(59, 130, 246, 0.7)'; // Leve
+                return '#e5e7eb'; // No load
             });
 
             activeCharts[canvasId] = new Chart(ctx, {
@@ -1506,134 +1608,41 @@
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, min: 0, max: 100, title: { display: true, text: 'Carga (%)' } }, x: { grid: { display: false } } },
-                    plugins: { legend: { display: false }, datalabels: { display: false } }
-                }
-            });
-        }
-        
-        // --- DASHBOARD FUNCTIONS ---
-        function renderPlanningDashboards() {
-            renderDashboardFisico(treinosFisicos);
-            renderDashboardCampo(treinosCampo);
-        }
-
-        function renderDashboardFisico(treinos) {
-            document.getElementById('totalSessoesFisico').textContent = treinos.length;
-
-            const objPrincipalCounts = countOccurrences(treinos, 'objPrincipal');
-            const localCounts = countOccurrences(treinos, 'local');
-            const objSecundarioCounts = countOccurrencesInArray(treinos, 'objSecundario');
-            
-            renderPieChart('chartObjPrincipalFisico', 'Objetivos Principais (Físico)', objPrincipalCounts);
-            renderPieChart('chartLocalFisico', 'Local do Treino', localCounts);
-            renderBarChart('chartObjSecundarioFisico', 'Top Objetivos Secundários (Físico)', objSecundarioCounts, 'rgba(59, 130, 246, 0.7)');
-        }
-
-        function renderDashboardCampo(treinos) {
-            document.getElementById('totalSessoesCampo').textContent = treinos.length;
-
-            const objPrincipalCounts = countOccurrences(treinos, 'objPrincipal');
-            const objSecundarioCounts = countOccurrencesInArray(treinos, 'objSecundario');
-
-            renderPieChart('chartObjPrincipalCampo', 'Objetivos Principais (Campo)', objPrincipalCounts);
-            renderBarChart('chartObjSecundarioCampo', 'Top Objetivos Secundários (Campo)', objSecundarioCounts, 'rgba(34, 197, 94, 0.7)');
-        }
-        
-        function countOccurrences(data, key) {
-            return data.reduce((acc, item) => {
-                const value = item[key];
-                if (value) acc[value] = (acc[value] || 0) + 1;
-                return acc;
-            }, {});
-        }
-
-        function countOccurrencesInArray(data, key) {
-            return data.reduce((acc, item) => {
-                const array = item[key];
-                if (Array.isArray(array)) {
-                    array.forEach(value => acc[value] = (acc[value] || 0) + 1);
-                }
-                return acc;
-            }, {});
-        }
-        
-        function renderPieChart(canvasId, label, data) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const labels = Object.keys(data);
-            const values = Object.values(data);
-            const total = values.reduce((a, b) => a + b, 0);
-
-            if (total === 0) {
-                const context = ctx.getContext('2d');
-                context.clearRect(0, 0, ctx.width, ctx.height);
-                context.textAlign = 'center';
-                context.fillStyle = '#6b7280';
-                context.fillText("Sem dados para exibir.", ctx.width / 2, ctx.height / 2);
-                return;
-            }
-            
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels.map(l => `${l} (${((data[l]/total)*100).toFixed(0)}%)`),
-                    datasets: [{
-                        label: label, data: values,
-                        backgroundColor: ['rgba(59, 130, 246, 0.8)', 'rgba(245, 158, 11, 0.8)', 'rgba(34, 197, 94, 0.8)', 'rgba(239, 68, 68, 0.8)', 'rgba(139, 92, 246, 0.8)'],
-                        borderColor: '#f9fafb', borderWidth: 4
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { padding: 15 } }, title: { display: true, text: label, padding: { bottom: 20 } }, datalabels: { display: false } }
-                }
-            });
-        }
-        
-        function renderBarChart(canvasId, label, data, color) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-            
-            const sortedData = Object.entries(data).sort(([,a],[,b]) => b-a);
-            const labels = sortedData.map(item => item[0]);
-            const values = sortedData.map(item => item[1]);
-
-             if (values.length === 0) {
-                const context = ctx.getContext('2d');
-                context.clearRect(0, 0, ctx.width, ctx.height);
-                context.textAlign = 'center';
-                context.fillStyle = '#6b7280';
-                context.fillText("Sem dados para exibir.", ctx.width / 2, ctx.height / 2);
-                return;
-            }
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{ label: 'Contagem', data: values, backgroundColor: color || 'rgba(59, 130, 246, 0.7)' }]
-                },
-                options: {
-                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, title: { display: true, text: label, padding: { bottom: 20 } }, datalabels: { anchor: 'end', align: 'right', color: '#1f2937' } },
-                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            min: 0,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Carga (%)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        datalabels: {
+                           display: false
+                        }
+                    }
                 }
             });
         }
 
-        // --- GLOBAL UTILITIES ---
         window.removeTraining = async (id, type) => {
-            if (!confirm("Tem certeza que deseja remover este treino?")) return;
-            
             showToast(`Removendo treino...`, 'success');
             try {
-                const collectionRef = type === 'fisico' ? treinosFisicosCollection : treinosCampoCollection;
-                await deleteDoc(doc(db, collectionRef.path, id));
+                const collectionName = type === 'fisico' ? 'treinosFisicos' : 'treinosCampo';
+                await deleteDoc(doc(db, collectionName, id));
             } catch (error) {
                 console.error("Error removing training: ", error);
                 showToast("Erro ao remover o treino.");
@@ -1643,18 +1652,19 @@
         function isDateInThisWeek(date) {
             const today = new Date();
             today.setHours(0,0,0,0);
-            const dayOfWeek = today.getDay(); 
+            const dayOfWeek = today.getDay();
             const startOfWeek = new Date(today);
-            const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); 
+            const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
             startOfWeek.setDate(diff);
-            endOfWeek = new Date(startOfWeek);
+
+            const endOfWeek = new Date(startOfWeek);
             endOfWeek.setDate(startOfWeek.getDate() + 6);
             endOfWeek.setHours(23, 59, 59, 999);
-            
+
             return date >= startOfWeek && date <= endOfWeek;
         }
 
-        
+
         // --- CLASSIFICATION & LEGENDS ---
         const getHooperClassification = score => {
             if (score == null) return { class: 'text-gray-700', bg: 'bg-gray-100', border: 'border-gray-200' };
@@ -1675,10 +1685,10 @@
             return { class: 'text-red-600' };
         };
         const getCargaAgudaChartColor = load => {
-            if (load == null || load === 0) return '#cbd5e1'; 
-            if (load <= 300) return 'rgba(59, 130, 246, 0.7)';
-            if (load <= 600) return 'rgba(34, 197, 94, 0.7)';
-            return 'rgba(239, 68, 68, 0.7)';
+            if (load == null || load === 0) return '#cbd5e1'; // gray-400 for no load
+            if (load <= 300) return 'rgba(59, 130, 246, 0.7)'; // blue-500
+            if (load <= 600) return 'rgba(34, 197, 94, 0.7)'; // green-500
+            return 'rgba(239, 68, 68, 0.7)'; // red-500
         }
         const getStrainClassification = strain => {
             if (strain == null) return { class: 'text-gray-700' };
