@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento Integrado de Atletas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .details-section {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .details-section.open {
+            max-height: 1000px; /* Adjust as needed */
+        }
+        .tab-btn {
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        /* Custom styles for timeline */
+        .timeline-card {
+            border-left-width: 4px;
+        }
+        .carga-leve { border-color: #3b82f6; } /* Azul */
+        .carga-moderada { border-color: #f59e0b; } /* Amarelo */
+        .carga-alta { border-color: #f97316; } /* Laranja */
+        .carga-maxima { border-color: #ef4444; } /* Vermelho */
+        
+        /* Custom styling for multi-select */
+        select[multiple] {
+            height: 100px;
+            padding: 8px;
+        }
+         select[multiple] option {
+            padding: 4px;
+            border-radius: 4px;
+        }
+         select[multiple] option:checked {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl flex-grow">
+        <header class="text-center mb-8">
+            <div class="flex justify-center items-center gap-4">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Monitoramento Integrado de Atletas</h1>
+                <div id="authStatusContainer" class="bg-gray-100 p-2 rounded-lg text-sm">
+                    <span id="authStatus">Conectando...</span>
+                </div>
+            </div>
+            <p class="text-gray-600 mt-2 text-lg">Analise a prontidão, controle a carga e planeje os treinos da sua equipe.</p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="mb-8">
+            <div class="flex border-b border-gray-200">
+                <button id="tabProntidaoBtn" class="tab-btn active text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
+                    Análise de Prontidão
+                </button>
+                <button id="tabCargaBtn" class="tab-btn text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
+                    Controle de Carga
+                </button>
+                <button id="tabPlanejamentoBtn" class="tab-btn text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
+                    Planejamento
+                </button>
+            </div>
+        </div>
+
+        <!-- Content for Prontidão Tab -->
+        <div id="prontidaoContent">
+            <!-- Existing Prontidão Content -->
+             <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-3">1. Prepare seu arquivo de Prontidão</h2>
+                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo. A `hooper_score` é a principal.</p>
+                        <div class="bg-gray-100 p-4 rounded-lg text-sm text-gray-700 font-mono border">
+                            <p>atleta_id,data,qualidade_sono,niveis_stress,fadiga_geral,dor_muscular,<strong class="text-blue-600">hooper_score</strong>,salto_horizontal_cm,vfc_rmssd</p>
+                        </div>
+                         <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
+                            <li>A coluna `hooper_score` é a soma dos 4 indicadores de bem-estar.</li>
+                            <li>Para a análise, cada atleta deve ter pelo menos <strong>6 registros (linhas)</strong>.</li>
+                        </ul>
+                    </div>
+
+                    <div class="mt-6 md:mt-0">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-3">2. Importe o arquivo e analise</h2>
+                        <div class="flex flex-col items-center justify-center w-full">
+                             <label for="csvFileInput" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <svg class="w-10 h-10 mb-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                    <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Clique para carregar</span> ou arraste</p>
+                                    <p class="text-xs text-gray-500">Arquivo de Prontidão (.CSV)</p>
+                                </div>
+                                <input id="csvFileInput" type="file" class="hidden" accept=".csv" />
+                            </label>
+                            <p id="fileName" class="mt-2 text-sm text-gray-500"></p>
+                        </div>
+                        <button id="processBtn" class="btn mt-4 w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center text-lg" disabled>
+                            <span id="btnText">Processar Prontidão</span>
+                            <div id="btnLoader" class="loader hidden ml-3"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="resultsSection" class="mt-10 hidden">
+                <div id="pdf-content-prontidao">
+                    <div id="teamDashboard" class="mb-8"></div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Resultados Individuais de Prontidão</h2>
+                         <div class="flex gap-x-2">
+                            <button id="exportPdfBtn" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
+                                Exportar PDF
+                            </button>
+                            <button id="clearBtn" class="btn bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">Limpar Análise</button>
+                        </div>
+                    </div>
+                    <div id="resultsContainer" class="bg-white rounded-lg shadow-md border overflow-hidden"></div>
+                    <div id="legendsProntidao" class="mt-6 text-xs text-gray-500 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+            </div>
+            <div id="placeholderSectionProntidao" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <h3 class="mt-4 text-xl font-semibold text-gray-800">Aguardando dados de Prontidão</h3>
+                <p class="mt-1 text-gray-500">Importe um arquivo para ver o relatório de prontidão da sua equipe.</p>
+            </div>
+        </div>
+
+        <!-- Content for Carga de Treino Tab -->
+        <div id="cargaContent" class="hidden">
+           <!-- Existing Carga Content -->
+           <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-3">1. Prepare seu arquivo de Carga</h2>
+                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo, incluindo o `microciclo_id`.</p>
+                        <div class="bg-gray-100 p-4 rounded-lg text-sm text-gray-700 font-mono border">
+                            <p>atleta_id,data,<strong class="text-blue-600">microciclo_id</strong>,pse_sessao,duracao_sessao_min</p>
+                        </div>
+                        <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
+                            <li>O `microciclo_id` deve ser consistente (ex: "M1", "M2", "Semana 1").</li>
+                            <li>Para o cálculo do AWCR, forneça dados de pelo menos <strong>5 microciclos</strong>.</li>
+                        </ul>
+                    </div>
+
+                    <div class="mt-6 md:mt-0">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-3">2. Importe o arquivo e analise</h2>
+                         <div class="flex flex-col items-center justify-center w-full">
+                             <label for="csvFileInputCarga" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <svg class="w-10 h-10 mb-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                    <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Clique para carregar</span> ou arraste</p>
+                                    <p class="text-xs text-gray-500">Arquivo de Carga (.CSV)</p>
+                                </div>
+                                <input id="csvFileInputCarga" type="file" class="hidden" accept=".csv" />
+                            </label>
+                            <p id="fileNameCarga" class="mt-2 text-sm text-gray-500"></p>
+                        </div>
+                        <button id="processBtnCarga" class="btn mt-4 w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center text-lg" disabled>
+                            <span id="btnTextCarga">Processar Carga</span>
+                            <div id="btnLoaderCarga" class="loader hidden ml-3"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="resultsSectionCarga" class="mt-10 hidden">
+                 <div id="pdf-content-carga">
+                    <div id="filterContainer" class="mb-6"></div>
+                    <div id="teamDashboardCarga" class="mb-8"></div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Resultados Individuais de Carga</h2>
+                         <div class="flex gap-x-2">
+                            <button id="exportPdfBtnCarga" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
+                                Exportar PDF
+                            </button>
+                            <button id="clearBtnCarga" class="btn bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">Limpar Análise</button>
+                        </div>
+                    </div>
+                    <div id="resultsContainerCarga" class="bg-white rounded-lg shadow-md border overflow-hidden"></div>
+                    <div id="legendsCarga" class="mt-6 text-xs text-gray-500 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+                </div>
+            </div>
+             <div id="placeholderSectionCarga" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <h3 class="mt-4 text-xl font-semibold text-gray-800">Aguardando dados de Carga</h3>
+                <p class="mt-1 text-gray-500">Importe um arquivo para ver o relatório de carga de treino da sua equipe.</p>
+            </div>
+        </div>
+
+        <!-- NEW Content for Planejamento Tab -->
+        <div id="planejamentoContent" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Forms Section -->
+                <div class="lg:col-span-1 space-y-8">
+                    <!-- Physical Training Form -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino Físico</h3>
+                        <form id="formTreinoFisico" class="space-y-4">
+                            <div>
+                                <label for="dataTreinoFisico" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
+                                <input type="date" id="dataTreinoFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                            </div>
+                            <div>
+                                <label for="objPrincipalFisico" class="block text-sm font-medium text-gray-700 mb-1">Objetivo Principal</label>
+                                <select id="objPrincipalFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option>Neuromuscular</option>
+                                    <option>Funcional</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label for="objSecundarioFisico" class="block text-sm font-medium text-gray-700 mb-1">Objetivo Secundário (segure Ctrl/Cmd para selecionar vários)</label>
+                                <select id="objSecundarioFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" multiple>
+                                    <option>Força Geral</option><option>Força Máxima</option><option>Força Explosiva</option><option>Força Especial</option><option>Velocidade</option><option>Agilidade</option><option>Resistência Aeróbia</option><option>Resistência Anaeróbia</option><option>Mobilidade</option><option>Flexibilidade</option><option>Físico-Técnico</option><option>Recreativo</option><option>Jogo Treino</option><option>Jogo Oficial</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="localTreinoFisico" class="block text-sm font-medium text-gray-700 mb-1">Local</label>
+                                <select id="localTreinoFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option>Campo</option>
+                                    <option>Academia</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="cargaTreinoFisico" class="block text-sm font-medium text-gray-700 mb-1">Carga</label>
+                                <select id="cargaTreinoFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="leve">Leve (0-40%)</option>
+                                    <option value="moderada">Moderada (40-70%)</option>
+                                    <option value="alta">Alta (70-90%)</option>
+                                    <option value="maxima">Máxima (90-100%)</option>
+                                </select>
+                            </div>
+                            <button type="submit" id="submitTreinoFisico" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300" disabled>Adicionar Treino Físico</button>
+                        </form>
+                    </div>
+                    <!-- Field Training Form -->
+                     <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino de Campo</h3>
+                        <form id="formTreinoCampo" class="space-y-4">
+                           <div>
+                                <label for="dataTreinoCampo" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
+                                <input type="date" id="dataTreinoCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                            </div>
+                            <div>
+                                <label for="objPrincipalCampo" class="block text-sm font-medium text-gray-700 mb-1">Objetivo Principal</label>
+                                <select id="objPrincipalCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option>Técnico</option>
+                                    <option>Tático</option>
+                                    <option>Jogadas Ensaiadas</option>
+                                    <option>Recreativo</option>
+                                    <option>Jogo Treino</option>
+                                    <option>Jogo Oficial</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label for="objSecundarioCampo" class="block text-sm font-medium text-gray-700 mb-1">Objetivo Secundário (segure Ctrl/Cmd para selecionar vários)</label>
+                                <select id="objSecundarioCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" multiple>
+                                    <option>Fundamentos</option><option>Cruzamentos</option><option>Finalização</option><option>Posse de Bola</option><option>Posicionamento</option><option>Pressão</option><option>Apoio</option><option>Sistema Defensivo</option><option>Sistema Ofensivo</option><option>Jogo</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label for="campoTreinoCampo" class="block text-sm font-medium text-gray-700 mb-1">Campo</label>
+                                <select id="campoTreinoCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option>Campo Inteiro</option>
+                                    <option>Meio-campo</option>
+                                    <option>Espaços Reduzidos</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="cargaTreinoCampo" class="block text-sm font-medium text-gray-700 mb-1">Carga</label>
+                                <select id="cargaTreinoCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="leve">Leve (0-40%)</option>
+                                    <option value="moderada">Moderada (40-70%)</option>
+                                    <option value="alta">Alta (70-90%)</option>
+                                    <option value="maxima">Máxima (90-100%)</option>
+                                </select>
+                            </div>
+                             <button type="submit" id="submitTreinoCampo" class="w-full bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition duration-300" disabled>Adicionar Treino de Campo</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Timelines Section -->
+                <div class="lg:col-span-2 space-y-8" id="pdf-content-planejamento">
+                    <!-- Physical Training Timeline -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                             <h3 class="text-2xl font-bold text-gray-900">Treinos Físicos da Semana</h3>
+                             <button id="exportPdfBtnPlanejamento" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
+                                Exportar PDF
+                            </button>
+                        </div>
+                        <div id="timelineFisico" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]">
+                           <!-- Cards will be injected here -->
+                        </div>
+                        <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64">
+                             <canvas id="chartCargaFisico"></canvas>
+                        </div>
+                    </div>
+                     <!-- Field Training Timeline -->
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Treinos de Campo da Semana</h3>
+                        <div id="timelineCampo" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]">
+                           <!-- Cards will be injected here -->
+                        </div>
+                         <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64">
+                             <canvas id="chartCargaCampo"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+    <footer class="text-center py-4 text-xs text-gray-400">
+        Powered by Ciente - Inteligência Esportiva
+    </footer>
+
+    <div id="toast" class="fixed bottom-5 right-5 bg-red-500 text-white py-3 px-6 rounded-lg shadow-xl opacity-0 transition-opacity duration-300 transform translate-y-10"></div>
+
+    <script type="module">
+        // --- Firebase v9+ modular imports ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+
+
+        // --- FIREBASE SETUP ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBc8XiZIR3x98T8HX9maUZRBrIUWMTIgZs",
+            authDomain: "inteligenciaesportiva-4aa30.firebaseapp.com",
+            projectId: "inteligenciaesportiva-4aa30",
+            storageBucket: "inteligenciaesportiva-4aa30.appspot.com",
+            messagingSenderId: "591560841073",
+            appId: "1:591560841073:web:43fabba5650a9afeee88d0"
+        };
+        
+        // Initialize Firebase and services
+        let db, auth;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        } catch (e) {
+            console.error("Firebase initialization failed. Please check your firebaseConfig.", e);
+            showToast("Erro na configuração do Firebase. Verifique o console.");
+        }
+
+        // Firebase Collection References
+        const treinosFisicosCollection = collection(db, 'treinosFisicos');
+        const treinosCampoCollection = collection(db, 'treinosCampo');
+
+        // --- CONSTANTS AND GLOBAL STATE ---
+        const METRIC_NAMES = {
+            qualidade_sono: 'Qualidade do Sono',
+            niveis_stress: 'Níveis de Stress',
+            fadiga_geral: 'Fadiga Geral',
+            dor_muscular: 'Dor Muscular',
+            hooper_score: 'Pontuação Hooper',
+            salto_horizontal_cm: 'Salto Horizontal',
+            vfc_rmssd: 'VFC (RMSSD)'
+        };
+        const CARGA_PERCENTUAL = {
+            leve: 40,
+            moderada: 70,
+            alta: 90,
+            maxima: 100
+        };
+        let activeCharts = {}; 
+        let athleteMicrocycleData = {}; 
+        let treinosFisicos = [];
+        let treinosCampo = [];
+        let currentUser = null;
+
+        // --- DOM ELEMENTS ---
+        const authStatus = document.getElementById('authStatus');
+        const submitTreinoFisicoBtn = document.getElementById('submitTreinoFisico');
+        const submitTreinoCampoBtn = document.getElementById('submitTreinoCampo');
+        const tabProntidaoBtn = document.getElementById('tabProntidaoBtn');
+        const tabCargaBtn = document.getElementById('tabCargaBtn');
+        const tabPlanejamentoBtn = document.getElementById('tabPlanejamentoBtn');
+        const prontidaoContent = document.getElementById('prontidaoContent');
+        const cargaContent = document.getElementById('cargaContent');
+        const planejamentoContent = document.getElementById('planejamentoContent');
+        const csvFileInput = document.getElementById('csvFileInput');
+        const fileNameEl = document.getElementById('fileName');
+        const processBtn = document.getElementById('processBtn');
+        const btnText = document.getElementById('btnText');
+        const btnLoader = document.getElementById('btnLoader');
+        const resultsSection = document.getElementById('resultsSection');
+        const placeholderSectionProntidao = document.getElementById('placeholderSectionProntidao');
+        const teamDashboard = document.getElementById('teamDashboard');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const clearBtn = document.getElementById('clearBtn');
+        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        const legendsProntidao = document.getElementById('legendsProntidao');
+        const csvFileInputCarga = document.getElementById('csvFileInputCarga');
+        const fileNameCargaEl = document.getElementById('fileNameCarga');
+        const processBtnCarga = document.getElementById('processBtnCarga');
+        const btnTextCarga = document.getElementById('btnTextCarga');
+        const btnLoaderCarga = document.getElementById('btnLoaderCarga');
+        const resultsSectionCarga = document.getElementById('resultsSectionCarga');
+        const placeholderSectionCarga = document.getElementById('placeholderSectionCarga');
+        const filterContainer = document.getElementById('filterContainer');
+        const teamDashboardCarga = document.getElementById('teamDashboardCarga');
+        const resultsContainerCarga = document.getElementById('resultsContainerCarga');
+        const clearBtnCarga = document.getElementById('clearBtnCarga');
+        const exportPdfBtnCarga = document.getElementById('exportPdfBtnCarga');
+        const legendsCarga = document.getElementById('legendsCarga');
+        const toast = document.getElementById('toast');
+        // Planejamento DOM Elements
+        const formTreinoFisico = document.getElementById('formTreinoFisico');
+        const formTreinoCampo = document.getElementById('formTreinoCampo');
+        const timelineFisico = document.getElementById('timelineFisico');
+        const timelineCampo = document.getElementById('timelineCampo');
+        const exportPdfBtnPlanejamento = document.getElementById('exportPdfBtnPlanejamento');
+
+        // --- SETUP ---
+        Chart.register(ChartDataLabels);
+        Chart.defaults.set('plugins.datalabels', {
+            color: '#333',
+            font: {
+                weight: 'bold'
+            },
+            formatter: (value) => value ? Math.round(value * 100) / 100 : null
+        });
+
+
+        // --- AUTHENTICATION ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in.
+                currentUser = user;
+                authStatus.textContent = 'Conectado';
+                authStatus.classList.add('text-green-600', 'font-semibold');
+                authStatus.classList.remove('text-red-600');
+                submitTreinoFisicoBtn.disabled = false;
+                submitTreinoCampoBtn.disabled = false;
+                
+                // Start listening to data only after user is authenticated
+                listenToTrainings();
+
+            } else {
+                // User is signed out.
+                currentUser = null;
+                authStatus.textContent = 'Offline';
+                authStatus.classList.add('text-red-600', 'font-semibold');
+                authStatus.classList.remove('text-green-600');
+                submitTreinoFisicoBtn.disabled = true;
+                submitTreinoCampoBtn.disabled = true;
+                showToast("Você está desconectado. Os dados não serão salvos ou carregados.");
+            }
+        });
+
+        // Sign in anonymously on load
+        signInAnonymously(auth).catch((error) => {
+            console.error("Anonymous sign-in failed", error);
+            showToast("Falha na autenticação. Os dados não serão salvos.");
+        });
+
+        // --- FIREBASE DATA LISTENERS ---
+        function listenToTrainings() {
+             // Listener for Physical Trainings
+            const qFisico = query(treinosFisicosCollection, orderBy("date", "asc"));
+            onSnapshot(qFisico, (snapshot) => {
+                treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                renderTimelines();
+            }, (error) => {
+                console.error("Error listening to physical trainings:", error);
+                showToast("Erro ao carregar treinos físicos.");
+            });
+
+            // Listener for Field Trainings
+            const qCampo = query(treinosCampoCollection, orderBy("date", "asc"));
+            onSnapshot(qCampo, (snapshot) => {
+                treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                renderTimelines();
+            }, (error) => {
+                console.error("Error listening to field trainings:", error);
+                showToast("Erro ao carregar treinos de campo.");
+            });
+        }
+
+
+        // --- EVENT LISTENERS ---
+        tabProntidaoBtn.addEventListener('click', () => switchTab('prontidao'));
+        tabCargaBtn.addEventListener('click', () => switchTab('carga'));
+        tabPlanejamentoBtn.addEventListener('click', () => switchTab('planejamento'));
+        csvFileInput.addEventListener('change', () => handleFileSelect(csvFileInput, fileNameEl, processBtn));
+        processBtn.addEventListener('click', handleFileProcessing);
+        clearBtn.addEventListener('click', resetView);
+        exportPdfBtn.addEventListener('click', () => exportToPDF('prontidao'));
+        resultsContainer.addEventListener('click', (e) => toggleDetails(e, 'prontidao'));
+        csvFileInputCarga.addEventListener('change', () => handleFileSelect(csvFileInputCarga, fileNameCargaEl, processBtnCarga));
+        processBtnCarga.addEventListener('click', handleFileProcessingCarga);
+        clearBtnCarga.addEventListener('click', resetViewCarga);
+        exportPdfBtnCarga.addEventListener('click', () => exportToPDF('carga'));
+        resultsContainerCarga.addEventListener('click', (e) => toggleDetails(e, 'carga'));
+        filterContainer.addEventListener('change', (e) => {
+            if (e.target.classList.contains('microciclo-checkbox')) {
+                const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
+                const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+                if (selectedIds.length > 0) {
+                    displayFilteredLoadData(selectedIds);
+                } else {
+                    teamDashboardCarga.innerHTML = '';
+                    resultsContainerCarga.innerHTML = '';
+                }
+            }
+        });
+        // Planejamento Listeners
+        formTreinoFisico.addEventListener('submit', handleFormFisicoSubmit);
+        formTreinoCampo.addEventListener('submit', handleFormCampoSubmit);
+        exportPdfBtnPlanejamento.addEventListener('click', () => exportToPDF('planejamento'));
+
+
+        // --- INITIALIZATION ---
+        // Set default date for planning forms
+        document.getElementById('dataTreinoFisico').valueAsDate = new Date();
+        document.getElementById('dataTreinoCampo').valueAsDate = new Date();
+        renderTimelines(); // Initial render while data loads
+
+
+        // --- GENERAL FUNCTIONS ---
+        function showToast(message, type = 'error') {
+            toast.textContent = message;
+            toast.className = `fixed bottom-5 right-5 text-white py-3 px-6 rounded-lg shadow-xl opacity-0 transition-opacity duration-300 transform translate-y-10 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+            toast.classList.remove('opacity-0', 'translate-y-10');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-10');
+            }, 5000);
+        }
+        
+        function getStats(data) {
+            const filteredData = data.filter(d => typeof d === 'number' && !isNaN(d));
+            if (filteredData.length === 0) return { mean: 0, stdDev: 0, sum: 0, count: 0 };
+            const sum = filteredData.reduce((a, b) => a + b, 0);
+            const mean = sum / filteredData.length;
+            const stdDev = Math.sqrt(filteredData.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / (filteredData.length > 1 ? filteredData.length - 1 : 1));
+            return { mean, stdDev, sum, count: filteredData.length };
+        }
+        
+        function toggleDetails(event, type) {
+            const button = event.target.closest('.toggle-details-btn');
+            if (!button) return;
+            const targetId = button.dataset.target;
+            const detailsSection = document.getElementById(targetId);
+            if (!detailsSection) return;
+
+            const isOpen = detailsSection.classList.toggle('open');
+            button.querySelector('.arrow-icon').classList.toggle('rotate-180');
+            if (isOpen && type === 'carga' && button.dataset.chartdata) {
+                 const athleteId = button.dataset.athlete;
+                 const canvasId = `chart-${athleteId}`;
+                 if (!activeCharts[canvasId]) {
+                     const data = JSON.parse(button.dataset.chartdata);
+                     renderAthleteChart(canvasId, data, 'Carga de Treino Diária (u.a.)');
+                 }
+            }
+        }
+        
+        async function exportToPDF(type) {
+            const contentId = type === 'prontidao' ? 'pdf-content-prontidao' 
+                            : type === 'carga' ? 'pdf-content-carga' 
+                            : 'pdf-content-planejamento';
+                            
+            const pdfButton = type === 'prontidao' ? exportPdfBtn 
+                            : type === 'carga' ? exportPdfBtnCarga 
+                            : exportPdfBtnPlanejamento;
+                            
+            const fileName = type === 'prontidao' ? 'relatorio_prontidao.pdf' 
+                           : type === 'carga' ? 'relatorio_carga.pdf'
+                           : 'relatorio_planejamento.pdf';
+
+            const originalText = pdfButton.innerHTML;
+            pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
+            pdfButton.disabled = true;
+            
+            if (type !== 'planejamento') {
+                document.querySelectorAll(`#${contentId} .details-section`).forEach(el => el.classList.add('open'));
+                document.querySelectorAll(`#${contentId} .toggle-details-btn`).forEach(button => {
+                    if (button.dataset.chartdata) {
+                        const athleteId = button.dataset.athlete;
+                        const canvasId = `chart-${athleteId}`;
+                        if (!activeCharts[canvasId]) {
+                            const data = JSON.parse(button.dataset.chartdata);
+                            renderAthleteChart(canvasId, data, 'Carga de Treino Diária (u.a.)');
+                        }
+                    }
+                });
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 500)); 
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const contentToPrint = document.getElementById(contentId);
+            
+            try {
+                const canvas = await html2canvas(contentToPrint, { scale: 2, useCORS: true, backgroundColor: '#f9fafb' });
+                const imgData = canvas.toDataURL('image/jpeg', 0.9); 
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const imgProps = pdf.getImageProperties(imgData);
+                const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+                heightLeft -= pdfHeight;
+
+                while (heightLeft > 0) {
+                    position -= pdfHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+                    heightLeft -= pdfHeight;
+                }
+                pdf.save(fileName);
+            } catch (error) {
+                console.error("Erro ao gerar PDF:", error);
+                showToast("Falha ao gerar o PDF.");
+            } finally {
+                pdfButton.innerHTML = originalText;
+                pdfButton.disabled = false;
+                if (type !== 'planejamento') {
+                    document.querySelectorAll(`#${contentId} .details-section`).forEach(el => el.classList.remove('open'));
+                }
+            }
+        }
+
+        function switchTab(tab) {
+            prontidaoContent.classList.toggle('hidden', tab !== 'prontidao');
+            cargaContent.classList.toggle('hidden', tab !== 'carga');
+            planejamentoContent.classList.toggle('hidden', tab !== 'planejamento');
+
+            tabProntidaoBtn.classList.toggle('active', tab === 'prontidao');
+            tabCargaBtn.classList.toggle('active', tab === 'carga');
+            tabPlanejamentoBtn.classList.toggle('active', tab === 'planejamento');
+        }
+
+        function handleFileSelect(fileInput, fileNameEl, processBtn) {
+             if (fileInput.files.length > 0) {
+                fileNameEl.textContent = fileInput.files[0].name;
+                processBtn.disabled = false;
+            } else {
+                fileNameEl.textContent = '';
+                processBtn.disabled = true;
+            }
+        }
+
+        function parseCSV(text, requiredHeaders) {
+            const lines = text.trim().replace(/\r/g, '').split('\n');
+            if (lines.length < 2) throw new Error("O arquivo CSV está vazio ou contém apenas o cabeçalho.");
+            
+            const firstLine = lines[0];
+            const separator = firstLine.includes(';') ? ';' : ',';
+            const headers = firstLine.split(separator).map(h => h.trim().toLowerCase());
+            
+            if (!requiredHeaders.every(h => headers.includes(h))) {
+                throw new Error(`Cabeçalho inválido. Verifique se as colunas: ${requiredHeaders.join(', ')} existem.`);
+            }
+
+            return lines.slice(1).map((line, i) => {
+                if (line.trim() === '') return null;
+                const values = line.split(separator);
+                const entry = {};
+                headers.forEach((header, index) => {
+                    const value = values[index] ? values[index].trim() : null;
+                    if (['atleta_id', 'data', 'microciclo_id'].includes(header)) {
+                        entry[header] = value;
+                    } else {
+                        const sanitizedValue = value ? value.replace(',', '.') : null;
+                        entry[header] = sanitizedValue && !isNaN(parseFloat(sanitizedValue)) ? parseFloat(sanitizedValue) : null;
+                    }
+                });
+                if (!entry.atleta_id || !entry.data || (requiredHeaders.includes('microciclo_id') && !entry.microciclo_id)) {
+                    console.warn(`Linha ${i + 2} ignorada por falta de dados essenciais.`);
+                    return null;
+                };
+                return entry;
+            }).filter(Boolean);
+        }
+        
+        // --- PRONTIDÃO FUNCTIONS --- (No changes, logic is local from CSV)
+        function toggleLoading(isLoading, type = 'prontidao') {
+            const textEl = type === 'prontidao' ? btnText : btnTextCarga;
+            const loaderEl = type === 'prontidao' ? btnLoader : btnLoaderCarga;
+            const buttonEl = type === 'prontidao' ? processBtn : processBtnCarga;
+            textEl.classList.toggle('hidden', isLoading);
+            loaderEl.classList.toggle('hidden', !isLoading);
+            buttonEl.disabled = isLoading;
+        }
+
+        function resetView() {
+            csvFileInput.value = '';
+            fileNameEl.textContent = '';
+            processBtn.disabled = true;
+            resultsSection.classList.add('hidden');
+            placeholderSectionProntidao.classList.remove('hidden');
+            resultsContainer.innerHTML = '';
+            teamDashboard.innerHTML = '';
+            activeCharts = {};
+        }
+
+        function handleFileProcessing() {
+            const file = csvFileInput.files[0];
+            if (!file) return showToast("Por favor, selecione um arquivo de prontidão.");
+            toggleLoading(true, 'prontidao');
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const csvText = event.target.result;
+                    const required = ['atleta_id', 'data', 'hooper_score'];
+                    const parsedData = parseCSV(csvText, required);
+                    const { individualResults, teamStats, latestDate } = analyzeProntidaoData(parsedData);
+                    renderProntidaoResults(individualResults, teamStats, latestDate);
+                } catch (error) {
+                     console.error("Error during prontidao analysis:", error);
+                     showToast(`Erro: ${error.message}`);
+                } finally {
+                    toggleLoading(false, 'prontidao');
+                }
+            };
+            reader.onerror = () => {
+                showToast("Erro ao ler o arquivo.");
+                toggleLoading(false, 'prontidao');
+            };
+            reader.readAsText(file);
+        }
+
+        function analyzeProntidaoData(data) {
+            const MIN_RECORDS = 6;
+            const athletesData = data.reduce((acc, row) => {
+                if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
+                acc[row.atleta_id].push(row);
+                return acc;
+            }, {});
+
+            let latestDate = null;
+            const individualResults = Object.keys(athletesData).map(athleteId => {
+                const allEntries = athletesData[athleteId].sort((a, b) => new Date(b.data) - new Date(a.data));
+                
+                if (allEntries.length < MIN_RECORDS) {
+                    return { athleteId, status: 'collecting', message: `Dados insuficientes. São necessários ${MIN_RECORDS} registros e o arquivo forneceu ${allEntries.length}.` };
+                }
+
+                if (allEntries[0].data && (!latestDate || new Date(allEntries[0].data) > new Date(latestDate))) {
+                    latestDate = allEntries[0].data;
+                }
+
+                return calculateAthleteReadiness(athleteId, allEntries);
+            }).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
+            
+            const readyAthletes = individualResults.filter(r => r.status === 'ready');
+            const teamStats = {
+                averageIndex: getStats(readyAthletes.map(r => parseFloat(r.index))).mean,
+                averageHooper: getStats(readyAthletes.map(r => r.hooperScore.latest)).mean,
+                averageSaltoDiff: getStats(readyAthletes.map(r => r.saltoPercentDiff)).mean,
+                zoneCounts: individualResults.reduce((acc, r) => {
+                    acc[r.zone || 'collecting'] = (acc[r.zone || 'collecting'] || 0) + 1;
+                    return acc;
+                }, { green: 0, yellow: 0, red: 0, collecting: 0 })
+            };
+            return { individualResults, teamStats, latestDate };
+        }
+
+        function calculateAthleteReadiness(athleteId, allEntries) {
+            const latestEntry = allEntries[0];
+            const historicalEntries = allEntries.slice(1);
+
+            const getZScore = (key) => {
+                const value = latestEntry[key];
+                const dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null);
+                if (value == null || dataPoints.length < 5) return null;
+                const { mean, stdDev } = getStats(dataPoints);
+                return stdDev === 0 ? 0 : (value - mean) / stdDev;
+            };
+            
+            const cap = (val) => Math.max(-2.5, Math.min(2.5, val));
+            const performanceScores = [getZScore('salto_horizontal_cm'), getZScore('vfc_rmssd')].filter(s => s != null);
+            const performancePillar = performanceScores.length > 0 ? cap(getStats(performanceScores).mean) : 0;
+            
+            let hooperAdjustment = 0;
+            if (latestEntry.hooper_score != null) {
+                if (latestEntry.hooper_score <= 9) hooperAdjustment = 0.25;
+                else if (latestEntry.hooper_score <= 17) hooperAdjustment = -0.25;
+                else hooperAdjustment = -0.50;
+            }
+            
+            const readinessIndex = performancePillar + hooperAdjustment;
+            let zone;
+            if (readinessIndex < -1.5) zone = 'red';
+            else if (readinessIndex < -0.5) zone = 'yellow';
+            else zone = 'green';
+            
+            const metricsDetail = Object.keys(METRIC_NAMES).reduce((acc, key) => {
+                const dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null);
+                acc[key] = { latest: latestEntry[key], mean: getStats(dataPoints).mean };
+                return acc;
+            }, {});
+
+            const saltoMean = metricsDetail.salto_horizontal_cm?.mean || 0;
+            const saltoDiff = (latestEntry.salto_horizontal_cm && saltoMean) ? ((latestEntry.salto_horizontal_cm - saltoMean) / saltoMean) * 100 : null;
+
+            return { athleteId, status: 'ready', index: readinessIndex.toFixed(2), zone, metricsDetail, hooperScore: { latest: latestEntry.hooper_score }, saltoPercentDiff: saltoDiff, latestDate: latestEntry.data };
+        }
+
+        function renderProntidaoResults(individualResults, teamStats, latestDate) {
+            placeholderSectionProntidao.classList.add('hidden');
+            resultsSection.classList.remove('hidden');
+            renderTeamDashboardProntidao(teamStats, latestDate);
+            resultsContainer.innerHTML = `
+                <div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0">
+                    <div class="w-1/3">Atleta</div>
+                    <div class="w-1/6 text-center">Índice Geral</div>
+                    <div class="w-1/6 text-center">Zona</div>
+                    <div class="w-1/6 text-center">Fadiga (Hooper)</div>
+                    <div class="w-1/6 text-center">Recup. Muscular (%)</div>
+                    <div class="w-12"></div>
+                </div>
+                <div>${individualResults.map(createProntidaoResultRow).join('')}</div>`;
+            renderLegends('prontidao');
+        }
+        
+        function renderTeamDashboardProntidao(stats, latestDate) {
+            const { green, yellow, red } = stats.zoneCounts;
+            const hooperTeamClass = getHooperClassification(stats.averageHooper);
+            const indexTeamClass = getIndexClassification(stats.averageIndex);
+            const saltoTeamClass = stats.averageSaltoDiff >= 0 ? 'text-green-600' : 'text-red-600';
+            const formattedDate = latestDate ? new Date(latestDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
+            teamDashboard.innerHTML = `
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Painel da Equipe <span class="text-base font-normal text-gray-500">(Dados de: ${formattedDate})</span></h2>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+                        <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Índice Geral Médio</p><p class="text-5xl font-bold ${indexTeamClass.class}">${stats.averageIndex ? stats.averageIndex.toFixed(2) : '--'}</p></div>
+                        <div class="flex flex-col items-center justify-center p-4 rounded-lg border ${hooperTeamClass.border} ${hooperTeamClass.bg} min-h-[140px]"><p class="text-sm font-medium ${hooperTeamClass.class}">Média de Fadiga (Hooper)</p><p class="text-5xl font-bold ${hooperTeamClass.class}">${stats.averageHooper ? stats.averageHooper.toFixed(1) : '--'}</p></div>
+                        <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Recup. Muscular Média</p><p class="text-5xl font-bold ${saltoTeamClass}">${stats.averageSaltoDiff ? `${stats.averageSaltoDiff >= 0 ? '+' : ''}${stats.averageSaltoDiff.toFixed(1)}%` : '--'}</p></div>
+                        <div class="p-4 bg-gray-50 rounded-lg h-full flex flex-col min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2 text-center">Distribuição dos Atletas</p><div class="flex-grow flex items-center justify-around w-full"><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">${green}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-lg">${yellow}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-lg">${red}</div></div></div></div>
+                    </div>
+                </div>`;
+        }
+        
+        function createProntidaoResultRow(result) {
+            if (result.status === 'collecting') {
+                return `<div class="flex items-center p-4 border-b last:border-b-0"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}</div><div class="w-2/3 text-gray-500 text-sm">${result.message}</div></div>`;
+            }
+            let zoneClass, recommendation, statusText;
+            if (result.zone === 'green') { zoneClass = 'text-green-600'; statusText = 'Zona Ótima'; recommendation = "Atleta em bom estado. Treinar conforme o plano."; }
+            else if (result.zone === 'yellow') { zoneClass = 'text-yellow-600'; statusText = 'Zona de Atenção'; recommendation = "Sinais de alerta. A carga deve ser ajustada."; }
+            else { zoneClass = 'text-red-600'; statusText = 'Zona Crítica'; recommendation = "Risco Elevado. Priorizar recuperação ativa."; }
+            
+            const hooperClass = getHooperClassification(result.hooperScore.latest);
+            const saltoClass = result.saltoPercentDiff == null ? 'text-gray-500' : (result.saltoPercentDiff >= 0 ? 'text-green-600' : 'text-red-600');
+            const detailsHtml = Object.entries(result.metricsDetail).map(([key, data]) => {
+                if (!METRIC_NAMES[key] || data.latest == null) return '';
+                return `<li class="flex justify-between items-center text-sm py-1 border-b"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${data.latest} <span class="text-xs text-gray-500 font-normal">(Média: ${data.mean.toFixed(1)})</span></span></li>`;
+            }).join('');
+            
+            return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div><div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div><div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div><div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${result.hooperScore.latest}</span></div><div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-prontidao-${result.athleteId}"><svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-prontidao-${result.athleteId}"><div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="font-semibold text-sm mb-2">Detalhes:</h4><ul class="space-y-1">${detailsHtml}</ul></div><div class="bg-blue-50 border p-3 rounded-lg self-start"><h4 class="font-semibold text-sm mb-1">Sugestão:</h4><p class="text-sm">${recommendation}</p></div></div></div></div>`;
+        }
+
+        // --- CARGA DE TREINO FUNCTIONS --- (No changes, logic is local from CSV)
+        function resetViewCarga() {
+            csvFileInputCarga.value = '';
+            fileNameCargaEl.textContent = '';
+            processBtnCarga.disabled = true;
+            resultsSectionCarga.classList.add('hidden');
+            placeholderSectionCarga.classList.remove('hidden');
+            filterContainer.innerHTML = '';
+            teamDashboardCarga.innerHTML = '';
+            resultsContainerCarga.innerHTML = '';
+            activeCharts = {};
+            athleteMicrocycleData = {};
+        }
+        
+        function handleFileProcessingCarga() {
+            const file = csvFileInputCarga.files[0];
+            if (!file) return showToast("Por favor, selecione um arquivo de carga.");
+            toggleLoading(true, 'carga');
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const required = ['atleta_id', 'data', 'microciclo_id', 'pse_sessao', 'duracao_sessao_min'];
+                    const fullLoadData = parseCSV(event.target.result, required);
+                    if (fullLoadData.length === 0) throw new Error("Nenhum dado válido encontrado no arquivo.");
+                    
+                    processAndRenderLoadData(fullLoadData);
+                } catch (error) {
+                     console.error("Error during carga analysis:", error);
+                     showToast(`Erro na análise: ${error.message}`);
+                     resetViewCarga();
+                } finally {
+                    toggleLoading(false, 'carga');
+                }
+            };
+            reader.onerror = () => {
+                showToast("Erro ao ler o arquivo.");
+                toggleLoading(false, 'carga');
+            };
+            reader.readAsText(file);
+        }
+
+        function processAndRenderLoadData(data) {
+            const dataByAthlete = data.reduce((acc, row) => {
+                if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
+                acc[row.atleta_id].push(row);
+                return acc;
+            }, {});
+
+            let allMicrocycles = new Set();
+            athleteMicrocycleData = {};
+
+            for (const athleteId in dataByAthlete) {
+                const microcycles = dataByAthlete[athleteId].reduce((acc, row) => {
+                    if (!row.microciclo_id) return acc;
+                    allMicrocycles.add(row.microciclo_id);
+                    if (!acc[row.microciclo_id]) acc[row.microciclo_id] = { entries: [], minDate: row.data };
+                    acc[row.microciclo_id].entries.push(row);
+                    if (new Date(row.data) < new Date(acc[row.microciclo_id].minDate)) {
+                        acc[row.microciclo_id].minDate = row.data;
+                    }
+                    return acc;
+                }, {});
+
+                athleteMicrocycleData[athleteId] = Object.entries(microcycles)
+                    .sort(([, a], [, b]) => new Date(a.minDate) - new Date(b.minDate))
+                    .map(([id, cycleData]) => {
+                         const dailyEntries = cycleData.entries.map(e => ({
+                            date: e.data,
+                            load: (e.pse_sessao || 0) * (e.duracao_sessao_min || 0)
+                         }));
+                        const loadStats = getStats(dailyEntries.map(e => e.load));
+                        const monotony = loadStats.mean > 0 && loadStats.stdDev > 0 ? loadStats.mean / loadStats.stdDev : 0;
+                        return {
+                            microciclo_id: id, 
+                            totalLoad: loadStats.sum, 
+                            monotony, 
+                            strain: loadStats.sum * monotony,
+                            dailyEntries: dailyEntries
+                        };
+                    });
+            }
+
+            const sortedMicrocycles = Array.from(allMicrocycles).sort();
+            
+            placeholderSectionCarga.classList.add('hidden');
+            resultsSectionCarga.classList.remove('hidden');
+
+            renderFilter(sortedMicrocycles);
+            if (sortedMicrocycles.length > 0) {
+                displayFilteredLoadData([sortedMicrocycles[sortedMicrocycles.length - 1]]);
+            }
+        }
+
+        function renderFilter(microcycles) {
+            if (microcycles.length === 0) {
+                filterContainer.innerHTML = '';
+                return;
+            }
+            const latestMicrocycle = microcycles[microcycles.length - 1];
+            filterContainer.innerHTML = `
+                <div class="bg-white p-4 rounded-lg border shadow-sm">
+                    <label class="font-semibold text-gray-700 block mb-2">Selecione o(s) Microciclo(s):</label>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                        ${microcycles.map(mc => `
+                            <div class="flex items-center">
+                                <input id="mc-${mc}" type="checkbox" value="${mc}" class="microciclo-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${mc === latestMicrocycle ? 'checked' : ''}>
+                                <label for="mc-${mc}" class="ml-2 block text-sm text-gray-900">${mc}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+        }
+
+        function displayFilteredLoadData(selectedIds) {
+            if (!selectedIds || selectedIds.length === 0) return;
+
+            Object.values(activeCharts).forEach(chart => chart.destroy());
+            activeCharts = {};
+        
+            const individualResults = [];
+            let allEntriesInCycles = [];
+            let weeklyTeamData = [];
+
+            const sortedSelectedIds = [...selectedIds].sort();
+
+            for (const athleteId in athleteMicrocycleData) {
+                const allAthleteCycles = athleteMicrocycleData[athleteId];
+                
+                if (selectedIds.length > 1) {
+                    sortedSelectedIds.forEach(mc_id => {
+                        const cycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === mc_id);
+                        if (cycleIndex !== -1) {
+                            const cycle = allAthleteCycles[cycleIndex];
+                            const chronicCycles = allAthleteCycles.slice(Math.max(0, cycleIndex - 4), cycleIndex);
+                            const chronicLoad = getStats(chronicCycles.map(c => c.totalLoad)).mean;
+                            const awcr = chronicLoad > 0 ? cycle.totalLoad / chronicLoad : null;
+                            weeklyTeamData.push({
+                                microciclo_id: mc_id,
+                                totalLoad: cycle.totalLoad,
+                                strain: cycle.strain,
+                                awcr: awcr
+                            });
+                        }
+                    });
+                }
+
+                const selectedCycles = allAthleteCycles.filter(c => selectedIds.includes(c.microciclo_id));
+                if(selectedCycles.length === 0) continue;
+                
+                const aggregatedDailyEntries = selectedCycles.flatMap(c => c.dailyEntries);
+                const aggregatedLoadStats = getStats(aggregatedDailyEntries.map(e => e.load));
+                const aggregatedMonotony = aggregatedLoadStats.mean > 0 && aggregatedLoadStats.stdDev > 0 ? aggregatedLoadStats.mean / aggregatedLoadStats.stdDev : 0;
+                const firstSelectedCycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === sortedSelectedIds[0]);
+                const chronicCyclesForTable = allAthleteCycles.slice(Math.max(0, firstSelectedCycleIndex - 4), firstSelectedCycleIndex);
+                const chronicLoadForTable = getStats(chronicCyclesForTable.map(c => c.totalLoad)).mean;
+                const acuteLoadForTable = aggregatedLoadStats.sum;
+                const awcrForTable = chronicLoadForTable > 0 ? acuteLoadForTable / (chronicLoadForTable * selectedIds.length) : null;
+                
+                individualResults.push({ 
+                    athleteId, 
+                    totalLoad: acuteLoadForTable,
+                    monotony: aggregatedMonotony,
+                    strain: acuteLoadForTable * aggregatedMonotony,
+                    awcr: awcrForTable, 
+                    hasEnoughDataForAwcr: chronicCyclesForTable.length >= 4,
+                    chartData: {
+                        labels: aggregatedDailyEntries.sort((a,b) => new Date(a.date) - new Date(b.date)).map(e => new Date(e.date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})),
+                        loads: aggregatedDailyEntries.sort((a,b) => new Date(a.date) - new Date(b.date)).map(e => e.load)
+                    }
+                });
+                
+                allEntriesInCycles.push(...aggregatedDailyEntries);
+            }
+            
+            const loadsByDayOfWeek = allEntriesInCycles.reduce((acc, entry) => {
+                const dayOfWeek = new Date(entry.date + 'T00:00:00').getDay();
+                if (!acc[dayOfWeek]) acc[dayOfWeek] = [];
+                acc[dayOfWeek].push(entry.load);
+                return acc;
+            }, {});
+
+            const dailyAverages = [0,1,2,3,4,5,6].map(day => getStats(loadsByDayOfWeek[day] || []).mean);
+            
+            const evolutionData = sortedSelectedIds.map(mc_id => {
+                const weekData = weeklyTeamData.filter(d => d.microciclo_id === mc_id);
+                return {
+                    microciclo_id: mc_id,
+                    totalLoad: getStats(weekData.map(d=>d.totalLoad)).mean,
+                    strain: getStats(weekData.map(d=>d.strain)).mean,
+                    awcr: getStats(weekData.filter(d=>d.awcr != null).map(d=>d.awcr)).mean
+                };
+            });
+            
+            const teamStats = {
+                avgAcwr: getStats(individualResults.filter(r => r.awcr != null).map(r => r.awcr)).mean,
+                avgStrain: getStats(individualResults.map(r => r.strain)).mean,
+                dailyAverages: dailyAverages,
+                evolutionData: evolutionData,
+                selectionCount: selectedIds.length,
+                microcicloId: selectedIds.join(', ')
+            };
+            
+            individualResults.sort((a, b) => (b.awcr ?? -1) - (a.awcr ?? -1));
+
+            renderTeamDashboardCarga(teamStats);
+            renderLoadTable(individualResults);
+            renderLegends('carga');
+
+            if (teamStats.selectionCount > 1) {
+                renderTeamWeeklyLoadChart(teamStats.evolutionData);
+                renderTeamAcwrChart(teamStats.evolutionData);
+                renderTeamStrainChart(teamStats.evolutionData);
+            } else {
+                 renderTeamDailyLoadChart(teamStats.dailyAverages); 
+            }
+        }
+
+        function renderTeamDashboardCarga(stats) {
+            const avgAcwr = stats.avgAcwr ? stats.avgAcwr.toFixed(2) : '--';
+            const avgStrain = stats.avgStrain ? Math.round(stats.avgStrain) : '--';
+
+            let chartsHtml = '';
+            if (stats.selectionCount > 1) {
+                 chartsHtml = `
+                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">Carga Aguda por Semana</p><div class="w-full h-28"><canvas id="team-weekly-load-chart"></canvas></div></div>
+                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">AWCR por Semana</p><div class="w-full h-28"><canvas id="team-acwr-chart"></canvas></div></div>
+                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">Strain por Semana</p><div class="w-full h-28"><canvas id="team-strain-chart"></canvas></div></div>
+                `;
+            } else {
+                chartsHtml = `
+                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2">Média Diária de Carga</p><div class="w-full h-24"><canvas id="team-daily-chart"></canvas></div></div>
+                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">ACWR Médio</p><p class="text-5xl font-bold ${getAwcrClassification(stats.avgAcwr).class}">${avgAcwr}</p></div>
+                    <div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Strain Médio</p><p class="text-5xl font-bold ${getStrainClassification(stats.avgStrain).class}">${avgStrain}</p></div>
+                `;
+            }
+
+            teamDashboardCarga.innerHTML = `
+                 <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Painel da Equipe <span class="text-base font-normal text-gray-500">(Microciclo(s): ${stats.microcicloId})</span></h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        ${chartsHtml}
+                    </div>
+                </div>`;
+        }
+
+        function renderTeamDailyLoadChart(dailyData) {
+            const ctx = document.getElementById('team-daily-chart');
+            if (!ctx) return;
+            if (activeCharts['team-daily-chart']) activeCharts['team-daily-chart'].destroy();
+            
+            const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+            const data = [dailyData[1], dailyData[2], dailyData[3], dailyData[4], dailyData[5], dailyData[6], dailyData[0]];
+            const backgroundColors = data.map(load => getCargaAgudaChartColor(load));
+
+            activeCharts['team-daily-chart'] = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Média Diária', data, backgroundColor: backgroundColors }] },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: { y: { display: false, beginAtZero: true, min: 0, max: 1000 }, x: { grid: { display: false } } },
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: { anchor: 'center', align: 'center', color: 'white', formatter: (v) => v > 0 ? Math.round(v) : null }
+                    }
+                }
+            });
+        }
+        
+        function renderTeamWeeklyLoadChart(evolutionData) {
+             const ctx = document.getElementById('team-weekly-load-chart');
+            if (!ctx) return;
+            if (activeCharts['team-weekly-load-chart']) activeCharts['team-weekly-load-chart'].destroy();
+            
+            const labels = evolutionData.map(d => d.microciclo_id);
+            const data = evolutionData.map(d => d.totalLoad);
+            const backgroundColors = data.map(load => getCargaAgudaChartColor(load));
+
+            activeCharts['team-weekly-load-chart'] = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Carga Semanal', data, backgroundColor: backgroundColors }] },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: { y: { display: true, beginAtZero: true, min: 0, max: 5000 }, x: { grid: { display: false } } },
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: { anchor: 'center', align: 'center', color: 'white', formatter: (v) => v > 0 ? Math.round(v) : null }
+                    }
+                }
+            });
+        }
+
+        function renderTeamAcwrChart(evolutionData) {
+            const ctx = document.getElementById('team-acwr-chart');
+            if (!ctx) return;
+            if (activeCharts['team-acwr-chart']) activeCharts['team-acwr-chart'].destroy();
+            
+            activeCharts['team-acwr-chart'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: evolutionData.map(d => d.microciclo_id),
+                    datasets: [{
+                        label: 'AWCR',
+                        data: evolutionData.map(d => d.awcr),
+                        borderColor: 'rgb(234, 179, 8)', fill: false, tension: 0.1
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, min: 0, max: 2 }, x: { grid: { display: false } } },
+                    plugins: { legend: { display: false }, datalabels: { align: 'top' } }
+                }
+            });
+        }
+
+        function renderTeamStrainChart(evolutionData) {
+            const ctx = document.getElementById('team-strain-chart');
+            if (!ctx) return;
+            if (activeCharts['team-strain-chart']) activeCharts['team-strain-chart'].destroy();
+            
+            activeCharts['team-strain-chart'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: evolutionData.map(d => d.microciclo_id),
+                    datasets: [{
+                        label: 'Strain',
+                        data: evolutionData.map(d => d.strain),
+                        borderColor: 'rgb(239, 68, 68)', fill: false, tension: 0.1
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, min: 0, max: 15000 }, x: { grid: { display: false } } },
+                    plugins: { legend: { display: false }, datalabels: { align: 'top' } }
+                }
+            });
+        }
+        
+        function renderLoadTable(results) {
+             resultsContainerCarga.innerHTML = `
+                <div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0">
+                    <div class="w-2/6">Atleta</div>
+                    <div class="w-1/6 text-center">AWCR</div>
+                    <div class="w-1/6 text-center">Carga Aguda</div>
+                    <div class="w-1/6 text-center">Monotonia</div>
+                    <div class="w-1/6 text-center">Strain</div>
+                    <div class="w-12"></div>
+                </div>
+                <div>${results.map(createLoadResultRow).join('')}</div>`;
+        }
+        
+        function createLoadResultRow(result) {
+            const cleanAthleteId = result.athleteId.replace(/\s+/g, '-');
+            const awcrText = result.awcr != null ? result.awcr.toFixed(2) : '--';
+            const cargaClass = getCargaAgudaClassification(result.totalLoad).class;
+            const chartData = JSON.stringify(result.chartData);
+
+            return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-2/6 font-bold text-gray-800">${result.athleteId}</div><div class="w-1/6 text-center font-bold text-xl ${getAwcrClassification(result.awcr).class}">${awcrText} ${!result.hasEnoughDataForAwcr && result.awcr != null ? '*' : ''}</div><div class="w-1/6 text-center font-semibold text-lg ${cargaClass}">${Math.round(result.totalLoad)}</div><div class="w-1/6 text-center font-semibold text-lg ${getMonotonyClassification(result.monotony).class}">${result.monotony.toFixed(2)}</div><div class="w-1/6 text-center font-semibold text-lg ${getStrainClassification(result.strain).class}">${Math.round(result.strain)}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-carga-${cleanAthleteId}" data-athlete="${cleanAthleteId}" data-chartdata='${chartData}'><svg class="arrow-icon w-5 h-5 text-gray-500 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-carga-${cleanAthleteId}"><div class="p-4"><h4 class="font-semibold text-sm mb-2 text-gray-700">Carga Diária do(s) Microciclo(s):</h4><div class="h-64 w-full"><canvas id="chart-${cleanAthleteId}"></canvas></div></div></div></div>`;
+        }
+
+        function renderAthleteChart(canvasId, chartData, label) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+            activeCharts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{ label: label, data: chartData.loads, backgroundColor: 'rgba(59, 130, 246, 0.5)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1 }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            min: 0,
+                            max: 1000,
+                            title: { display: true, text: 'Carga (PSE x Duração)' } 
+                        }, 
+                        x: { title: { display: true, text: 'Data' } } 
+                    },
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: { anchor: 'end', align: 'top' }
+                    }
+                }
+            });
+        }
+
+        // --- PLANEJAMENTO FUNCTIONS (MODIFIED FOR FIREBASE) ---
+        function getSelectedOptions(selectElement) {
+            return Array.from(selectElement.selectedOptions).map(option => option.value);
+        }
+
+        async function handleFormFisicoSubmit(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+
+            const objSecundarioEl = document.getElementById('objSecundarioFisico');
+            const treino = {
+                type: 'fisico',
+                date: document.getElementById('dataTreinoFisico').value,
+                objPrincipal: document.getElementById('objPrincipalFisico').value,
+                objSecundario: getSelectedOptions(objSecundarioEl),
+                local: document.getElementById('localTreinoFisico').value,
+                carga: document.getElementById('cargaTreinoFisico').value,
+                cargaText: document.getElementById('cargaTreinoFisico').options[document.getElementById('cargaTreinoFisico').selectedIndex].text,
+                createdAt: serverTimestamp() // Adds a server-side timestamp
+            };
+            try {
+                await addDoc(treinosFisicosCollection, treino);
+                showToast('Treino Físico adicionado!', 'success');
+                formTreinoFisico.reset();
+                document.getElementById('dataTreinoFisico').valueAsDate = new Date();
+            } catch (error) {
+                console.error("Error adding physical training: ", error);
+                showToast("Erro ao salvar o treino físico.");
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function handleFormCampoSubmit(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            
+            const objSecundarioEl = document.getElementById('objSecundarioCampo');
+            const treino = {
+                type: 'campo',
+                date: document.getElementById('dataTreinoCampo').value,
+                objPrincipal: document.getElementById('objPrincipalCampo').value,
+                objSecundario: getSelectedOptions(objSecundarioEl),
+                campo: document.getElementById('campoTreinoCampo').value,
+                carga: document.getElementById('cargaTreinoCampo').value,
+                cargaText: document.getElementById('cargaTreinoCampo').options[document.getElementById('cargaTreinoCampo').selectedIndex].text,
+                createdAt: serverTimestamp()
+            };
+            try {
+                await addDoc(treinosCampoCollection, treino);
+                showToast('Treino de Campo adicionado!', 'success');
+                formTreinoCampo.reset();
+                document.getElementById('dataTreinoCampo').valueAsDate = new Date();
+            } catch (error) {
+                console.error("Error adding field training: ", error);
+                showToast("Erro ao salvar o treino de campo.");
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function renderTimelines() {
+            renderTimeline(timelineFisico, treinosFisicos, 'Nenhum treino físico cadastrado para esta semana.');
+            renderTimeline(timelineCampo, treinosCampo, 'Nenhum treino de campo cadastrado para esta semana.');
+            renderWeeklyLoadCharts();
+        }
+
+        function renderTimeline(container, treinos, emptyMessage) {
+            container.innerHTML = ''; 
+            
+            const treinosDaSemana = treinos.filter(t => t.date && isDateInThisWeek(new Date(t.date + 'T00:00:00')));
+            
+            if (treinosDaSemana.length === 0) {
+                 container.innerHTML = `<p class="col-span-full text-gray-500 text-center w-full py-8">${emptyMessage}</p>`;
+                return;
+            }
+
+            treinosDaSemana.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            treinosDaSemana.forEach(treino => {
+                const card = document.createElement('div');
+                let cardContent = '';
+                const borderColorClass = `carga-${treino.carga}`;
+
+                const formattedDate = new Date(treino.date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
+
+                const objSecundarioText = Array.isArray(treino.objSecundario) ? treino.objSecundario.join(', ') : '';
+
+                if (treino.type === 'fisico') {
+                    cardContent = `
+                        <p class="font-semibold text-gray-800 text-sm">${treino.objPrincipal}</p>
+                        <p class="text-xs text-gray-600 truncate mt-1" title="${objSecundarioText}">${objSecundarioText}</p>
+                        <p class="text-xs text-gray-500 mt-1">Local: ${treino.local}</p>
+                        <p class="text-xs font-semibold mt-2">${treino.cargaText}</p>
+                    `;
+                } else { // 'campo'
+                     cardContent = `
+                        <p class="font-semibold text-gray-800 text-sm">${treino.objPrincipal}</p>
+                        <p class="text-xs text-gray-600 truncate mt-1" title="${objSecundarioText}">${objSecundarioText}</p>
+                        <p class="text-xs text-gray-500 mt-1">Campo: ${treino.campo}</p>
+                        <p class="text-xs font-semibold mt-2">${treino.cargaText}</p>
+                    `;
+                }
+                
+                // The onclick event now calls the global removeTraining function with the document ID
+                card.className = `timeline-card ${borderColorClass} bg-white p-2 rounded-lg shadow-sm`;
+                card.innerHTML = `
+                    <div class="relative">
+                        <p class="text-xs font-bold text-gray-500 mb-1">${formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}</p>
+                        ${cardContent}
+                        <button onclick="window.removeTraining('${treino.id}', '${treino.type}')" class="absolute top-0 right-0 text-gray-400 hover:text-red-500 text-lg font-bold leading-none p-1">&times;</button>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+        
+        function renderWeeklyLoadCharts() {
+            renderDailyLoadChart('chartCargaFisico', treinosFisicos);
+            renderDailyLoadChart('chartCargaCampo', treinosCampo);
+        }
+
+        function renderDailyLoadChart(canvasId, treinos) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+
+            const treinosDaSemana = treinos.filter(t => t.date && isDateInThisWeek(new Date(t.date + 'T00:00:00')));
+            const dailyMaxLoad = {}; // 0=Sun, 1=Mon, ..., 6=Sat
+
+            treinosDaSemana.forEach(t => {
+                const dayOfWeek = new Date(t.date + 'T00:00:00').getDay();
+                const loadValue = CARGA_PERCENTUAL[t.carga];
+                if (!dailyMaxLoad[dayOfWeek] || loadValue > dailyMaxLoad[dayOfWeek]) {
+                    dailyMaxLoad[dayOfWeek] = loadValue;
+                }
+            });
+            
+            // Adjust for week starting on Monday for the chart
+            const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+            const data = [
+                dailyMaxLoad[1] || 0, // Mon
+                dailyMaxLoad[2] || 0, // Tue
+                dailyMaxLoad[3] || 0, // Wed
+                dailyMaxLoad[4] || 0, // Thu
+                dailyMaxLoad[5] || 0, // Fri
+                dailyMaxLoad[6] || 0, // Sat
+                dailyMaxLoad[0] || 0  // Sun
+            ];
+            
+            const backgroundColors = data.map(load => {
+                if (load === 100) return 'rgba(239, 68, 68, 0.7)'; // Maxima
+                if (load === 90) return 'rgba(249, 115, 22, 0.7)'; // Alta
+                if (load === 70) return 'rgba(245, 158, 11, 0.7)'; // Moderada
+                if (load > 0) return 'rgba(59, 130, 246, 0.7)'; // Leve
+                return '#e5e7eb'; // No load
+            });
+
+            activeCharts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Carga Planejada (%)',
+                        data,
+                        backgroundColor: backgroundColors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            min: 0,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Carga (%)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        datalabels: {
+                           display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Make removeTraining a global function to be accessible from onclick attribute
+        window.removeTraining = async (id, type) => {
+            showToast(`Removendo treino...`, 'success');
+            try {
+                if (type === 'fisico') {
+                    await deleteDoc(doc(db, "treinosFisicos", id));
+                } else {
+                    await deleteDoc(doc(db, "treinosCampo", id));
+                }
+                // The onSnapshot listener will automatically update the UI.
+            } catch (error) {
+                console.error("Error removing training: ", error);
+                showToast("Erro ao remover o treino.");
+            }
+        };
+
+        function isDateInThisWeek(date) {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const dayOfWeek = today.getDay(); 
+            const startOfWeek = new Date(today);
+            const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); 
+            startOfWeek.setDate(diff);
+
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            endOfWeek.setHours(23, 59, 59, 999);
+            
+            return date >= startOfWeek && date <= endOfWeek;
+        }
+
+        
+        // --- CLASSIFICATION & LEGENDS ---
+        const getHooperClassification = score => {
+            if (score == null) return { class: 'text-gray-700', bg: 'bg-gray-100', border: 'border-gray-200' };
+            if (score <= 9) return { class: 'text-green-700', bg: 'bg-green-100', border: 'border-green-200' };
+            if (score <= 17) return { class: 'text-yellow-700', bg: 'bg-yellow-100', border: 'border-yellow-200' };
+            return { class: 'text-red-700', bg: 'bg-red-100', border: 'border-red-200' };
+        };
+        const getIndexClassification = index => {
+            if (index == null) return { class: 'text-gray-700' };
+            if (index < -1.5) return { class: 'text-red-600' };
+            if (index < -0.5) return { class: 'text-yellow-600' };
+            return { class: 'text-green-600' };
+        };
+        const getCargaAgudaClassification = load => {
+            if (load == null) return { class: 'text-gray-700' };
+            if (load <= 300) return { class: 'text-blue-600' };
+            if (load <= 600) return { class: 'text-green-600' };
+            return { class: 'text-red-600' };
+        };
+        const getCargaAgudaChartColor = load => {
+            if (load == null || load === 0) return '#cbd5e1'; // gray-400 for no load
+            if (load <= 300) return 'rgba(59, 130, 246, 0.7)'; // blue-500
+            if (load <= 600) return 'rgba(34, 197, 94, 0.7)'; // green-500
+            return 'rgba(239, 68, 68, 0.7)'; // red-500
+        }
+        const getStrainClassification = strain => {
+            if (strain == null) return { class: 'text-gray-700' };
+            if (strain > 10000) return { class: 'text-red-600' };
+            if (strain > 6000) return { class: 'text-yellow-600' };
+            return { class: 'text-green-600' };
+        };
+        const getMonotonyClassification = monotony => {
+            if (monotony == null) return { class: 'text-gray-700' };
+            if (monotony > 2.0) return { class: 'text-red-600' };
+            if (monotony > 1.5) return { class: 'text-yellow-600' };
+            return { class: 'text-green-600' };
+        };
+        const getAwcrClassification = awcr => {
+            if (awcr == null) return { class: 'text-gray-700' };
+            if (awcr > 1.5) return { class: 'text-red-600' };
+            if (awcr >= 0.8 && awcr <= 1.3) return { class: 'text-green-600' };
+            return { class: 'text-yellow-600' };
+        };
+
+        function renderLegends(type) {
+             if (type === 'prontidao') {
+                legendsProntidao.innerHTML = `<div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Índice Geral</h4><p>Calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p><p><strong class="text-green-600">> -0.5 (Ótimo)</strong></p><p><strong class="text-yellow-600">-0.5 a -1.5 (Atenção)</strong></p><p><strong class="text-red-600">< -1.5 (Crítico)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Fadiga (Hooper)</h4><p><strong class="text-green-700">4-9 (Bom)</strong></p><p><strong class="text-yellow-700">10-17 (Regular)</strong></p><p><strong class="text-red-700">18-28 (Ruim)</strong></p></div>`;
+             } else {
+                legendsCarga.innerHTML = `<div class="bg-white p-3 rounded-lg border">
+                                            <h4 class="font-bold text-sm mb-1 text-gray-700">Carga Aguda (u.a.)</h4>
+                                            <p>Estresse total do microciclo selecionado.</p>
+                                            <p><strong class="text-blue-600">0 a 300 (Leve)</strong></p>
+                                            <p><strong class="text-green-600">301 a 600 (Moderada)</strong></p>
+                                            <p><strong class="text-red-600">> 600 (Alta)</strong></p>
+                                        </div>
+                                        <div class="bg-white p-3 rounded-lg border">
+                                            <h4 class="font-bold text-sm mb-1 text-gray-700">AWCR (Acute:Chronic)</h4>
+                                            <p>Carga Aguda / Média das 4 semanas anteriores. <br><em>* <4 semanas de dados crônicos.</em></p>
+                                            <p><strong class="text-green-600">0.8-1.3 (Ideal)</strong></p>
+                                            <p><strong class="text-yellow-600"><0.8 ou 1.3-1.5 (Atenção)</strong></p>
+                                            <p><strong class="text-red-600">>1.5 (Perigo)</strong></p>
+                                        </div>
+                                        <div class="bg-white p-3 rounded-lg border">
+                                            <h4 class="font-bold text-sm mb-1 text-gray-700">Monotonia</h4>
+                                            <p>Média da carga diária / Desvio Padrão. Variabilidade da carga semanal.</p>
+                                            <p><strong class="text-green-600">< 1.5 (Ideal)</strong></p>
+                                            <p><strong class="text-yellow-600">1.5-2.0 (Atenção)</strong></p>
+                                            <p><strong class="text-red-600">> 2.0 (Elevado)</strong></p>
+                                        </div>
+                                        <div class="bg-white p-3 rounded-lg border">
+                                            <h4 class="font-bold text-sm mb-1 text-gray-700">Strain (Tensão)</h4>
+                                            <p>Carga total da semana x Monotonia. Estresse geral da semana.</p>
+                                            <p><strong class="text-green-600">< 6000 (Ideal)</strong></p>
+                                            <p><strong class="text-yellow-600">6000-10000 (Atenção)</strong></p>
+                                            <p><strong class="text-red-600">> 10000 (Elevado)</strong></p>
+                                        </div>`;
+             }
+        }
+    </script>
+</body>
+</html>
