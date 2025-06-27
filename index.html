@@ -542,7 +542,6 @@
 
         // --- FIREBASE DATA LISTENERS ---
         function listenToTrainings() {
-            // Corrected query to order by the training date, ensuring consistency
             const qFisico = query(treinosFisicosCollection, orderBy("date", "desc"));
             onSnapshot(qFisico, (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -552,7 +551,6 @@
                 showToast("Erro ao carregar treinos físicos.");
             });
 
-            // Corrected query to order by the training date
             const qCampo = query(treinosCampoCollection, orderBy("date", "desc"));
             onSnapshot(qCampo, (snapshot) => {
                 treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -720,27 +718,17 @@
             }
         }
 
-        function switchTab(tab) {
-            // Hide all content
-            prontidaoContent.classList.add('hidden');
-            cargaContent.classList.add('hidden');
-            planejamentoContent.classList.add('hidden');
+        function switchTab(targetTab) {
+            const tabs = {
+                prontidao: { content: prontidaoContent, btn: tabProntidaoBtn },
+                carga: { content: cargaContent, btn: tabCargaBtn },
+                planejamento: { content: planejamentoContent, btn: tabPlanejamentoBtn }
+            };
 
-            // Deactivate all buttons
-            tabProntidaoBtn.classList.remove('active');
-            tabCargaBtn.classList.remove('active');
-            tabPlanejamentoBtn.classList.remove('active');
-
-            // Show the selected content and activate the button
-            if (tab === 'prontidao') {
-                prontidaoContent.classList.remove('hidden');
-                tabProntidaoBtn.classList.add('active');
-            } else if (tab === 'carga') {
-                cargaContent.classList.remove('hidden');
-                tabCargaBtn.classList.add('active');
-            } else if (tab === 'planejamento') {
-                planejamentoContent.classList.remove('hidden');
-                tabPlanejamentoBtn.classList.add('active');
+            for (const tabName in tabs) {
+                const isTarget = tabName === targetTab;
+                tabs[tabName].content.classList.toggle('hidden', !isTarget);
+                tabs[tabName].btn.classList.toggle('active', isTarget);
             }
         }
 
