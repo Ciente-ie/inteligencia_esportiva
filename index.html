@@ -38,7 +38,7 @@
             transition: max-height 0.5s ease-in-out;
         }
         .details-section.open {
-            max-height: 1000px; /* Adjust as needed */
+            max-height: 2000px; /* Adjust as needed for dashboard content */
         }
         .tab-btn {
             transition: all 0.3s ease;
@@ -88,7 +88,7 @@
 
         <!-- Tabs Navigation -->
         <div class="mb-8">
-            <div class="flex border-b border-gray-200">
+            <div class="flex border-b border-gray-200 flex-wrap">
                 <button id="tabProntidaoBtn" class="tab-btn active text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
                     Análise de Prontidão
                 </button>
@@ -224,7 +224,7 @@
             </div>
         </div>
 
-        <!-- NEW Content for Planejamento Tab -->
+        <!-- Content for Planejamento Tab -->
         <div id="planejamentoContent" class="hidden">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Forms Section -->
@@ -316,32 +316,77 @@
                     </div>
                 </div>
 
-                <!-- Timelines Section -->
-                <div class="lg:col-span-2 space-y-8" id="pdf-content-planejamento">
-                    <!-- Physical Training Timeline -->
-                    <div>
-                        <div class="flex justify-between items-center mb-4">
-                             <h3 class="text-2xl font-bold text-gray-900">Treinos Físicos da Semana</h3>
-                             <button id="exportPdfBtnPlanejamento" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
-                                Exportar PDF
-                            </button>
-                        </div>
-                        <div id="timelineFisico" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]">
-                           <!-- Cards will be injected here -->
-                        </div>
-                        <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64">
-                             <canvas id="chartCargaFisico"></canvas>
+                <!-- Timelines & Dashboard Section -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Discreet Dashboard Section -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
+                        <button id="toggleDashboardBtn" class="flex justify-between items-center w-full text-left">
+                            <h3 class="text-xl font-bold text-gray-800">Resumo da Temporada</h3>
+                            <svg id="dashboardArrow" class="w-6 h-6 text-gray-500 transform transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div id="dashboardContainer" class="details-section mt-6 pt-6 border-t border-gray-200 space-y-8">
+                            <!-- Dashboard Físico Content -->
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Análise dos Treinos Físicos</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                    <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center min-h-[100px] border">
+                                        <span id="totalSessoesFisico" class="text-4xl font-bold text-blue-600">0</span>
+                                        <span class="text-sm font-medium text-gray-500 mt-1 text-center">Sessões Físicas</span>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="bg-gray-50 p-4 rounded-lg border h-80"><canvas id="chartObjPrincipalFisico"></canvas></div>
+                                    <div class="bg-gray-50 p-4 rounded-lg border h-80"><canvas id="chartLocalFisico"></canvas></div>
+                                    <div class="bg-gray-50 p-4 rounded-lg border h-80"><canvas id="chartObjSecundarioFisico"></canvas></div>
+                                </div>
+                            </div>
+                             <hr class="my-6 border-gray-200">
+                             <!-- Dashboard Campo Content -->
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4">Análise dos Treinos de Campo</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                     <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center min-h-[100px] border">
+                                        <span id="totalSessoesCampo" class="text-4xl font-bold text-green-600">0</span>
+                                        <span class="text-sm font-medium text-gray-500 mt-1 text-center">Sessões de Campo</span>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                     <div class="bg-gray-50 p-4 rounded-lg border h-80"><canvas id="chartObjPrincipalCampo"></canvas></div>
+                                     <div class="bg-gray-50 p-4 rounded-lg border h-80"><canvas id="chartObjSecundarioCampo"></canvas></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                     <!-- Field Training Timeline -->
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Treinos de Campo da Semana</h3>
-                        <div id="timelineCampo" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]">
-                           <!-- Cards will be injected here -->
+
+                    <!-- Timelines Section (for PDF export) -->
+                    <div id="pdf-content-planejamento">
+                        <!-- Physical Training Timeline -->
+                        <div>
+                            <div class="flex justify-between items-center mb-4">
+                                 <h3 class="text-2xl font-bold text-gray-900">Treinos Físicos da Semana</h3>
+                                 <button id="exportPdfBtnPlanejamento" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
+                                    Exportar PDF da Semana
+                                </button>
+                            </div>
+                            <div id="timelineFisico" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]">
+                               <!-- Cards will be injected here -->
+                            </div>
+                            <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64">
+                                 <canvas id="chartCargaFisico"></canvas>
+                            </div>
                         </div>
-                         <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64">
-                             <canvas id="chartCargaCampo"></canvas>
+                         <!-- Field Training Timeline -->
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900 mb-4 mt-8">Treinos de Campo da Semana</h3>
+                            <div id="timelineCampo" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]">
+                               <!-- Cards will be injected here -->
+                            </div>
+                             <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64">
+                                 <canvas id="chartCargaCampo"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -453,6 +498,10 @@
         const timelineFisico = document.getElementById('timelineFisico');
         const timelineCampo = document.getElementById('timelineCampo');
         const exportPdfBtnPlanejamento = document.getElementById('exportPdfBtnPlanejamento');
+        const toggleDashboardBtn = document.getElementById('toggleDashboardBtn');
+        const dashboardContainer = document.getElementById('dashboardContainer');
+        const dashboardArrow = document.getElementById('dashboardArrow');
+
 
         // --- SETUP ---
         Chart.register(ChartDataLabels);
@@ -468,19 +517,14 @@
         // --- AUTHENTICATION ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // User is signed in.
                 currentUser = user;
                 authStatus.textContent = 'Conectado';
                 authStatus.classList.add('text-green-600', 'font-semibold');
                 authStatus.classList.remove('text-red-600');
                 submitTreinoFisicoBtn.disabled = false;
                 submitTreinoCampoBtn.disabled = false;
-                
-                // Start listening to data only after user is authenticated
                 listenToTrainings();
-
             } else {
-                // User is signed out.
                 currentUser = null;
                 authStatus.textContent = 'Offline';
                 authStatus.classList.add('text-red-600', 'font-semibold');
@@ -491,7 +535,6 @@
             }
         });
 
-        // Sign in anonymously on load
         signInAnonymously(auth).catch((error) => {
             console.error("Anonymous sign-in failed", error);
             showToast("Falha na autenticação. Os dados não serão salvos.");
@@ -499,25 +542,29 @@
 
         // --- FIREBASE DATA LISTENERS ---
         function listenToTrainings() {
-             // Listener for Physical Trainings
-            const qFisico = query(treinosFisicosCollection, orderBy("date", "asc"));
+            const qFisico = query(treinosFisicosCollection, orderBy("createdAt", "desc"));
             onSnapshot(qFisico, (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderTimelines();
+                updatePlanejamentoView();
             }, (error) => {
                 console.error("Error listening to physical trainings:", error);
                 showToast("Erro ao carregar treinos físicos.");
             });
 
-            // Listener for Field Trainings
-            const qCampo = query(treinosCampoCollection, orderBy("date", "asc"));
+            const qCampo = query(treinosCampoCollection, orderBy("createdAt", "desc"));
             onSnapshot(qCampo, (snapshot) => {
                 treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderTimelines();
+                updatePlanejamentoView();
             }, (error) => {
                 console.error("Error listening to field trainings:", error);
                 showToast("Erro ao carregar treinos de campo.");
             });
+        }
+
+        // --- GLOBAL VIEW UPDATER ---
+        function updatePlanejamentoView() {
+            renderTimelines();
+            renderPlanningDashboards();
         }
 
 
@@ -547,17 +594,21 @@
                 }
             }
         });
-        // Planejamento Listeners
+        
         formTreinoFisico.addEventListener('submit', handleFormFisicoSubmit);
         formTreinoCampo.addEventListener('submit', handleFormCampoSubmit);
         exportPdfBtnPlanejamento.addEventListener('click', () => exportToPDF('planejamento'));
+        
+        toggleDashboardBtn.addEventListener('click', () => {
+            dashboardContainer.classList.toggle('open');
+            dashboardArrow.classList.toggle('rotate-180');
+        });
 
 
         // --- INITIALIZATION ---
-        // Set default date for planning forms
         document.getElementById('dataTreinoFisico').valueAsDate = new Date();
         document.getElementById('dataTreinoCampo').valueAsDate = new Date();
-        renderTimelines(); // Initial render while data loads
+        updatePlanejamentoView();
 
 
         // --- GENERAL FUNCTIONS ---
@@ -720,7 +771,7 @@
             }).filter(Boolean);
         }
         
-        // --- PRONTIDÃO FUNCTIONS --- (No changes, logic is local from CSV)
+        // --- PRONTIDÃO FUNCTIONS ---
         function toggleLoading(isLoading, type = 'prontidao') {
             const textEl = type === 'prontidao' ? btnText : btnTextCarga;
             const loaderEl = type === 'prontidao' ? btnLoader : btnLoaderCarga;
@@ -898,7 +949,7 @@
             return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div><div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div><div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div><div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${result.hooperScore.latest}</span></div><div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-prontidao-${result.athleteId}"><svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-prontidao-${result.athleteId}"><div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="font-semibold text-sm mb-2">Detalhes:</h4><ul class="space-y-1">${detailsHtml}</ul></div><div class="bg-blue-50 border p-3 rounded-lg self-start"><h4 class="font-semibold text-sm mb-1">Sugestão:</h4><p class="text-sm">${recommendation}</p></div></div></div></div>`;
         }
 
-        // --- CARGA DE TREINO FUNCTIONS --- (No changes, logic is local from CSV)
+        // --- CARGA DE TREINO FUNCTIONS ---
         function resetViewCarga() {
             csvFileInputCarga.value = '';
             fileNameCargaEl.textContent = '';
@@ -1392,7 +1443,6 @@
                     `;
                 }
                 
-                // The onclick event now calls the global removeTraining function with the document ID
                 card.className = `timeline-card ${borderColorClass} bg-white p-2 rounded-lg shadow-sm`;
                 card.innerHTML = `
                     <div class="relative">
@@ -1417,7 +1467,7 @@
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
             const treinosDaSemana = treinos.filter(t => t.date && isDateInThisWeek(new Date(t.date + 'T00:00:00')));
-            const dailyMaxLoad = {}; // 0=Sun, 1=Mon, ..., 6=Sat
+            const dailyMaxLoad = {}; 
 
             treinosDaSemana.forEach(t => {
                 const dayOfWeek = new Date(t.date + 'T00:00:00').getDay();
@@ -1427,24 +1477,18 @@
                 }
             });
             
-            // Adjust for week starting on Monday for the chart
             const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
             const data = [
-                dailyMaxLoad[1] || 0, // Mon
-                dailyMaxLoad[2] || 0, // Tue
-                dailyMaxLoad[3] || 0, // Wed
-                dailyMaxLoad[4] || 0, // Thu
-                dailyMaxLoad[5] || 0, // Fri
-                dailyMaxLoad[6] || 0, // Sat
-                dailyMaxLoad[0] || 0  // Sun
+                dailyMaxLoad[1] || 0, dailyMaxLoad[2] || 0, dailyMaxLoad[3] || 0,
+                dailyMaxLoad[4] || 0, dailyMaxLoad[5] || 0, dailyMaxLoad[6] || 0, dailyMaxLoad[0] || 0
             ];
             
             const backgroundColors = data.map(load => {
-                if (load === 100) return 'rgba(239, 68, 68, 0.7)'; // Maxima
-                if (load === 90) return 'rgba(249, 115, 22, 0.7)'; // Alta
-                if (load === 70) return 'rgba(245, 158, 11, 0.7)'; // Moderada
-                if (load > 0) return 'rgba(59, 130, 246, 0.7)'; // Leve
-                return '#e5e7eb'; // No load
+                if (load === 100) return 'rgba(239, 68, 68, 0.7)';
+                if (load === 90) return 'rgba(249, 115, 22, 0.7)';
+                if (load === 70) return 'rgba(245, 158, 11, 0.7)';
+                if (load > 0) return 'rgba(59, 130, 246, 0.7)';
+                return '#e5e7eb';
             });
 
             activeCharts[canvasId] = new Chart(ctx, {
@@ -1458,46 +1502,134 @@
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            min: 0,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: 'Carga (%)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        datalabels: {
-                           display: false
-                        }
-                    }
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, min: 0, max: 100, title: { display: true, text: 'Carga (%)' } }, x: { grid: { display: false } } },
+                    plugins: { legend: { display: false }, datalabels: { display: false } }
+                }
+            });
+        }
+        
+        // --- DASHBOARD FUNCTIONS ---
+        function renderPlanningDashboards() {
+            renderDashboardFisico(treinosFisicos);
+            renderDashboardCampo(treinosCampo);
+        }
+
+        function renderDashboardFisico(treinos) {
+            document.getElementById('totalSessoesFisico').textContent = treinos.length;
+
+            const objPrincipalCounts = countOccurrences(treinos, 'objPrincipal');
+            const localCounts = countOccurrences(treinos, 'local');
+            const objSecundarioCounts = countOccurrencesInArray(treinos, 'objSecundario');
+            
+            renderPieChart('chartObjPrincipalFisico', 'Objetivos Principais (Físico)', objPrincipalCounts);
+            renderPieChart('chartLocalFisico', 'Local do Treino', localCounts);
+            renderBarChart('chartObjSecundarioFisico', 'Top Objetivos Secundários (Físico)', objSecundarioCounts, 'rgba(59, 130, 246, 0.7)');
+        }
+
+        function renderDashboardCampo(treinos) {
+            document.getElementById('totalSessoesCampo').textContent = treinos.length;
+
+            const objPrincipalCounts = countOccurrences(treinos, 'objPrincipal');
+            const objSecundarioCounts = countOccurrencesInArray(treinos, 'objSecundario');
+
+            renderPieChart('chartObjPrincipalCampo', 'Objetivos Principais (Campo)', objPrincipalCounts);
+            renderBarChart('chartObjSecundarioCampo', 'Top Objetivos Secundários (Campo)', objSecundarioCounts, 'rgba(34, 197, 94, 0.7)');
+        }
+        
+        function countOccurrences(data, key) {
+            return data.reduce((acc, item) => {
+                const value = item[key];
+                if (value) acc[value] = (acc[value] || 0) + 1;
+                return acc;
+            }, {});
+        }
+
+        function countOccurrencesInArray(data, key) {
+            return data.reduce((acc, item) => {
+                const array = item[key];
+                if (Array.isArray(array)) {
+                    array.forEach(value => acc[value] = (acc[value] || 0) + 1);
+                }
+                return acc;
+            }, {});
+        }
+        
+        function renderPieChart(canvasId, label, data) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+            const total = values.reduce((a, b) => a + b, 0);
+
+            if (total === 0) {
+                const context = ctx.getContext('2d');
+                context.clearRect(0, 0, ctx.width, ctx.height);
+                context.textAlign = 'center';
+                context.fillStyle = '#6b7280';
+                context.fillText("Sem dados para exibir.", ctx.width / 2, ctx.height / 2);
+                return;
+            }
+            
+            activeCharts[canvasId] = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels.map(l => `${l} (${((data[l]/total)*100).toFixed(0)}%)`),
+                    datasets: [{
+                        label: label, data: values,
+                        backgroundColor: ['rgba(59, 130, 246, 0.8)', 'rgba(245, 158, 11, 0.8)', 'rgba(34, 197, 94, 0.8)', 'rgba(239, 68, 68, 0.8)', 'rgba(139, 92, 246, 0.8)'],
+                        borderColor: '#f9fafb', borderWidth: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { padding: 15 } }, title: { display: true, text: label, padding: { bottom: 20 } }, datalabels: { display: false } }
+                }
+            });
+        }
+        
+        function renderBarChart(canvasId, label, data, color) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+            
+            const sortedData = Object.entries(data).sort(([,a],[,b]) => b-a);
+            const labels = sortedData.map(item => item[0]);
+            const values = sortedData.map(item => item[1]);
+
+             if (values.length === 0) {
+                const context = ctx.getContext('2d');
+                context.clearRect(0, 0, ctx.width, ctx.height);
+                context.textAlign = 'center';
+                context.fillStyle = '#6b7280';
+                context.fillText("Sem dados para exibir.", ctx.width / 2, ctx.height / 2);
+                return;
+            }
+
+            activeCharts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{ label: 'Contagem', data: values, backgroundColor: color || 'rgba(59, 130, 246, 0.7)' }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, title: { display: true, text: label, padding: { bottom: 20 } }, datalabels: { anchor: 'end', align: 'right', color: '#1f2937' } },
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
                 }
             });
         }
 
-        // Make removeTraining a global function to be accessible from onclick attribute
+        // --- GLOBAL UTILITIES ---
         window.removeTraining = async (id, type) => {
+            if (!confirm("Tem certeza que deseja remover este treino?")) return;
+            
             showToast(`Removendo treino...`, 'success');
             try {
-                if (type === 'fisico') {
-                    await deleteDoc(doc(db, "treinosFisicos", id));
-                } else {
-                    await deleteDoc(doc(db, "treinosCampo", id));
-                }
-                // The onSnapshot listener will automatically update the UI.
+                const collectionRef = type === 'fisico' ? treinosFisicosCollection : treinosCampoCollection;
+                await deleteDoc(doc(db, collectionRef.path, id));
             } catch (error) {
                 console.error("Error removing training: ", error);
                 showToast("Erro ao remover o treino.");
@@ -1511,8 +1643,7 @@
             const startOfWeek = new Date(today);
             const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); 
             startOfWeek.setDate(diff);
-
-            const endOfWeek = new Date(startOfWeek);
+            endOfWeek = new Date(startOfWeek);
             endOfWeek.setDate(startOfWeek.getDate() + 6);
             endOfWeek.setHours(23, 59, 59, 999);
             
@@ -1540,10 +1671,10 @@
             return { class: 'text-red-600' };
         };
         const getCargaAgudaChartColor = load => {
-            if (load == null || load === 0) return '#cbd5e1'; // gray-400 for no load
-            if (load <= 300) return 'rgba(59, 130, 246, 0.7)'; // blue-500
-            if (load <= 600) return 'rgba(34, 197, 94, 0.7)'; // green-500
-            return 'rgba(239, 68, 68, 0.7)'; // red-500
+            if (load == null || load === 0) return '#cbd5e1'; 
+            if (load <= 300) return 'rgba(59, 130, 246, 0.7)';
+            if (load <= 600) return 'rgba(34, 197, 94, 0.7)';
+            return 'rgba(239, 68, 68, 0.7)';
         }
         const getStrainClassification = strain => {
             if (strain == null) return { class: 'text-gray-700' };
