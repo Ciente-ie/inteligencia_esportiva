@@ -93,12 +93,6 @@
                      <div id="authStatusContainer" class="bg-gray-100 p-2 rounded-lg text-sm">
                         <span id="authStatus"></span>
                     </div>
-                     <button id="clearAllDataBtn" class="btn bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition flex items-center text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                          <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
-                        Limpar Dados Importados
-                    </button>
                 </div>
             </div>
             <p class="text-gray-600 mt-2 text-lg">Analise a prontidão, controle a carga e planeje os treinos da sua equipe.</p>
@@ -189,6 +183,12 @@
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Resultados Individuais de Prontidão</h2>
                          <div class="flex gap-x-2">
+                             <button id="clearProntidaoDataBtn" class="btn bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition flex items-center text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                                Limpar Dados de Prontidão
+                            </button>
                             <button id="exportPdfBtn" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
                                 Exportar PDF
@@ -249,6 +249,12 @@
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Resultados Individuais de Carga</h2>
                          <div class="flex gap-x-2">
+                            <button id="clearCargaDataBtn" class="btn bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition flex items-center text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                                Limpar Dados de Carga
+                            </button>
                             <button id="exportPdfBtnCarga" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
                                 Exportar PDF
@@ -408,7 +414,7 @@
     <script type="module">
         // --- Firebase v9+ modular imports ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs, where } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
 
@@ -496,6 +502,7 @@
         const resultsContainer = document.getElementById('resultsContainer');
         const exportPdfBtn = document.getElementById('exportPdfBtn');
         const legendsProntidao = document.getElementById('legendsProntidao');
+        const clearProntidaoDataBtn = document.getElementById('clearProntidaoDataBtn');
         // Carga Elements
         const csvFileInputCarga = document.getElementById('csvFileInputCarga');
         const fileNameCargaEl = document.getElementById('fileNameCarga');
@@ -509,6 +516,7 @@
         const resultsContainerCarga = document.getElementById('resultsContainerCarga');
         const exportPdfBtnCarga = document.getElementById('exportPdfBtnCarga');
         const legendsCarga = document.getElementById('legendsCarga');
+        const clearCargaDataBtn = document.getElementById('clearCargaDataBtn');
         // Planejamento Elements
         const formTreinoFisico = document.getElementById('formTreinoFisico');
         const formTreinoCampo = document.getElementById('formTreinoCampo');
@@ -530,7 +538,7 @@
             font: {
                 weight: 'bold'
             },
-            formatter: (value) => value ? Math.round(value * 100) / 100 : null
+            formatter: (value, context) => value ? (context.dataset.label.includes('%') ? `${value}%` : Math.round(value * 100) / 100) : null
         });
 
 
@@ -609,14 +617,14 @@
 
             onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
                 fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderFilterProntidao(fullProntidaoData); // Update filter with new data
-                renderProntidaoTab(); // Re-render tab with current filter selection
+                renderFilterProntidao(fullProntidaoData); 
+                renderProntidaoTab(); 
             });
             
             onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
                 fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                processAndStoreLoadData(); // Update data structures
-                renderCargaTab(); // Re-render tab with current filter selection
+                processAndStoreLoadData(); 
+                renderCargaTab(); 
             });
         }
 
@@ -632,6 +640,7 @@
         exportPdfBtn.addEventListener('click', () => exportToPDF('prontidao'));
         resultsContainer.addEventListener('click', (e) => toggleDetails(e, 'prontidao'));
         filterContainerProntidao.addEventListener('change', () => renderProntidaoTab());
+        clearProntidaoDataBtn.addEventListener('click', clearProntidaoData);
 
         csvFileInputCarga.addEventListener('change', () => handleFileSelect(csvFileInputCarga, fileNameCargaEl, processBtnCarga));
         processBtnCarga.addEventListener('click', handleFileProcessingCarga);
@@ -642,13 +651,13 @@
                 renderCargaTab();
             }
         });
+        clearCargaDataBtn.addEventListener('click', clearCargaData);
         
         formTreinoFisico.addEventListener('submit', handleFormFisicoSubmit);
         formTreinoCampo.addEventListener('submit', handleFormCampoSubmit);
         document.getElementById('dataTreinoFisico').addEventListener('change', (e) => {
             const date = e.target.valueAsDate;
             if (date) {
-                // Adjust for timezone offset to get correct UTC date
                 const timezoneOffset = date.getTimezoneOffset() * 60000;
                 const utcDate = new Date(date.getTime() + timezoneOffset);
                 document.getElementById('semanaIdFisico').value = getWeekId(utcDate) || '';
@@ -670,18 +679,13 @@
                 renderPlanningView();
                 updateDashboardView();
             }
+             if (e.target.id === 'deletePlanningWeeksBtn') {
+                deleteSelectedPlanningWeeks();
+            }
         });
         
         exportPdfBtnDashboard.addEventListener('click', () => exportToPDF('dashboard'));
-        document.getElementById('clearAllDataBtn').addEventListener('click', () => {
-             showConfirmationModal(
-                'Tem certeza que deseja apagar TODOS os dados importados de Prontidão e Carga? Esta ação não pode ser desfeita.',
-                () => clearAllImportedData(),
-                'Apagar Todos os Dados'
-            );
-        });
-
-
+        
         // --- INITIALIZATION ---
         document.getElementById('dataTreinoFisico').valueAsDate = new Date();
         document.getElementById('dataTreinoFisico').dispatchEvent(new Event('change'));
@@ -715,7 +719,7 @@
             if (filteredData.length > 0) {
                 displayFilteredProntidaoData(filteredData, selectedWeeks);
             } else {
-                teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s).</p>';
+                teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhuma dado de prontidão para a(s) semana(s) selecionada(s).</p>';
                 resultsContainer.innerHTML = '';
                 latestProntidaoData = null;
             }
@@ -759,14 +763,12 @@
             const selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
             
             if (latestProntidaoData && latestProntidaoData.teamStats) {
-                // If multiple weeks are selected, show charts on the main dashboard too
                 if (selectedWeeks.length > 1 && latestProntidaoData.teamStats.evolutionData.length > 0) {
                     dashboardProntidao.innerHTML = renderTeamDashboardProntidaoWithCharts(latestProntidaoData.teamStats, latestProntidaoData.latestDate, true, selectedWeeks.length, 'dashboard-');
-                    // Call chart renderers with prefixed IDs to avoid conflicts
                     renderTeamIndexChart('dashboard-team-index-chart', latestProntidaoData.teamStats.evolutionData);
                     renderTeamHooperChart('dashboard-team-hooper-chart', latestProntidaoData.teamStats.evolutionData);
                     renderTeamSaltoChart('dashboard-team-salto-chart', latestProntidaoData.teamStats.evolutionData);
-                } else { // Otherwise, show the numeric cards (old behavior)
+                } else { 
                     const overallStats = {
                         averageIndex: latestProntidaoData.teamStats.averageIndex,
                         averageHooper: latestProntidaoData.teamStats.averageHooper,
@@ -919,46 +921,42 @@
 
         async function exportToPDF(type) {
             const contentId = `pdf-content-${type}`;
-            const pdfButton = document.getElementById(`exportPdfBtn${type.charAt(0).toUpperCase() + type.slice(1)}`);
-            const fileName = `relatorio_${type}.pdf`;
+            const pdfButtonId = `exportPdfBtn${type === 'dashboard' ? 'Dashboard' : type.charAt(0).toUpperCase() + type.slice(1)}`;
+            const pdfButton = document.getElementById(pdfButtonId);
+            if (!pdfButton) {
+                console.error(`PDF button with id ${pdfButtonId} not found.`);
+                return;
+            }
+            const fileName = `relatorio_${type}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
             const contentToPrint = document.getElementById(contentId);
-            if (!contentToPrint) return;
+            if (!contentToPrint) {
+                showToast(`Conteúdo para PDF (id: ${contentId}) não encontrado.`);
+                return;
+            }
 
             const originalText = pdfButton.innerHTML;
             pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
             pdfButton.disabled = true;
-
-            const truncatedElements = contentToPrint.querySelectorAll('.truncate');
-            truncatedElements.forEach(el => el.classList.remove('truncate'));
-
-            if (type === 'prontidao' || type === 'carga') {
-                document.querySelectorAll(`#${contentId} .details-section`).forEach(el => el.classList.add('open'));
-                document.querySelectorAll(`#${contentId} .toggle-details-btn`).forEach(button => {
-                    if (button.dataset.chartdata) {
-                        const athleteId = button.dataset.athlete;
-                        const canvasId = `chart-${athleteId}`;
-                        if (!activeCharts[canvasId]) {
-                            const data = JSON.parse(button.dataset.chartdata);
-                            renderAthleteChart(canvasId, data, 'Carga de Treino Diária (u.a.)');
-                        }
-                    }
-                });
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            // Open all details sections to ensure they are captured in the PDF
+            const detailsSections = contentToPrint.querySelectorAll('.details-section');
+            detailsSections.forEach(el => el.classList.add('open'));
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait for sections to open
 
             try {
-                const canvas = await html2canvas(contentToPrint, { scale: 2, useCORS: true, backgroundColor: '#f9fafb' });
-                const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const canvas = await html2canvas(contentToPrint, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = pdf.internal.pageSize.getHeight();
                 const imgProps = pdf.getImageProperties(imgData);
                 const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                
                 let heightLeft = imgHeight;
                 let position = 0;
+                
                 pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
                 heightLeft -= pdfHeight;
 
@@ -975,10 +973,7 @@
             } finally {
                 pdfButton.innerHTML = originalText;
                 pdfButton.disabled = false;
-                truncatedElements.forEach(el => el.classList.add('truncate'));
-                 if (type === 'prontidao' || type === 'carga') {
-                    document.querySelectorAll(`#${contentId} .details-section`).forEach(el => el.classList.remove('open'));
-                }
+                detailsSections.forEach(el => el.classList.remove('open')); // Close details sections again
             }
         }
 
@@ -1025,7 +1020,13 @@
                     if (header) { 
                         const value = values[index] ? values[index].trim() : null;
                         if (['atleta_id', 'data', 'microciclo_id', 'semana_id'].includes(header)) {
-                            entry[header] = value;
+                             // Fix for date parsing
+                             if (header === 'data' && value && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+                                const parts = value.split('/');
+                                entry[header] = `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert DD/MM/YYYY to YYYY-MM-DD
+                            } else {
+                                entry[header] = value;
+                            }
                         } else {
                             const sanitizedValue = value ? value.replace(',', '.') : null;
                             entry[header] = sanitizedValue && !isNaN(parseFloat(sanitizedValue)) ? parseFloat(sanitizedValue) : null;
@@ -1059,16 +1060,32 @@
             await batch.commit();
         }
         
-        async function clearAllImportedData() {
-            const collectionsToDelete = [prontidaoCollection, cargaCollection];
-            showToast('Limpando dados...', 'success');
-            for(const coll of collectionsToDelete) {
-                const snapshot = await getDocs(query(coll));
-                const batch = writeBatch(db);
-                snapshot.docs.forEach(d => batch.delete(d.ref));
-                await batch.commit();
-            }
-            showToast('Todos os dados importados foram removidos.', 'success');
+        function clearProntidaoData() {
+            showConfirmationModal(
+                'Tem certeza que deseja apagar TODOS os dados de Prontidão? Esta ação não pode ser desfeita.',
+                async () => {
+                    showToast('Limpando dados de prontidão...', 'success');
+                    const snapshot = await getDocs(query(prontidaoCollection));
+                    const batch = writeBatch(db);
+                    snapshot.docs.forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                    showToast('Dados de prontidão removidos.', 'success');
+                }, 'Apagar Dados de Prontidão'
+            );
+        }
+
+        function clearCargaData() {
+            showConfirmationModal(
+                'Tem certeza que deseja apagar TODOS os dados de Carga? Esta ação não pode ser desfeita.',
+                async () => {
+                    showToast('Limpando dados de carga...', 'success');
+                    const snapshot = await getDocs(query(cargaCollection));
+                    const batch = writeBatch(db);
+                    snapshot.docs.forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                    showToast('Dados de carga removidos.', 'success');
+                }, 'Apagar Dados de Carga'
+            );
         }
 
         function handleFileProcessing() {
@@ -1100,20 +1117,17 @@
         function getWeekId(date) {
             if (!date) return null;
             let d = date;
-            if (typeof date.getTime !== 'function') {
+             if (typeof date === 'string') {
+                d = new Date(date + 'T00:00:00'); 
+            } else if (typeof date.getTime !== 'function') {
                 d = new Date(date);
             }
-             // Adjust for timezone offset to get correct UTC date
-            const timezoneOffset = d.getTimezoneOffset() * 60000;
-            const utcDate = new Date(d.getTime() + timezoneOffset);
-            
-            const day = utcDate.getUTCDay() || 7;
-            utcDate.setUTCDate(utcDate.getUTCDate() + 4 - day);
-            const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
-            const weekNo = Math.ceil((((utcDate - yearStart) / 86400000) + 1) / 7);
+            const day = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - day);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
             return `S${String(weekNo).padStart(2, '0')}`;
         }
-
 
         function renderFilterProntidao(data) {
             const weekIds = [...new Set(data.map(d => d.semana_id).filter(Boolean))].sort().reverse();
@@ -1154,19 +1168,18 @@
 
             let latestDateOverall = null;
 
-            // 1. Calculate individual results for the table (average of the whole selection period per athlete)
             const individualResults = Object.keys(athletesData).map(athleteId => {
                 const entriesInSelection = athletesData[athleteId];
                 if (entriesInSelection.length === 0) return null;
                 
-                const firstDateInSelection = entriesInSelection.reduce((minDate, entry) => new Date(entry.data) < minDate ? new Date(entry.data) : minDate, new Date());
+                const firstDateInSelection = entriesInSelection.reduce((minDate, entry) => new Date(`${entry.data}T00:00:00`) < minDate ? new Date(`${entry.data}T00:00:00`) : minDate, new Date());
                 const latestDateInSelection = entriesInSelection.reduce((maxDate, entry) => {
-                    const entryDate = new Date(entry.data);
+                    const entryDate = new Date(`${entry.data}T00:00:00`);
                     if (!latestDateOverall || entryDate > latestDateOverall) latestDateOverall = entryDate;
                     return entryDate > maxDate ? entryDate : maxDate;
                 }, new Date(0));
 
-                const allHistoricalEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(d.data) < firstDateInSelection).sort((a, b) => new Date(b.data) - new Date(a.data));
+                const allHistoricalEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < firstDateInSelection).sort((a, b) => new Date(`${b.data}T00:00:00`) - new Date(`${a.data}T00:00:00`));
                 const representativeEntry = Object.keys(METRIC_NAMES).reduce((acc, key) => {
                     acc[key] = getStats(entriesInSelection.map(e => e[key])).mean;
                     return acc;
@@ -1174,15 +1187,14 @@
                 return calculateAthleteReadiness(athleteId, representativeEntry, allHistoricalEntries, latestDateInSelection.toISOString().split('T')[0]);
             }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
 
-            // 2. Calculate evolution data for the team dashboard charts (one data point per week)
             const uniqueWeeksSorted = [...new Set(data.map(d => d.semana_id))].sort();
             const evolutionData = uniqueWeeksSorted.map(weekId => {
                 const dataForThisWeek = data.filter(d => d.semana_id === weekId);
                 const athletesInWeek = [...new Set(dataForThisWeek.map(d => d.atleta_id))];
                 const resultsForThisWeek = athletesInWeek.map(athleteId => {
                     const entriesInWeek = dataForThisWeek.filter(d => d.atleta_id === athleteId);
-                    const latestEntryInWeek = entriesInWeek.sort((a,b) => new Date(b.data) - new Date(a.data))[0];
-                    const historicalEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(d.data) < new Date(latestEntryInWeek.data));
+                    const latestEntryInWeek = entriesInWeek.sort((a,b) => new Date(`${b.data}T00:00:00`) - new Date(`${a.data}T00:00:00`))[0];
+                    const historicalEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < new Date(`${latestEntryInWeek.data}T00:00:00`));
                     return calculateAthleteReadiness(athleteId, latestEntryInWeek, historicalEntries, latestEntryInWeek.data);
                 }).filter(Boolean);
                 
@@ -1195,7 +1207,6 @@
                 };
             });
 
-            // 3. Assemble the final return object
             const readyAthletesOverall = individualResults.filter(r => r.status === 'ready');
             const teamStats = {
                 averageIndex: getStats(readyAthletesOverall.map(r => parseFloat(r.index))).mean,
@@ -1282,7 +1293,7 @@
             const hooperTeamClass = getHooperClassification(stats.averageHooper);
             const indexTeamClass = getIndexClassification(stats.averageIndex);
             const saltoTeamClass = stats.averageSaltoDiff >= 0 ? 'text-green-600' : 'text-red-600';
-            const formattedDate = latestDate ? new Date(latestDate.replace(/-/g, '/')).toLocaleDateString('pt-BR') : 'N/A';
+            const formattedDate = latestDate ? new Date(latestDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
             const title = 'Resumo da Prontidão';
 
             return `
@@ -1301,7 +1312,7 @@
             const title = isForDashboard ? 'Resumo da Prontidão' : 'Painel da Equipe';
             const dateText = selectedWeeksCount > 1 
                 ? `Evolução Semanal` 
-                : `Dados de: ${latestDate ? new Date(latestDate.replace(/-/g, '/')).toLocaleDateString('pt-BR') : 'N/A'}`;
+                : `Dados de: ${latestDate ? new Date(latestDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A'}`;
 
             return `
                 <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(${dateText})</span></h2>
@@ -1359,16 +1370,14 @@
                 if (!METRIC_NAMES[key] || data.latest == null) return '';
                 const latestValue = (data.latest && !isNaN(data.latest)) ? data.latest.toFixed(1) : 'N/A';
                 const meanValue = (data.mean && !isNaN(data.mean)) ? data.mean.toFixed(1) : 'N/A';
-                const label = document.querySelectorAll('.week-checkbox:checked').length > 1 ? 'Média Seleção' : 'Último Valor';
-                return `<li class="flex justify-between items-center text-sm py-1 border-b"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${latestValue} <span class="text-xs text-gray-500 font-normal">(${label}: ${latestValue} / Média Hist.: ${meanValue})</span></span></li>`;
+                return `<li class="flex justify-between items-center text-sm py-1 border-b"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${latestValue} <span class="text-xs text-gray-500 font-normal">(Média Hist.: ${meanValue})</span></span></li>`;
             }).join('');
             
             const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
 
-            return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate.replace(/-/g, '/')).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div><div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div><div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div><div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${hooperScoreValue}</span></div><div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-prontidao-${uniqueId}"><svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-prontidao-${uniqueId}"><div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="font-semibold text-sm mb-2">Detalhes (Valores médios da seleção):</h4><ul class="space-y-1">${detailsHtml}</ul></div><div class="bg-blue-50 border p-3 rounded-lg self-start"><h4 class="font-semibold text-sm mb-1">Sugestão:</h4><p class="text-sm">${recommendation}</p></div></div></div></div>`;
+            return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div><div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div><div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div><div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${hooperScoreValue}</span></div><div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-prontidao-${uniqueId}"><svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-prontidao-${uniqueId}"><div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="font-semibold text-sm mb-2">Detalhes (Valores médios da seleção):</h4><ul class="space-y-1">${detailsHtml}</ul></div><div class="bg-blue-50 border p-3 rounded-lg self-start"><h4 class="font-semibold text-sm mb-1">Sugestão:</h4><p class="text-sm">${recommendation}</p></div></div></div></div>`;
         }
         
-        // --- NEW CHART RENDERING FUNCTIONS ---
         function renderTeamIndexChart(canvasId, evolutionData) {
             const ctx = document.getElementById(canvasId);
             if (!ctx) return;
@@ -1405,6 +1414,11 @@
 
             const labels = evolutionData.map(d => d.weekId);
             const data = evolutionData.map(d => d.averageHooper.toFixed(1));
+            const backgroundColors = data.map(val => {
+                if (val <= 9) return 'rgba(34, 197, 94, 0.7)'; // green
+                if (val <= 17) return 'rgba(245, 158, 11, 0.7)'; // yellow
+                return 'rgba(239, 68, 68, 0.7)'; // red
+            });
 
             activeCharts[canvasId] = new Chart(ctx, {
                 type: 'bar',
@@ -1413,15 +1427,13 @@
                     datasets: [{
                         label: 'Hooper',
                         data: data,
-                        backgroundColor: 'rgba(245, 158, 11, 0.7)',
-                        borderColor: 'rgba(245, 158, 11, 1)',
-                        borderWidth: 1
+                        backgroundColor: backgroundColors,
                     }]
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     scales: { y: { min: 4, max: 28 } },
-                    plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top', color: '#a16207' } }
+                    plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top' } }
                 }
             });
         }
@@ -1442,8 +1454,6 @@
                         label: '% Recuperação Muscular',
                         data: data,
                         backgroundColor: data.map(val => val >= 0 ? 'rgba(34, 197, 94, 0.7)' : 'rgba(239, 68, 68, 0.7)'),
-                        borderColor: data.map(val => val >= 0 ? 'rgba(22, 163, 74, 1)' : 'rgba(220, 38, 38, 1)'),
-                        borderWidth: 1
                     }]
                 },
                 options: {
@@ -1509,14 +1519,14 @@
                     allMicrocycles.add(row.microciclo_id);
                     if (!acc[row.microciclo_id]) acc[row.microciclo_id] = { entries: [], minDate: row.data };
                     acc[row.microciclo_id].entries.push(row);
-                    if (new Date(row.data) < new Date(acc[row.microciclo_id].minDate)) {
+                    if (new Date(`${row.data}T00:00:00`) < new Date(`${acc[row.microciclo_id].minDate}T00:00:00`)) {
                         acc[row.microciclo_id].minDate = row.data;
                     }
                     return acc;
                 }, {});
 
                 athleteMicrocycleData[athleteId] = Object.entries(microcycles)
-                    .sort(([, a], [, b]) => new Date(a.minDate) - new Date(b.minDate))
+                    .sort(([, a], [, b]) => new Date(`${a.minDate}T00:00:00`) - new Date(`${b.minDate}T00:00:00`))
                     .map(([id, cycleData]) => {
                          const dailyEntries = cycleData.entries.map(e => ({
                             date: e.data,
@@ -1569,18 +1579,19 @@
 
             for (const athleteId in athleteMicrocycleData) {
                 const allAthleteCycles = athleteMicrocycleData[athleteId];
-                if (selectedIds.length > 1) {
-                    sortedSelectedIds.forEach(mc_id => {
-                        const cycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === mc_id);
-                        if (cycleIndex !== -1) {
-                            const cycle = allAthleteCycles[cycleIndex];
-                            const chronicCycles = allAthleteCycles.slice(Math.max(0, cycleIndex - 4), cycleIndex);
-                            const chronicLoad = getStats(chronicCycles.map(c => c.totalLoad)).mean;
-                            const awcr = chronicLoad > 0 ? cycle.totalLoad / chronicLoad : null;
+                
+                sortedSelectedIds.forEach(mc_id => {
+                    const cycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === mc_id);
+                    if (cycleIndex !== -1) {
+                        const cycle = allAthleteCycles[cycleIndex];
+                        const chronicCycles = allAthleteCycles.slice(Math.max(0, cycleIndex - 4), cycleIndex);
+                        const chronicLoad = getStats(chronicCycles.map(c => c.totalLoad)).mean;
+                        const awcr = chronicLoad > 0 ? cycle.totalLoad / chronicLoad : null;
+                        if (selectedIds.length > 1) {
                             weeklyTeamData.push({ microciclo_id: mc_id, totalLoad: cycle.totalLoad, strain: cycle.strain, awcr: awcr });
                         }
-                    });
-                }
+                    }
+                });
 
                 const selectedCycles = allAthleteCycles.filter(c => selectedIds.includes(c.microciclo_id));
                 if(selectedCycles.length === 0) continue;
@@ -1588,26 +1599,28 @@
                 const aggregatedDailyEntries = selectedCycles.flatMap(c => c.dailyEntries);
                 const aggregatedLoadStats = getStats(aggregatedDailyEntries.map(e => e.load));
                 const aggregatedMonotony = aggregatedLoadStats.mean > 0 && aggregatedLoadStats.stdDev > 0 ? aggregatedLoadStats.mean / aggregatedLoadStats.stdDev : 0;
-                const firstSelectedCycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === sortedSelectedIds[0]);
-                const chronicCyclesForTable = allAthleteCycles.slice(Math.max(0, firstSelectedCycleIndex - 4), firstSelectedCycleIndex);
-                const chronicLoadForTable = getStats(chronicCyclesForTable.map(c => c.totalLoad)).mean;
-                const acuteLoadForTable = aggregatedLoadStats.sum;
-                const awcrForTable = chronicLoadForTable > 0 ? acuteLoadForTable / (chronicLoadForTable * selectedIds.length) : null;
-
+                
+                const lastSelectedCycleId = sortedSelectedIds[sortedSelectedIds.length - 1];
+                const lastCycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === lastSelectedCycleId);
+                const lastCycleAcuteLoad = lastCycleIndex > -1 ? allAthleteCycles[lastCycleIndex].totalLoad : 0;
+                const chronicCyclesForLast = allAthleteCycles.slice(Math.max(0, lastCycleIndex - 4), lastCycleIndex);
+                const chronicLoadForLast = getStats(chronicCyclesForLast.map(c => c.totalLoad)).mean;
+                const awcrForTable = chronicLoadForLast > 0 ? lastCycleAcuteLoad / chronicLoadForLast : null;
+                
                 individualResults.push({
-                    athleteId, totalLoad: acuteLoadForTable, monotony: aggregatedMonotony,
-                    strain: acuteLoadForTable * aggregatedMonotony, awcr: awcrForTable,
-                    hasEnoughDataForAwcr: chronicCyclesForTable.length >= 4,
+                    athleteId, totalLoad: aggregatedLoadStats.sum, monotony: aggregatedMonotony,
+                    strain: aggregatedLoadStats.sum * aggregatedMonotony, awcr: awcrForTable,
+                    hasEnoughDataForAwcr: chronicCyclesForLast.length >= 4,
                     chartData: {
-                        labels: aggregatedDailyEntries.sort((a,b) => new Date(a.date) - new Date(b.date)).map(e => new Date(e.date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})),
-                        loads: aggregatedDailyEntries.sort((a,b) => new Date(a.date) - new Date(b.date)).map(e => e.load)
+                        labels: aggregatedDailyEntries.sort((a,b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`)).map(e => new Date(`${e.date}T00:00:00`).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})),
+                        loads: aggregatedDailyEntries.sort((a,b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`)).map(e => e.load)
                     }
                 });
                 allEntriesInCycles.push(...aggregatedDailyEntries);
             }
 
             const loadsByDayOfWeek = allEntriesInCycles.reduce((acc, entry) => {
-                const dayOfWeek = new Date(entry.date + 'T00:00:00').getDay();
+                const dayOfWeek = new Date(`${entry.date}T00:00:00`).getUTCDay();
                 if (!acc[dayOfWeek]) acc[dayOfWeek] = [];
                 acc[dayOfWeek].push(entry.load);
                 return acc;
@@ -1670,8 +1683,8 @@
             if (!ctx) return;
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
-            const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-            const data = [dailyData[1], dailyData[2], dailyData[3], dailyData[4], dailyData[5], dailyData[6], dailyData[0]];
+            const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            const data = [dailyData[0], dailyData[1], dailyData[2], dailyData[3], dailyData[4], dailyData[5], dailyData[6]];
             const backgroundColors = data.map(load => getCargaAgudaChartColor(load));
 
             activeCharts[canvasId] = new Chart(ctx, {
@@ -1820,7 +1833,10 @@
             
             filterContainerPlanejamento.innerHTML = `
                  <div class="bg-white p-4 rounded-lg border shadow-sm">
-                    <label class="font-semibold text-gray-700 block mb-2">Selecione a(s) Semana(s) para Planejamento:</label>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="font-semibold text-gray-700">Selecione a(s) Semana(s) para Planejamento:</label>
+                        <button id="deletePlanningWeeksBtn" class="btn bg-red-100 text-red-700 font-semibold py-1 px-3 rounded-lg hover:bg-red-200 transition text-sm">Excluir Semanas</button>
+                    </div>
                     <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                         ${allWeeks.map(week => `
                             <div class="flex items-center">
@@ -1830,6 +1846,7 @@
                         `).join('')}
                     </div>
                 </div>`;
+            document.getElementById('deletePlanningWeeksBtn').addEventListener('click', deleteSelectedPlanningWeeks);
         }
 
         function renderPlanningView() {
@@ -1866,6 +1883,36 @@
             renderDailyLoadChart('chartCargaCampo', campoSemana);
         }
         
+        async function deleteSelectedPlanningWeeks() {
+            const selectedCheckboxes = document.querySelectorAll('.planning-week-checkbox:checked');
+            const weeksToDelete = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+            if (weeksToDelete.length === 0) {
+                showToast("Nenhuma semana selecionada para excluir.");
+                return;
+            }
+
+            showConfirmationModal(
+                `Tem certeza que deseja apagar todos os treinos da(s) semana(s) ${weeksToDelete.join(', ')}? Esta ação não pode ser desfeita.`,
+                async () => {
+                    showToast('Excluindo treinos...', 'success');
+                    const batch = writeBatch(db);
+                    
+                    const qFisico = query(treinosFisicosCollection, where("semana_id", "in", weeksToDelete));
+                    const qCampo = query(treinosCampoCollection, where("semana_id", "in", weeksToDelete));
+
+                    const [fisicoSnap, campoSnap] = await Promise.all([getDocs(qFisico), getDocs(qCampo)]);
+
+                    fisicoSnap.docs.forEach(d => batch.delete(d.ref));
+                    campoSnap.docs.forEach(d => batch.delete(d.ref));
+
+                    await batch.commit();
+                    showToast('Semanas e treinos associados removidos.', 'success');
+                },
+                'Excluir Semanas de Planejamento'
+            );
+        }
+
         function renderTimeline(container, treinos, emptyMessage) {
             if (!container) return;
             container.innerHTML = '';
@@ -1873,7 +1920,7 @@
                  container.innerHTML = `<p class="col-span-full text-gray-500 text-center w-full py-8">${emptyMessage}</p>`;
                 return;
             }
-            treinos.sort((a, b) => new Date(a.date) - new Date(b.date));
+            treinos.sort((a, b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`));
             treinos.forEach(treino => {
                 const card = document.createElement('div');
                 const borderColorClass = `carga-${treino.carga}`;
