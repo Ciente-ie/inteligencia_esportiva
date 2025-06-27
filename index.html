@@ -713,7 +713,6 @@
             const filteredData = fullProntidaoData.filter(d => selectedWeeks.includes(d.semana_id));
 
             if (filteredData.length > 0) {
-                // MODIFICATION: Pass selectedWeeks to display function
                 displayFilteredProntidaoData(filteredData, selectedWeeks);
             } else {
                 teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s).</p>';
@@ -756,11 +755,26 @@
         }
 
         function renderDashboardProntidao() {
-             // MODIFICATION: Get selected weeks count for dashboard title
             const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
-            const selectedWeeksCount = selectedCheckboxes.length;
-            if (latestProntidaoData) {
-                dashboardProntidao.innerHTML = renderTeamDashboardProntidao(latestProntidaoData.teamStats, latestProntidaoData.latestDate, true, selectedWeeksCount);
+            const selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
+            
+            if (latestProntidaoData && latestProntidaoData.teamStats) {
+                // If multiple weeks are selected, show charts on the main dashboard too
+                if (selectedWeeks.length > 1 && latestProntidaoData.teamStats.evolutionData.length > 0) {
+                    dashboardProntidao.innerHTML = renderTeamDashboardProntidaoWithCharts(latestProntidaoData.teamStats, latestProntidaoData.latestDate, true, selectedWeeks.length, 'dashboard-');
+                    // Call chart renderers with prefixed IDs to avoid conflicts
+                    renderTeamIndexChart('dashboard-team-index-chart', latestProntidaoData.teamStats.evolutionData);
+                    renderTeamHooperChart('dashboard-team-hooper-chart', latestProntidaoData.teamStats.evolutionData);
+                    renderTeamSaltoChart('dashboard-team-salto-chart', latestProntidaoData.teamStats.evolutionData);
+                } else { // Otherwise, show the numeric cards (old behavior)
+                    const overallStats = {
+                        averageIndex: latestProntidaoData.teamStats.averageIndex,
+                        averageHooper: latestProntidaoData.teamStats.averageHooper,
+                        averageSaltoDiff: latestProntidaoData.teamStats.averageSaltoDiff,
+                        zoneCounts: latestProntidaoData.teamStats.zoneCounts
+                    };
+                    dashboardProntidao.innerHTML = renderTeamDashboardProntidaoWithCards(overallStats, latestProntidaoData.latestDate);
+                }
             } else {
                 dashboardProntidao.innerHTML = `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Prontidão</h2><div class="text-center py-10 px-6"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de prontidão carregado</h3><p class="mt-1 text-sm text-gray-500">Vá para a aba 'Análise de Prontidão' para importar um arquivo.</p></div>`;
             }
@@ -1124,17 +1138,14 @@
                 </div>`;
         }
         
-        // MODIFICATION: Added selectedWeeks parameter
         function displayFilteredProntidaoData(data, selectedWeeks) {
             const { individualResults, teamStats, latestDate } = analyzeProntidaoData(data);
             latestProntidaoData = { teamStats, latestDate };
-            // MODIFICATION: Pass selectedWeeks.length to rendering functions
             renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeks.length);
             updateDashboardView();
         }
 
-        // MODIFICATION: Heavily modified to average results for selected weeks
-        function analyzeProntidaoData(data) { // 'data' is already filtered by the selected weeks
+        function analyzeProntidaoData(data) {
             const athletesData = data.reduce((acc, row) => {
                 if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
                 acc[row.atleta_id].push(row);
@@ -1143,55 +1154,64 @@
 
             let latestDateOverall = null;
 
+            // 1. Calculate individual results for the table (average of the whole selection period per athlete)
             const individualResults = Object.keys(athletesData).map(athleteId => {
                 const entriesInSelection = athletesData[athleteId];
                 if (entriesInSelection.length === 0) return null;
                 
-                // Determine cutoff date for historical data: the date of the first entry in the selection
-                const firstDateInSelection = entriesInSelection.reduce((minDate, entry) => {
-                    const entryDate = new Date(entry.data);
-                    return entryDate < minDate ? entryDate : minDate;
-                }, new Date());
-                
-                // Find the latest date in selection for display purposes
+                const firstDateInSelection = entriesInSelection.reduce((minDate, entry) => new Date(entry.data) < minDate ? new Date(entry.data) : minDate, new Date());
                 const latestDateInSelection = entriesInSelection.reduce((maxDate, entry) => {
                     const entryDate = new Date(entry.data);
                     if (!latestDateOverall || entryDate > latestDateOverall) latestDateOverall = entryDate;
                     return entryDate > maxDate ? entryDate : maxDate;
                 }, new Date(0));
 
-                const allHistoricalEntries = fullProntidaoData
-                    .filter(d => d.atleta_id === athleteId && new Date(d.data) < firstDateInSelection)
-                    .sort((a, b) => new Date(b.data) - new Date(a.data));
-
-                // Create a single representative entry by averaging the values from the selection
+                const allHistoricalEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(d.data) < firstDateInSelection).sort((a, b) => new Date(b.data) - new Date(a.data));
                 const representativeEntry = Object.keys(METRIC_NAMES).reduce((acc, key) => {
                     acc[key] = getStats(entriesInSelection.map(e => e[key])).mean;
                     return acc;
                 }, {});
-                
-                // Pass the latest date from the selection to be used in the UI row
                 return calculateAthleteReadiness(athleteId, representativeEntry, allHistoricalEntries, latestDateInSelection.toISOString().split('T')[0]);
-
             }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
 
-            const readyAthletes = individualResults.filter(r => r.status === 'ready');
+            // 2. Calculate evolution data for the team dashboard charts (one data point per week)
+            const uniqueWeeksSorted = [...new Set(data.map(d => d.semana_id))].sort();
+            const evolutionData = uniqueWeeksSorted.map(weekId => {
+                const dataForThisWeek = data.filter(d => d.semana_id === weekId);
+                const athletesInWeek = [...new Set(dataForThisWeek.map(d => d.atleta_id))];
+                const resultsForThisWeek = athletesInWeek.map(athleteId => {
+                    const entriesInWeek = dataForThisWeek.filter(d => d.atleta_id === athleteId);
+                    const latestEntryInWeek = entriesInWeek.sort((a,b) => new Date(b.data) - new Date(a.data))[0];
+                    const historicalEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(d.data) < new Date(latestEntryInWeek.data));
+                    return calculateAthleteReadiness(athleteId, latestEntryInWeek, historicalEntries, latestEntryInWeek.data);
+                }).filter(Boolean);
+                
+                const readyAthletesThisWeek = resultsForThisWeek.filter(r => r.status === 'ready');
+                return {
+                    weekId,
+                    averageIndex: getStats(readyAthletesThisWeek.map(r => parseFloat(r.index))).mean,
+                    averageHooper: getStats(readyAthletesThisWeek.map(r => r.hooperScore.latest)).mean,
+                    averageSaltoDiff: getStats(readyAthletesThisWeek.map(r => r.saltoPercentDiff)).mean,
+                };
+            });
+
+            // 3. Assemble the final return object
+            const readyAthletesOverall = individualResults.filter(r => r.status === 'ready');
             const teamStats = {
-                averageIndex: getStats(readyAthletes.map(r => parseFloat(r.index))).mean,
-                averageHooper: getStats(readyAthletes.map(r => r.hooperScore.latest)).mean,
-                averageSaltoDiff: getStats(readyAthletes.map(r => r.saltoPercentDiff)).mean,
+                averageIndex: getStats(readyAthletesOverall.map(r => parseFloat(r.index))).mean,
+                averageHooper: getStats(readyAthletesOverall.map(r => r.hooperScore.latest)).mean,
+                averageSaltoDiff: getStats(readyAthletesOverall.map(r => r.saltoPercentDiff)).mean,
                 zoneCounts: individualResults.reduce((acc, r) => {
                     acc[r.zone || 'collecting'] = (acc[r.zone || 'collecting'] || 0) + 1;
                     return acc;
-                }, { green: 0, yellow: 0, red: 0, collecting: 0 })
+                }, { green: 0, yellow: 0, red: 0, collecting: 0 }),
+                evolutionData
             };
             
             const latestDate = latestDateOverall ? latestDateOverall.toISOString().split('T')[0] : null;
-
             return { individualResults, teamStats, latestDate };
         }
 
-        // MODIFICATION: Added displayDate parameter and changed saltoDiff logic
         function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, displayDate) {
             const getZScore = (key) => {
                 const value = latestEntry[key];
@@ -1224,27 +1244,25 @@
                 return acc;
             }, {});
             
-            // Compare the average of the selection with the average of the history
             const saltoMeanHistorical = metricsDetail.salto_horizontal_cm?.mean || 0;
             const saltoMeanSelection = latestEntry.salto_horizontal_cm;
             const saltoDiff = (saltoMeanSelection && !isNaN(saltoMeanHistorical) && saltoMeanHistorical > 0) ? ((saltoMeanSelection - saltoMeanHistorical) / saltoMeanHistorical) * 100 : null;
 
-
             return { 
-                athleteId, 
-                status: 'ready', 
-                index: readinessIndex.toFixed(2), 
-                zone, 
-                metricsDetail, 
-                hooperScore: { latest: latestEntry.hooper_score }, 
-                saltoPercentDiff: saltoDiff, 
-                latestDate: displayDate // Pass the date through for UI rendering
+                athleteId, status: 'ready', index: readinessIndex.toFixed(2), zone, 
+                metricsDetail, hooperScore: { latest: latestEntry.hooper_score }, 
+                saltoPercentDiff: saltoDiff, latestDate: displayDate 
             };
         }
 
-        // MODIFICATION: Added selectedWeeksCount parameter
         function renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeksCount = 1) {
-            teamDashboard.innerHTML = renderTeamDashboardProntidao(teamStats, latestDate, false, selectedWeeksCount);
+            teamDashboard.innerHTML = renderTeamDashboardProntidaoWithCharts(teamStats, latestDate, false, selectedWeeksCount);
+            if (teamStats.evolutionData && teamStats.evolutionData.length > 0) {
+                renderTeamIndexChart('team-index-chart', teamStats.evolutionData);
+                renderTeamHooperChart('team-hooper-chart', teamStats.evolutionData);
+                renderTeamSaltoChart('team-salto-chart', teamStats.evolutionData);
+            }
+
             resultsContainer.innerHTML = `
                 <div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0">
                     <div class="w-1/3">Atleta</div>
@@ -1258,28 +1276,66 @@
             renderLegends('prontidao');
         }
 
-        // MODIFICATION: Added selectedWeeksCount and logic for title
-        function renderTeamDashboardProntidao(stats, latestDate, isForDashboard = false, selectedWeeksCount = 1) {
-            if(!stats) return '';
+        function renderTeamDashboardProntidaoWithCards(stats, latestDate) {
+             if(!stats) return '';
             const { green, yellow, red } = stats.zoneCounts;
             const hooperTeamClass = getHooperClassification(stats.averageHooper);
             const indexTeamClass = getIndexClassification(stats.averageIndex);
             const saltoTeamClass = stats.averageSaltoDiff >= 0 ? 'text-green-600' : 'text-red-600';
             const formattedDate = latestDate ? new Date(latestDate.replace(/-/g, '/')).toLocaleDateString('pt-BR') : 'N/A';
-            const title = isForDashboard ? 'Resumo da Prontidão' : 'Painel da Equipe';
-            
-            const dateText = selectedWeeksCount > 1 
-                ? `Média de ${selectedWeeksCount} semanas` 
-                : `Dados de: ${formattedDate}`;
+            const title = 'Resumo da Prontidão';
 
             return `
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(${dateText})</span></h2>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(Dados de: ${formattedDate})</span></h2>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
                         <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Índice Geral Médio</p><p class="text-5xl font-bold ${indexTeamClass.class}">${stats.averageIndex ? stats.averageIndex.toFixed(2) : '--'}</p></div>
                         <div class="flex flex-col items-center justify-center p-4 rounded-lg border ${hooperTeamClass.border} ${hooperTeamClass.bg} min-h-[140px]"><p class="text-sm font-medium ${hooperTeamClass.class}">Média de Fadiga (Hooper)</p><p class="text-5xl font-bold ${hooperTeamClass.class}">${stats.averageHooper ? stats.averageHooper.toFixed(1) : '--'}</p></div>
                         <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Recup. Muscular Média</p><p class="text-5xl font-bold ${saltoTeamClass}">${!isNaN(stats.averageSaltoDiff) ? `${stats.averageSaltoDiff >= 0 ? '+' : ''}${stats.averageSaltoDiff.toFixed(1)}%` : '--'}</p></div>
                         <div class="p-4 bg-gray-50 rounded-lg h-full flex flex-col min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2 text-center">Distribuição dos Atletas</p><div class="flex-grow flex items-center justify-around w-full"><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">${green}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-lg">${yellow}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-lg">${red}</div></div></div></div>
                     </div>`;
+        }
+        
+        function renderTeamDashboardProntidaoWithCharts(stats, latestDate, isForDashboard = false, selectedWeeksCount = 1, idPrefix = '') {
+            if (!stats) return '';
+            const { green = 0, yellow = 0, red = 0 } = stats.zoneCounts || {};
+            const title = isForDashboard ? 'Resumo da Prontidão' : 'Painel da Equipe';
+            const dateText = selectedWeeksCount > 1 
+                ? `Evolução Semanal` 
+                : `Dados de: ${latestDate ? new Date(latestDate.replace(/-/g, '/')).toLocaleDateString('pt-BR') : 'N/A'}`;
+
+            return `
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(${dateText})</span></h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+                    <div class="lg:col-span-1 bg-white p-3 rounded-lg border shadow-sm min-h-[220px]">
+                        <h3 class="font-semibold text-gray-700 text-center mb-2 text-sm">Índice Geral (Semanal)</h3>
+                        <div class="h-48"><canvas id="${idPrefix}team-index-chart"></canvas></div>
+                    </div>
+                    <div class="lg:col-span-1 bg-white p-3 rounded-lg border shadow-sm min-h-[220px]">
+                        <h3 class="font-semibold text-gray-700 text-center mb-2 text-sm">Fadiga Hooper (Média Semanal)</h3>
+                        <div class="h-48"><canvas id="${idPrefix}team-hooper-chart"></canvas></div>
+                    </div>
+                    <div class="lg:col-span-1 bg-white p-3 rounded-lg border shadow-sm min-h-[220px]">
+                        <h3 class="font-semibold text-gray-700 text-center mb-2 text-sm">% Rec. Muscular (Média Semanal)</h3>
+                        <div class="h-48"><canvas id="${idPrefix}team-salto-chart"></canvas></div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg h-full flex flex-col justify-center min-h-[220px]">
+                        <p class="text-sm font-medium text-gray-600 mb-2 text-center">Distribuição dos Atletas<br><span class="text-xs font-normal">(Média do Período)</span></p>
+                        <div class="flex-grow flex items-center justify-around w-full">
+                            <div class="text-center">
+                                <div class="w-12 h-12 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-xl">${green}</div>
+                                <p class="text-xs mt-1">Ótimo</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-12 h-12 mx-auto rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-xl">${yellow}</div>
+                                <p class="text-xs mt-1">Atenção</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-12 h-12 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-xl">${red}</div>
+                                <p class="text-xs mt-1">Crítico</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
         }
 
         function createProntidaoResultRow(result) {
@@ -1299,7 +1355,6 @@
             const hooperClass = getHooperClassification(result.hooperScore.latest);
             const saltoClass = result.saltoPercentDiff == null ? 'text-gray-500' : (result.saltoPercentDiff >= 0 ? 'text-green-600' : 'text-red-600');
             
-            // Show averaged values in the details view
             const detailsHtml = Object.entries(result.metricsDetail).map(([key, data]) => {
                 if (!METRIC_NAMES[key] || data.latest == null) return '';
                 const latestValue = (data.latest && !isNaN(data.latest)) ? data.latest.toFixed(1) : 'N/A';
@@ -1311,6 +1366,105 @@
             const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
 
             return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate.replace(/-/g, '/')).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div><div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div><div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div><div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${hooperScoreValue}</span></div><div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-prontidao-${uniqueId}"><svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-prontidao-${uniqueId}"><div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="font-semibold text-sm mb-2">Detalhes (Valores médios da seleção):</h4><ul class="space-y-1">${detailsHtml}</ul></div><div class="bg-blue-50 border p-3 rounded-lg self-start"><h4 class="font-semibold text-sm mb-1">Sugestão:</h4><p class="text-sm">${recommendation}</p></div></div></div></div>`;
+        }
+        
+        // --- NEW CHART RENDERING FUNCTIONS ---
+        function renderTeamIndexChart(canvasId, evolutionData) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+
+            const labels = evolutionData.map(d => d.weekId);
+            const data = evolutionData.map(d => d.averageIndex.toFixed(2));
+
+            activeCharts[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Índice Geral',
+                        data: data,
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { min: -3, max: 3 } },
+                    plugins: { legend: { display: false }, datalabels: { align: 'top', color: '#374151' } }
+                }
+            });
+        }
+
+        function renderTeamHooperChart(canvasId, evolutionData) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+
+            const labels = evolutionData.map(d => d.weekId);
+            const data = evolutionData.map(d => d.averageHooper.toFixed(1));
+
+            activeCharts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Hooper',
+                        data: data,
+                        backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { min: 4, max: 28 } },
+                    plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top', color: '#a16207' } }
+                }
+            });
+        }
+
+        function renderTeamSaltoChart(canvasId, evolutionData) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+
+            const labels = evolutionData.map(d => d.weekId);
+            const data = evolutionData.map(d => d.averageSaltoDiff.toFixed(1));
+
+            activeCharts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '% Recuperação Muscular',
+                        data: data,
+                        backgroundColor: data.map(val => val >= 0 ? 'rgba(34, 197, 94, 0.7)' : 'rgba(239, 68, 68, 0.7)'),
+                        borderColor: data.map(val => val >= 0 ? 'rgba(22, 163, 74, 1)' : 'rgba(220, 38, 38, 1)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: -20, max: 30,
+                            ticks: { callback: (value) => value + '%' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: {
+                            formatter: (value) => value + '%',
+                            anchor: 'end',
+                            align: (context) => context.dataset.data[context.dataIndex] >= 0 ? 'top' : 'bottom',
+                            color: (context) => context.dataset.data[context.dataIndex] >= 0 ? '#166534' : '#991b1b'
+                        }
+                    }
+                }
+            });
         }
 
         // --- CARGA DE TREINO FUNCTIONS ---
