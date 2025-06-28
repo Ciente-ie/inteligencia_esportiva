@@ -196,7 +196,7 @@
                          </div>
                     </div>
                     <div id="resultsContainer" class="bg-white rounded-lg shadow-md border overflow-hidden"></div>
-                    <div id="legendsProntidao" class="mt-6 text-xs text-gray-500 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                    <div id="legendsProntidao" class="mt-6 text-xs text-gray-500 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
                 </div>
             </div>
             <div id="placeholderSectionProntidao" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
@@ -680,9 +680,6 @@
                 renderPlanningView();
                 updateDashboardView();
             }
-             if (e.target.id === 'deletePlanningWeeksBtn') {
-                deleteSelectedPlanningWeeks();
-            }
         });
         
         exportPdfBtnDashboard.addEventListener('click', () => exportToPDF('dashboard'));
@@ -808,14 +805,14 @@
             if (selectedPlanningWeeks.length === 1) {
                 const formatTrainingList = (trainings) => {
                     if (trainings.length === 0) {
-                        return '<li class="text-xs text-gray-400">Nenhum treino.</li>';
+                        return '<li class="text-xs text-gray-400">Nenhum treino na semana.</li>';
                     }
                     return trainings
                         .sort((a, b) => new Date(a.date + 'T00:00:00') - new Date(b.date + 'T00:00:00'))
                         .map(t => {
                             const dayOfWeek = new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short' });
                             const objectives = t.objSecundario && t.objSecundario.length > 0 ? t.objSecundario.join(', ') : 'N/A';
-                            return `<li class="text-xs text-gray-700" title="${objectives}"><strong class="font-semibold">${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}:</strong> ${objectives}</li>`;
+                            return `<li class="text-xs text-gray-700"><strong class="font-semibold">${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}:</strong> ${objectives}</li>`;
                         }).join('');
                 };
 
@@ -826,12 +823,12 @@
                     <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                         <div>
                             <h4 class="font-semibold text-gray-600 text-sm text-center mb-1">Treinos Físicos (${trainingsFisico.length})</h4>
-                            <ul class="text-left space-y-1 mb-2 h-16 overflow-y-auto p-2 bg-white rounded-md border">${weekTrainingsFisico}</ul>
+                            <ul class="text-left space-y-1 mb-2 p-2 bg-white rounded-md border min-h-[5rem]">${weekTrainingsFisico}</ul>
                             <div class="h-24"><canvas id="dashboardLoadChartFisico"></canvas></div>
                         </div>
                         <div>
                             <h4 class="font-semibold text-gray-600 text-sm text-center mb-1">Treinos de Campo (${trainingsCampo.length})</h4>
-                            <ul class="text-left space-y-1 mb-2 h-16 overflow-y-auto p-2 bg-white rounded-md border">${weekTrainingsCampo}</ul>
+                            <ul class="text-left space-y-1 mb-2 p-2 bg-white rounded-md border min-h-[5rem]">${weekTrainingsCampo}</ul>
                             <div class="h-24"><canvas id="dashboardLoadChartCampo"></canvas></div>
                         </div>
                     </div>
@@ -1003,8 +1000,11 @@
             pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
             pdfButton.disabled = true;
             
-            const detailsSections = contentToPrint.querySelectorAll('.details-section');
-            detailsSections.forEach(el => el.classList.add('open'));
+            if (type !== 'prontidao') {
+                const detailsSections = contentToPrint.querySelectorAll('.details-section');
+                detailsSections.forEach(el => el.classList.add('open'));
+            }
+
             await new Promise(resolve => setTimeout(resolve, 500)); 
 
             try {
@@ -1037,7 +1037,10 @@
             } finally {
                 pdfButton.innerHTML = originalText;
                 pdfButton.disabled = false;
-                detailsSections.forEach(el => el.classList.remove('open')); 
+                 if (type !== 'prontidao') {
+                    const detailsSections = contentToPrint.querySelectorAll('.details-section');
+                    detailsSections.forEach(el => el.classList.remove('open')); 
+                }
             }
         }
 
@@ -2155,7 +2158,27 @@
 
         function renderLegends(type) {
              if (type === 'prontidao') {
-                legendsProntidao.innerHTML = `<div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Índice Geral</h4><p>Calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p><p><strong class="text-green-600">> -0.5 (Ótimo)</strong></p><p><strong class="text-yellow-600">-0.5 a -1.5 (Atenção)</strong></p><p><strong class="text-red-600">< -1.5 (Crítico)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Fadiga (Hooper)</h4><p><strong class="text-green-700">4-9 (Bom)</strong></p><p><strong class="text-yellow-700">10-17 (Regular)</strong></p><p><strong class="text-red-700">18-28 (Ruim)</strong></p></div>`;
+                legendsProntidao.innerHTML = `
+                    <div class="bg-white p-3 rounded-lg border">
+                        <h4 class="font-bold text-sm mb-1 text-gray-700">Índice Geral</h4>
+                        <p>Calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p>
+                        <p><strong class="text-green-600">> -0.5 (Ótimo)</strong></p>
+                        <p><strong class="text-yellow-600">-0.5 a -1.5 (Atenção)</strong></p>
+                        <p><strong class="text-red-600">< -1.5 (Crítico)</strong></p>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg border">
+                        <h4 class="font-bold text-sm mb-1 text-gray-700">Fadiga (Hooper)</h4>
+                        <p><strong class="text-green-700">4-9 (Bom)</strong></p>
+                        <p><strong class="text-yellow-700">10-17 (Regular)</strong></p>
+                        <p><strong class="text-red-700">18-28 (Ruim)</strong></p>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg border">
+                        <h4 class="font-bold text-sm mb-1 text-gray-700">% Recuperação Muscular</h4>
+                        <p>Variação do Salto Horizontal em relação à média histórica do atleta.</p>
+                        <p><strong class="text-green-600">> 0% (Melhor)</strong></p>
+                        <p><strong class="text-red-600">< 0% (Pior)</strong></p>
+                    </div>
+                `;
              } else {
                 legendsCarga.innerHTML = `<div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Carga Aguda (u.a.)</h4><p>Estresse total do microciclo selecionado.</p><p><strong class="text-blue-600">0 a 300 (Leve)</strong></p><p><strong class="text-green-600">301 a 600 (Moderada)</strong></p><p><strong class="text-red-600">> 600 (Alta)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">AWCR (Acute:Chronic)</h4><p>Carga Aguda / Média das 4 semanas anteriores. <br><em>* <4 semanas de dados crônicos.</em></p><p><strong class="text-green-600">0.8-1.3 (Ideal)</strong></p><p><strong class="text-yellow-600"><0.8 ou 1.3-1.5 (Atenção)</strong></p><p><strong class="text-red-600">>1.5 (Perigo)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Monotonia</h4><p>Média da carga diária / Desvio Padrão. Variabilidade da carga semanal.</p><p><strong class="text-green-600">< 1.5 (Ideal)</strong></p><p><strong class="text-yellow-600">1.5-2.0 (Atenção)</strong></p><p><strong class="text-red-600">> 2.0 (Elevado)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Strain (Tensão)</h4><p>Carga total da semana x Monotonia. Estresse geral da semana.</p><p><strong class="text-green-600">< 6000 (Ideal)</strong></p><p><strong class="text-yellow-600">6000-10000 (Atenção)</strong></p><p><strong class="text-red-600">> 10000 (Elevado)</strong></p></div>`;
              }
