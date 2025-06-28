@@ -804,8 +804,10 @@
 
             if (selectedPlanningWeeks.length === 1) {
                 const weekId = selectedPlanningWeeks[0];
+                const prontidaoForWeek = fullProntidaoData.filter(d => d.semana_id === weekId);
                 const cargaForWeek = fullCargaData.filter(d => d.microciclo_id === weekId);
-                const athleteCount = new Set(cargaForWeek.map(d => d.atleta_id)).size;
+                const athleteCount = new Set([...prontidaoForWeek.map(d => d.atleta_id), ...cargaForWeek.map(d => d.atleta_id)]).size;
+
 
                 const formatTrainingList = (trainings) => {
                     if (trainings.length === 0) {
@@ -875,6 +877,13 @@
                 <p class="text-center text-gray-600 mb-4">Semanas selecionadas: ${selectedPlanningWeeks.join(', ')}</p>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                    ${mainContentHtml}
+                </div>
+                <div class="mt-4 flex justify-center items-center gap-x-3 text-xs text-gray-500">
+                    <span class="font-semibold">Carga Esperada:</span>
+                    <span><span class="inline-block w-3 h-3 rounded-full carga-leve mr-1"></span>Leve</span>
+                    <span><span class="inline-block w-3 h-3 rounded-full carga-moderada mr-1"></span>Moderada</span>
+                    <span><span class="inline-block w-3 h-3 rounded-full carga-alta mr-1"></span>Alta</span>
+                    <span><span class="inline-block w-3 h-3 rounded-full carga-maxima mr-1"></span>Máxima</span>
                 </div>`;
             
             if (selectedPlanningWeeks.length === 1) {
@@ -1012,7 +1021,6 @@
             pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
             pdfButton.disabled = true;
             
-            // For prontidao, keep details closed. For others, open them.
             if (type !== 'prontidao') {
                 const detailsSections = contentToPrint.querySelectorAll('.details-section');
                 detailsSections.forEach(el => el.classList.add('open'));
@@ -1398,7 +1406,13 @@
                         <div class="flex flex-col items-center justify-center p-4 rounded-lg border ${hooperTeamClass.border} ${hooperTeamClass.bg} min-h-[140px]"><p class="text-sm font-medium ${hooperTeamClass.class}">Média de Fadiga (Hooper)</p><p class="text-5xl font-bold ${hooperTeamClass.class}">${stats.averageHooper ? stats.averageHooper.toFixed(1) : '--'}</p></div>
                         <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Recup. Muscular Média</p><p class="text-5xl font-bold ${saltoTeamClass}">${!isNaN(stats.averageSaltoDiff) ? `${stats.averageSaltoDiff >= 0 ? '+' : ''}${stats.averageSaltoDiff.toFixed(1)}%` : '--'}</p></div>
                         <div class="p-4 bg-gray-50 rounded-lg h-full flex flex-col min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2 text-center">Distribuição dos Atletas</p><div class="flex-grow flex items-center justify-around w-full"><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">${green}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-lg">${yellow}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-lg">${red}</div></div></div></div>
-                    </div>`;
+                    </div>
+                    <div class="mt-4 flex justify-center items-center gap-x-4 text-xs text-gray-500">
+                        <span><span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span>Ótimo</span>
+                        <span><span class="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-1"></span>Atenção</span>
+                        <span><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span>Crítico</span>
+                    </div>
+                    `;
         }
         
         function renderTeamDashboardProntidaoWithCharts(stats, latestDate, isForDashboard = false, selectedWeeksCount = 1, idPrefix = '') {
@@ -1441,7 +1455,13 @@
                             </div>
                         </div>
                     </div>
-                </div>`;
+                </div>
+                 <div class="mt-4 flex justify-center items-center gap-x-4 text-xs text-gray-500">
+                    <span><span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span>Ótimo</span>
+                    <span><span class="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-1"></span>Atenção</span>
+                    <span><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span>Crítico</span>
+                </div>
+                `;
         }
 
         function createProntidaoResultRow(result) {
@@ -1769,7 +1789,13 @@
                 chartsHtml = `<div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2">Média Diária de Carga</p><div class="w-full h-24"><canvas id="${prefix}team-daily-chart"></canvas></div></div><div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">ACWR Médio</p><p class="text-5xl font-bold ${getAwcrClassification(stats.avgAcwr).class}">${avgAcwr}</p></div><div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Strain Médio</p><p class="text-5xl font-bold ${getStrainClassification(stats.avgStrain).class}">${avgStrain}</p></div>`;
             }
 
-            return `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(Microciclo(s): ${stats.microcicloId})</span></h2><div class="grid grid-cols-1 md:grid-cols-3 gap-6">${chartsHtml}</div>`;
+            return `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(Microciclo(s): ${stats.microcicloId})</span></h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">${chartsHtml}</div>
+                    <div class="mt-4 flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                         <span><strong class="text-green-600">AWCR Ideal:</strong> 0.8-1.3</span>
+                         <span><strong class="text-yellow-600">Atenção:</strong> &lt;0.8 ou 1.3-1.5</span>
+                         <span><strong class="text-red-600">Perigo:</strong> >1.5</span>
+                    </div>`;
         }
 
         function renderTeamDailyLoadChart(dailyData, prefix = '') {
