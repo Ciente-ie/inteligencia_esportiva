@@ -803,12 +803,6 @@
             let mainContentHtml;
 
             if (selectedPlanningWeeks.length === 1) {
-                const weekId = selectedPlanningWeeks[0];
-                const prontidaoForWeek = fullProntidaoData.filter(d => d.semana_id === weekId);
-                const cargaForWeek = fullCargaData.filter(d => d.microciclo_id === weekId);
-                const athleteCount = new Set([...prontidaoForWeek.map(d => d.atleta_id), ...cargaForWeek.map(d => d.atleta_id)]).size;
-
-
                 const formatTrainingList = (trainings) => {
                     if (trainings.length === 0) {
                         return '<li class="text-xs text-gray-400">Nenhum treino na semana.</li>';
@@ -842,15 +836,9 @@
 
                 mainContentHtml = `
                     <div class="lg:col-span-2 flex flex-col justify-center bg-gray-50 p-6 rounded-lg">
-                        <div class="flex justify-center items-end gap-x-6">
-                            <div class="text-center">
-                                <h3 class="font-semibold text-gray-800">Sessões</h3>
-                                <p class="text-6xl font-bold text-blue-600">${totalSessions}</p>
-                            </div>
-                            <div class="text-center pb-1">
-                                <h3 class="font-semibold text-gray-800">Atletas</h3>
-                                <p class="text-4xl font-bold text-gray-600">${athleteCount}</p>
-                            </div>
+                        <div class="text-center">
+                            <h3 class="font-semibold text-gray-800">Total de Sessões na Semana</h3>
+                            <p class="text-6xl font-bold text-blue-600 text-center">${totalSessions}</p>
                         </div>
                         ${detailsHtml}
                     </div>
