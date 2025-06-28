@@ -806,19 +806,32 @@
             let mainContentHtml;
 
             if (selectedPlanningWeeks.length === 1) {
-                const weekTrainingsFisico = trainingsFisico.map(t => `<li class="text-xs text-gray-700 truncate" title="${t.objPrincipal}: ${t.objSecundario.join(', ')}">${t.objPrincipal}</li>`).join('');
-                const weekTrainingsCampo = trainingsCampo.map(t => `<li class="text-xs text-gray-700 truncate" title="${t.objPrincipal}: ${t.objSecundario.join(', ')}">${t.objPrincipal}</li>`).join('');
+                const formatTrainingList = (trainings) => {
+                    if (trainings.length === 0) {
+                        return '<li class="text-xs text-gray-400">Nenhum treino.</li>';
+                    }
+                    return trainings
+                        .sort((a, b) => new Date(a.date + 'T00:00:00') - new Date(b.date + 'T00:00:00'))
+                        .map(t => {
+                            const dayOfWeek = new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short' });
+                            const objectives = t.objSecundario && t.objSecundario.length > 0 ? t.objSecundario.join(', ') : 'N/A';
+                            return `<li class="text-xs text-gray-700" title="${objectives}"><strong class="font-semibold">${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}:</strong> ${objectives}</li>`;
+                        }).join('');
+                };
+
+                const weekTrainingsFisico = formatTrainingList(trainingsFisico);
+                const weekTrainingsCampo = formatTrainingList(trainingsCampo);
 
                 const detailsHtml = `
                     <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                         <div>
                             <h4 class="font-semibold text-gray-600 text-sm text-center mb-1">Treinos Físicos (${trainingsFisico.length})</h4>
-                            <ul class="text-left space-y-1 mb-2 h-16 overflow-y-auto p-2 bg-white rounded-md border">${weekTrainingsFisico || '<li class="text-xs text-gray-400">Nenhum treino físico.</li>'}</ul>
+                            <ul class="text-left space-y-1 mb-2 h-16 overflow-y-auto p-2 bg-white rounded-md border">${weekTrainingsFisico}</ul>
                             <div class="h-24"><canvas id="dashboardLoadChartFisico"></canvas></div>
                         </div>
                         <div>
                             <h4 class="font-semibold text-gray-600 text-sm text-center mb-1">Treinos de Campo (${trainingsCampo.length})</h4>
-                            <ul class="text-left space-y-1 mb-2 h-16 overflow-y-auto p-2 bg-white rounded-md border">${weekTrainingsCampo || '<li class="text-xs text-gray-400">Nenhum treino de campo.</li>'}</ul>
+                            <ul class="text-left space-y-1 mb-2 h-16 overflow-y-auto p-2 bg-white rounded-md border">${weekTrainingsCampo}</ul>
                             <div class="h-24"><canvas id="dashboardLoadChartCampo"></canvas></div>
                         </div>
                     </div>
@@ -832,7 +845,6 @@
                     </div>
                 `;
             } else {
-                // Multi-week view
                 mainContentHtml = `
                     <div class="lg:col-span-1 flex flex-col justify-center items-center bg-gray-50 p-6 rounded-lg min-h-[350px]">
                         <h3 class="font-semibold text-gray-800 mb-2 text-center">Total de Sessões Planejadas</h3>
@@ -1204,13 +1216,13 @@
         }
         
         function displayFilteredProntidaoData(data, selectedWeeks) {
-            const { individualResults, teamStats, latestDate } = analyzeProntidaoData(data);
+            const { individualResults, teamStats, latestDate } = analyzeProntidaoData(data, selectedWeeks);
             latestProntidaoData = { teamStats, latestDate };
             renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeks.length);
             updateDashboardView();
         }
 
-        function analyzeProntidaoData(data) {
+        function analyzeProntidaoData(data, selectedWeeks) {
             const athletesData = data.reduce((acc, row) => {
                 if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
                 acc[row.atleta_id].push(row);
@@ -1308,20 +1320,23 @@
             else zone = 'green';
 
             const metricsDetail = Object.keys(METRIC_NAMES).reduce((acc, key) => {
-                const dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null);
-                acc[key] = { latest: latestEntry[key], mean: getStats(dataPoints).mean };
+                 let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v));
+                 let mean = getStats(dataPoints).mean;
+
+                 if (dataPoints.length === 0) {
+                     const allOtherEntries = fullProntidaoData
+                        .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
+                        .map(e => e[key])
+                        .filter(v => v != null && !isNaN(v));
+                    mean = getStats(allOtherEntries).mean;
+                 }
+                acc[key] = { latest: latestEntry[key], mean: mean };
                 return acc;
             }, {});
             
-            let saltoMeanHistorical = metricsDetail.salto_horizontal_cm?.mean;
-            if (saltoMeanHistorical === undefined || saltoMeanHistorical === 0) {
-                 saltoMeanHistorical = getStats(fullProntidaoData
-                        .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
-                        .map(e => e.salto_horizontal_cm)).mean;
-            }
+            const saltoMeanHistorical = metricsDetail.salto_horizontal_cm?.mean || 0;
             const saltoLatest = latestEntry.salto_horizontal_cm;
             const saltoDiff = (saltoLatest && saltoMeanHistorical > 0) ? ((saltoLatest - saltoMeanHistorical) / saltoMeanHistorical) * 100 : null;
-
 
             return { 
                 athleteId, status: 'ready', index: readinessIndex.toFixed(2), zone, 
