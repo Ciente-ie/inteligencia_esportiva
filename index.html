@@ -880,10 +880,10 @@
                 </div>
                 <div class="mt-4 flex justify-center items-center gap-x-3 text-xs text-gray-500">
                     <span class="font-semibold">Carga Esperada:</span>
-                    <span><span class="inline-block w-3 h-3 rounded-full carga-leve mr-1"></span>Leve</span>
-                    <span><span class="inline-block w-3 h-3 rounded-full carga-moderada mr-1"></span>Moderada</span>
-                    <span><span class="inline-block w-3 h-3 rounded-full carga-alta mr-1"></span>Alta</span>
-                    <span><span class="inline-block w-3 h-3 rounded-full carga-maxima mr-1"></span>Máxima</span>
+                    <span class="flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-blue-500 mr-1 border border-blue-600"></span>Leve</span>
+                    <span class="flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-yellow-400 mr-1 border border-yellow-500"></span>Moderada</span>
+                    <span class="flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-orange-500 mr-1 border border-orange-600"></span>Alta</span>
+                    <span class="flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-red-600 mr-1 border border-red-700"></span>Máxima</span>
                 </div>`;
             
             if (selectedPlanningWeeks.length === 1) {
@@ -1021,6 +1021,7 @@
             pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
             pdfButton.disabled = true;
             
+            // For prontidao, keep details closed. For others, open them.
             if (type !== 'prontidao') {
                 const detailsSections = contentToPrint.querySelectorAll('.details-section');
                 detailsSections.forEach(el => el.classList.add('open'));
@@ -1215,9 +1216,17 @@
             const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
             return `S${String(weekNo).padStart(2, '0')}`;
         }
+        
+        function sortWeeks(arr) {
+            return arr.sort((a, b) => {
+                const numA = parseInt(a.substring(1));
+                const numB = parseInt(b.substring(1));
+                return numA - numB;
+            });
+        }
 
         function renderFilterProntidao(data) {
-            const weekIds = [...new Set(data.map(d => d.semana_id).filter(Boolean))].sort().reverse();
+            const weekIds = sortWeeks([...new Set(data.map(d => d.semana_id).filter(Boolean))]).reverse();
             if (weekIds.length === 0) {
                 filterContainerProntidao.innerHTML = '';
                 return;
@@ -1274,7 +1283,7 @@
                 return calculateAthleteReadiness(athleteId, representativeEntry, allHistoricalEntries, latestDateInSelection.toISOString().split('T')[0]);
             }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
 
-            const uniqueWeeksSorted = [...new Set(data.map(d => d.semana_id))].sort();
+            const uniqueWeeksSorted = sortWeeks([...new Set(data.map(d => d.semana_id))]);
             const evolutionData = uniqueWeeksSorted.map(weekId => {
                 const dataForThisWeek = data.filter(d => d.semana_id === weekId);
                 const athletesInWeek = [...new Set(dataForThisWeek.map(d => d.atleta_id))];
@@ -1517,7 +1526,14 @@
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     scales: { y: { min: -3, max: 3 } },
-                    plugins: { legend: { display: false }, datalabels: { align: 'top', color: '#374151' } }
+                    plugins: { 
+                        legend: { display: false }, 
+                        datalabels: { 
+                            display: evolutionData.length <= 12,
+                            align: 'top', 
+                            color: '#374151' 
+                        } 
+                    }
                 }
             });
         }
@@ -1548,7 +1564,14 @@
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     scales: { y: { min: 4, max: 28 } },
-                    plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top' } }
+                    plugins: { 
+                        legend: { display: false }, 
+                        datalabels: { 
+                            display: evolutionData.length <= 12,
+                            anchor: 'end', 
+                            align: 'top' 
+                        } 
+                    }
                 }
             });
         }
@@ -1582,6 +1605,7 @@
                     plugins: {
                         legend: { display: false },
                         datalabels: {
+                            display: evolutionData.length <= 12,
                             formatter: (value) => value + '%',
                             anchor: 'end',
                             align: (context) => context.dataset.data[context.dataIndex] >= 0 ? 'top' : 'bottom',
@@ -1659,7 +1683,7 @@
                     });
             }
 
-            const sortedMicrocycles = Array.from(allMicrocycles).sort();
+            const sortedMicrocycles = sortWeeks([...allMicrocycles]);
             renderFilter(sortedMicrocycles);
         }
         
@@ -1690,7 +1714,7 @@
             const individualResults = [];
             let allEntriesInCycles = [];
             let weeklyTeamData = [];
-            const sortedSelectedIds = [...selectedIds].sort();
+            const sortedSelectedIds = sortWeeks([...selectedIds]);
 
             for (const athleteId in athleteMicrocycleData) {
                 const allAthleteCycles = athleteMicrocycleData[athleteId];
@@ -1826,7 +1850,7 @@
 
             activeCharts[canvasId] = new Chart(ctx, {
                 type: 'bar', data: { labels, datasets: [{ label: 'Carga Semanal', data, backgroundColor: backgroundColors }] },
-                options: { maintainAspectRatio: false, scales: { y: { display: true, beginAtZero: true, min: 0, max: 5000 }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { anchor: 'center', align: 'center', color: 'white', formatter: (v) => v > 0 ? Math.round(v) : null } } }
+                options: { maintainAspectRatio: false, scales: { y: { display: true, beginAtZero: true, min: 0, max: 5000 }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { display: evolutionData.length <= 12, anchor: 'center', align: 'center', color: 'white', formatter: (v) => v > 0 ? Math.round(v) : null } } }
             });
         }
 
@@ -1838,7 +1862,7 @@
 
             activeCharts[canvasId] = new Chart(ctx, {
                 type: 'line', data: { labels: evolutionData.map(d => d.microciclo_id), datasets: [{ label: 'AWCR', data: evolutionData.map(d => d.awcr), borderColor: 'rgb(234, 179, 8)', fill: false, tension: 0.1 }] },
-                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, min: 0, max: 2 }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { align: 'top' } } }
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, min: 0, max: 2 }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { display: evolutionData.length <= 12, align: 'top' } } }
             });
         }
 
@@ -1869,6 +1893,7 @@
                     plugins: { 
                         legend: { display: false }, 
                         datalabels: { 
+                            display: evolutionData.length <= 12,
                             align: 'top',
                             formatter: (value) => Math.round(value)
                         } 
@@ -1973,7 +1998,7 @@
                 return getWeekId(d);
             });
 
-            const allWeeks = [...new Set([...existingWeeks, ...futureWeeks, getWeekId(new Date())])].filter(Boolean).sort();
+            const allWeeks = sortWeeks([...new Set([...existingWeeks, ...futureWeeks, getWeekId(new Date())])].filter(Boolean));
             
             filterContainerPlanejamento.innerHTML = `
                  <div class="bg-white p-4 rounded-lg border shadow-sm">
