@@ -218,7 +218,7 @@
                         </div>
                         <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
                             <li>O `microciclo_id` deve ser consistente (ex: "S25", "S26").</li>
-                            <li>Para o cálculo do AWCR, forneça dados de pelo menos <strong>4 microciclos</strong> anteriores.</li>
+                            <li>Para o cálculo do ACWR, forneça dados de pelo menos <strong>4 microciclos</strong> anteriores.</li>
                         </ul>
                     </div>
 
@@ -1218,13 +1218,13 @@
         }
 
         function renderFilterProntidao(data) {
-            const weekIds = sortWeeks([...new Set(data.map(d => d.semana_id).filter(Boolean))]).reverse();
+            const weekIds = sortWeeks([...new Set(data.map(d => d.semana_id).filter(Boolean))]);
             if (weekIds.length === 0) {
                 filterContainerProntidao.innerHTML = '';
                 return;
             }
             const currentSelection = Array.from(document.querySelectorAll('.week-checkbox:checked')).map(cb => cb.value);
-            const latestWeek = weekIds[0];
+            const latestWeek = weekIds[weekIds.length - 1];
             
             filterContainerProntidao.innerHTML = `
                  <div class="bg-white p-4 rounded-lg border shadow-sm">
@@ -1777,23 +1777,34 @@
                 athleteMicrocycleData[athleteId] = Object.entries(microcycles)
                     .sort(([, a], [, b]) => new Date(`${a.minDate}T00:00:00`) - new Date(`${b.minDate}T00:00:00`))
                     .map(([id, cycleData]) => {
-                         const dailyEntries = cycleData.entries.map(e => ({
+                        const dailyEntries = cycleData.entries.map(e => ({
                             date: e.data,
                             load: (e.pse_sessao || 0) * (e.duracao_sessao_min || 0)
-                         }));
+                        }));
                         const loadStats = getStats(dailyEntries.map(e => e.load));
-                        const monotony = loadStats.mean > 0 && loadStats.stdDev > 0 ? loadStats.mean / loadStats.stdDev : 0;
+                        
+                        let monotony = 0;
+                        if (loadStats.mean > 0) {
+                            if (loadStats.stdDev > 0) {
+                                monotony = loadStats.mean / loadStats.stdDev;
+                            } else if (loadStats.count > 1) {
+                                // Max monotony case: multiple sessions with the same load
+                                monotony = 10; // Assign a high arbitrary value for max monotony
+                            }
+                            // If count <= 1, stdDev is 0, monotony remains 0, which is correct.
+                        }
+
                         return {
                             microciclo_id: id,
                             totalLoad: loadStats.sum, 
-                            monotony,
+                            monotony: monotony,
                             strain: loadStats.sum * monotony,
                             dailyEntries: dailyEntries
                         };
                     });
             }
 
-            const sortedMicrocycles = sortWeeks([...allMicrocycles]).reverse();
+            const sortedMicrocycles = sortWeeks([...allMicrocycles]);
             renderFilter(sortedMicrocycles);
         }
         
@@ -1803,7 +1814,7 @@
                 return;
             }
             const currentSelection = Array.from(document.querySelectorAll('.microciclo-checkbox:checked')).map(cb => cb.value);
-            const latestMicrocycle = microcycles[0]; // Is now reversed, so first is latest
+            const latestMicrocycle = microcycles[microcycles.length -1];
             filterContainer.innerHTML = `
                 <div class="bg-white p-4 rounded-lg border shadow-sm">
                     <label class="font-semibold text-gray-700 block mb-2">Selecione o(s) Microciclo(s):</label>
@@ -1829,6 +1840,7 @@
             for (const athleteId in athleteMicrocycleData) {
                 const allAthleteCycles = athleteMicrocycleData[athleteId];
                 
+                // Pre-calculate weekly team data for charts
                 sortedSelectedIds.forEach(mc_id => {
                     const cycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === mc_id);
                     if (cycleIndex !== -1) {
@@ -1836,27 +1848,30 @@
                         const acuteLoad = cycle.totalLoad;
                         const chronicCycles = allAthleteCycles.slice(Math.max(0, cycleIndex - 3), cycleIndex + 1);
                         const chronicLoad = getStats(chronicCycles.map(c => c.totalLoad)).mean;
-                        const awcr = chronicLoad > 0 ? acuteLoad / chronicLoad : null;
+                        const acwr = chronicLoad > 0 ? acuteLoad / chronicLoad : null;
 
                         if (selectedIds.length > 1) {
-                            weeklyTeamData.push({ microciclo_id: mc_id, totalLoad: cycle.totalLoad, strain: cycle.strain, awcr: awcr });
+                            weeklyTeamData.push({ microciclo_id: mc_id, totalLoad: cycle.totalLoad, strain: cycle.strain, acwr: acwr });
                         }
                     }
                 });
                 
+                // Filter athlete's cycles based on selection
                 const selectedCycles = allAthleteCycles.filter(c => selectedIds.includes(c.microciclo_id));
                 if(selectedCycles.length === 0) continue;
 
+                // --- CORRECTED: Use average for multiple weeks ---
                 const avgWeeklyLoad = getStats(selectedCycles.map(c => c.totalLoad)).mean;
                 const avgMonotony = getStats(selectedCycles.map(c => c.monotony)).mean;
                 const avgStrain = getStats(selectedCycles.map(c => c.strain)).mean;
                 
                 const aggregatedDailyEntries = selectedCycles.flatMap(c => c.dailyEntries);
                 
+                // ACWR calculation based on the LAST selected microcycle
                 const lastSelectedCycleId = sortedSelectedIds[sortedSelectedIds.length - 1];
                 const lastCycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === lastSelectedCycleId);
-                let awcrForTable = null;
-                let hasEnoughDataForAwcr = false;
+                let acwrForTable = null;
+                let hasEnoughDataForAcwr = false;
 
                 if (lastCycleIndex > -1) {
                     const acuteLoad = allAthleteCycles[lastCycleIndex].totalLoad;
@@ -1864,18 +1879,18 @@
                     const chronicLoad = getStats(chronicCycles.map(c => c.totalLoad)).mean;
                     
                     if (chronicLoad > 0) {
-                        awcrForTable = acuteLoad / chronicLoad;
+                        acwrForTable = acuteLoad / chronicLoad;
                     }
-                    hasEnoughDataForAwcr = chronicCycles.length >= 4;
+                    hasEnoughDataForAcwr = chronicCycles.length >= 4;
                 }
                 
                 individualResults.push({
                     athleteId,
-                    totalLoad: avgWeeklyLoad,
+                    totalLoad: avgWeeklyLoad, // Changed from sum to average
                     monotony: avgMonotony,
-                    strain: avgStrain,
-                    awcr: awcrForTable,
-                    hasEnoughDataForAwcr,
+                    strain: avgStrain, // Changed from sum to average
+                    acwr: acwrForTable,
+                    hasEnoughDataForAcwr,
                     chartData: {
                         labels: aggregatedDailyEntries.sort((a,b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`)).map(e => new Date(`${e.date}T00:00:00`).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})),
                         loads: aggregatedDailyEntries.sort((a,b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`)).map(e => e.load)
@@ -1898,11 +1913,11 @@
                     microciclo_id: mc_id,
                     totalLoad: getStats(weekData.map(d=>d.totalLoad)).mean,
                     strain: getStats(weekData.map(d=>d.strain)).mean,
-                    awcr: getStats(weekData.filter(d=>d.awcr != null).map(d=>d.awcr)).mean
+                    acwr: getStats(weekData.filter(d=>d.acwr != null).map(d=>d.acwr)).mean
                 };
             });
             const teamStats = {
-                avgAcwr: getStats(individualResults.filter(r => r.awcr != null).map(r => r.awcr)).mean,
+                avgAcwr: getStats(individualResults.filter(r => r.acwr != null).map(r => r.acwr)).mean,
                 avgStrain: getStats(individualResults.map(r => r.strain)).mean,
                 dailyAverages: dailyAverages, evolutionData: evolutionData,
                 selectionCount: selectedIds.length, microcicloId: selectedIds.join(', ')
@@ -1910,7 +1925,7 @@
             
             latestCargaData = teamStats;
             updateDashboardView();
-            individualResults.sort((a, b) => (b.awcr ?? -1) - (a.awcr ?? -1));
+            individualResults.sort((a, b) => (b.acwr ?? -1) - (a.acwr ?? -1));
 
             teamDashboardCarga.innerHTML = renderTeamDashboardCarga(teamStats);
             renderLoadTable(individualResults);
@@ -1934,7 +1949,7 @@
 
             let chartsHtml = '';
             if (stats.selectionCount > 1) {
-                 chartsHtml = `<div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">Carga Aguda por Semana</p><div class="w-full h-28"><canvas id="${prefix}team-weekly-load-chart"></canvas></div></div><div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">AWCR por Semana</p><div class="w-full h-28"><canvas id="${prefix}team-acwr-chart"></canvas></div></div><div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">Strain por Semana</p><div class="w-full h-28"><canvas id="${prefix}team-strain-chart"></canvas></div></div>`;
+                 chartsHtml = `<div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">Carga Aguda por Semana</p><div class="w-full h-28"><canvas id="${prefix}team-weekly-load-chart"></canvas></div></div><div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">ACWR por Semana</p><div class="w-full h-28"><canvas id="${prefix}team-acwr-chart"></canvas></div></div><div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">Strain por Semana</p><div class="w-full h-28"><canvas id="${prefix}team-strain-chart"></canvas></div></div>`;
             } else {
                 chartsHtml = `<div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2">Média Diária de Carga</p><div class="w-full h-24"><canvas id="${prefix}team-daily-chart"></canvas></div></div><div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">ACWR Médio</p><p class="text-5xl font-bold ${getAwcrClassification(stats.avgAcwr).class}">${avgAcwr}</p></div><div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Strain Médio</p><p class="text-5xl font-bold ${getStrainClassification(stats.avgStrain).class}">${avgStrain}</p></div>`;
             }
@@ -1942,7 +1957,7 @@
             return `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(Microciclo(s): ${stats.microcicloId})</span></h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">${chartsHtml}</div>
                     <div class="mt-4 flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-xs text-gray-500">
-                         <span><strong class="text-green-600">AWCR Ideal:</strong> 0.8-1.3</span>
+                         <span><strong class="text-green-600">ACWR Ideal:</strong> 0.8-1.3</span>
                          <span><strong class="text-yellow-600">Atenção:</strong> &lt;0.8 ou 1.3-1.5</span>
                          <span><strong class="text-red-600">Perigo:</strong> >1.5</span>
                     </div>`;
@@ -1988,7 +2003,7 @@
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
             activeCharts[canvasId] = new Chart(ctx, {
-                type: 'line', data: { labels: evolutionData.map(d => d.microciclo_id), datasets: [{ label: 'AWCR', data: evolutionData.map(d => d.awcr), borderColor: 'rgb(234, 179, 8)', fill: false, tension: 0.1 }] },
+                type: 'line', data: { labels: evolutionData.map(d => d.microciclo_id), datasets: [{ label: 'ACWR', data: evolutionData.map(d => d.acwr), borderColor: 'rgb(234, 179, 8)', fill: false, tension: 0.1 }] },
                 options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, min: 0, max: 2 }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { display: evolutionData.length <= 12, align: 'top' } } }
             });
         }
@@ -2030,16 +2045,16 @@
         }
 
         function renderLoadTable(results) {
-             resultsContainerCarga.innerHTML = `<div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0"><div class="w-2/6">Atleta</div><div class="w-1/6 text-center">AWCR</div><div class="w-1/6 text-center">Carga Aguda Média</div><div class="w-1/6 text-center">Monotonia</div><div class="w-1/6 text-center">Strain</div><div class="w-12"></div></div><div>${results.map(createLoadResultRow).join('')}</div>`;
+             resultsContainerCarga.innerHTML = `<div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0"><div class="w-2/6">Atleta</div><div class="w-1/6 text-center">ACWR</div><div class="w-1/6 text-center">Carga Aguda Média</div><div class="w-1/6 text-center">Monotonia</div><div class="w-1/6 text-center">Strain</div><div class="w-12"></div></div><div>${results.map(createLoadResultRow).join('')}</div>`;
         }
 
         function createLoadResultRow(result) {
             const cleanAthleteId = result.athleteId.replace(/\s+/g, '-');
-            const awcrText = result.awcr != null ? result.awcr.toFixed(2) : '--';
+            const acwrText = result.acwr != null ? result.acwr.toFixed(2) : '--';
             const cargaClass = getCargaAgudaClassification(result.totalLoad).class;
             const chartData = JSON.stringify(result.chartData);
 
-            return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-2/6 font-bold text-gray-800">${result.athleteId}</div><div class="w-1/6 text-center font-bold text-xl ${getAwcrClassification(result.awcr).class}">${awcrText} ${!result.hasEnoughDataForAwcr && result.awcr != null ? '*' : ''}</div><div class="w-1/6 text-center font-semibold text-lg ${cargaClass}">${Math.round(result.totalLoad)}</div><div class="w-1/6 text-center font-semibold text-lg ${getMonotonyClassification(result.monotony).class}">${result.monotony.toFixed(2)}</div><div class="w-1/6 text-center font-semibold text-lg ${getStrainClassification(result.strain).class}">${Math.round(result.strain)}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-carga-${cleanAthleteId}" data-athlete="${cleanAthleteId}" data-chartdata='${chartData}'><svg class="arrow-icon w-5 h-5 text-gray-500 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-carga-${cleanAthleteId}"><div class="p-4"><h4 class="font-semibold text-sm mb-2 text-gray-700">Carga Diária do(s) Microciclo(s):</h4><div class="h-64 w-full"><canvas id="chart-${cleanAthleteId}"></canvas></div></div></div></div>`;
+            return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-2/6 font-bold text-gray-800">${result.athleteId}</div><div class="w-1/6 text-center font-bold text-xl ${getAwcrClassification(result.acwr).class}">${acwrText} ${!result.hasEnoughDataForAcwr && result.acwr != null ? '*' : ''}</div><div class="w-1/6 text-center font-semibold text-lg ${cargaClass}">${Math.round(result.totalLoad)}</div><div class="w-1/6 text-center font-semibold text-lg ${getMonotonyClassification(result.monotony).class}">${result.monotony.toFixed(2)}</div><div class="w-1/6 text-center font-semibold text-lg ${getStrainClassification(result.strain).class}">${Math.round(result.strain)}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-carga-${cleanAthleteId}" data-athlete="${cleanAthleteId}" data-chartdata='${chartData}'><svg class="arrow-icon w-5 h-5 text-gray-500 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-carga-${cleanAthleteId}"><div class="p-4"><h4 class="font-semibold text-sm mb-2 text-gray-700">Carga Diária do(s) Microciclo(s):</h4><div class="h-64 w-full"><canvas id="chart-${cleanAthleteId}"></canvas></div></div></div></div>`;
         }
 
         function renderAthleteChart(canvasId, chartData, label) {
@@ -2365,10 +2380,10 @@
             if (monotony > 1.5) return { class: 'text-yellow-600' };
             return { class: 'text-green-600' };
         };
-        const getAwcrClassification = awcr => {
-            if (awcr == null) return { class: 'text-gray-700' };
-            if (awcr > 1.5) return { class: 'text-red-600' };
-            if (awcr >= 0.8 && awcr <= 1.3) return { class: 'text-green-600' };
+        const getAwcrClassification = acwr => {
+            if (acwr == null) return { class: 'text-gray-700' };
+            if (acwr > 1.5) return { class: 'text-red-600' };
+            if (acwr >= 0.8 && acwr <= 1.3) return { class: 'text-green-600' };
             return { class: 'text-yellow-600' };
         };
 
@@ -2396,7 +2411,7 @@
                     </div>
                 `;
              } else {
-                legendsCarga.innerHTML = `<div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Carga Aguda Média (u.a.)</h4><p>Média da carga total dos microciclos selecionados.</p><p><strong class="text-blue-600">< 2500 (Baixa)</strong></p><p><strong class="text-green-600">2500-5000 (Moderada)</strong></p><p><strong class="text-red-600">> 5000 (Alta)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">AWCR (Acute:Chronic)</h4><p>Carga Aguda / Média das 4 semanas anteriores. <br><em>* <4 semanas de dados crônicos.</em></p><p><strong class="text-green-600">0.8-1.3 (Ideal)</strong></p><p><strong class="text-yellow-600"><0.8 ou 1.3-1.5 (Atenção)</strong></p><p><strong class="text-red-600">>1.5 (Perigo)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Monotonia</h4><p>Média da carga diária / Desvio Padrão. Variabilidade da carga semanal.</p><p><strong class="text-green-600">< 1.5 (Ideal)</strong></p><p><strong class="text-yellow-600">1.5-2.0 (Atenção)</strong></p><p><strong class="text-red-600">> 2.0 (Elevado)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Strain (Tensão)</h4><p>Carga total da semana x Monotonia. Estresse geral da semana.</p><p><strong class="text-green-600">< 6000 (Ideal)</strong></p><p><strong class="text-yellow-600">6000-10000 (Atenção)</strong></p><p><strong class="text-red-600">> 10000 (Elevado)</strong></p></div>`;
+                legendsCarga.innerHTML = `<div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Carga Aguda Média (u.a.)</h4><p>Média da carga total dos microciclos selecionados.</p><p><strong class="text-blue-600">< 2500 (Baixa)</strong></p><p><strong class="text-green-600">2500-5000 (Moderada)</strong></p><p><strong class="text-red-600">> 5000 (Alta)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">ACWR (Acute:Chronic Workload Ratio)</h4><p>Carga Aguda / Média das 4 semanas anteriores. <br><em>* <4 semanas de dados crônicos.</em></p><p><strong class="text-green-600">0.8-1.3 (Ideal)</strong></p><p><strong class="text-yellow-600"><0.8 ou 1.3-1.5 (Atenção)</strong></p><p><strong class="text-red-600">>1.5 (Perigo)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Monotonia</h4><p>Média da carga diária / Desvio Padrão. Variabilidade da carga semanal.</p><p><strong class="text-green-600">< 1.5 (Ideal)</strong></p><p><strong class="text-yellow-600">1.5-2.0 (Atenção)</strong></p><p><strong class="text-red-600">> 2.0 (Elevado)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Strain (Tensão)</h4><p>Carga total da semana x Monotonia. Estresse geral da semana.</p><p><strong class="text-green-600">< 6000 (Ideal)</strong></p><p><strong class="text-yellow-600">6000-10000 (Atenção)</strong></p><p><strong class="text-red-600">> 10000 (Elevado)</strong></p></div>`;
              }
         }
     </script>
