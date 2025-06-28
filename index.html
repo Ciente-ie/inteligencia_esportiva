@@ -836,7 +836,7 @@
 
                 mainContentHtml = `
                     <div class="lg:col-span-2 flex flex-col justify-center bg-gray-50 p-6 rounded-lg">
-                        <div class="text-center">
+                         <div class="text-center">
                             <h3 class="font-semibold text-gray-800">Total de Sessões na Semana</h3>
                             <p class="text-6xl font-bold text-blue-600 text-center">${totalSessions}</p>
                         </div>
@@ -1009,6 +1009,7 @@
             pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
             pdfButton.disabled = true;
             
+            // For prontidao, keep details closed. For others, open them.
             if (type !== 'prontidao') {
                 const detailsSections = contentToPrint.querySelectorAll('.details-section');
                 detailsSections.forEach(el => el.classList.add('open'));
@@ -1308,13 +1309,12 @@
         }
 
         function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, displayDate) {
-            const getZScore = (key) => {
-                const value = latestEntry[key];
-                let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v));
+            const getZScore = (key, value) => {
+                let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
                 if (dataPoints.length === 0) {
                      dataPoints = fullProntidaoData
                         .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
-                        .map(e => e[key]).filter(v => v != null && !isNaN(v));
+                        .map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
                 }
 
                 if (value == null || dataPoints.length === 0) return null;
@@ -1323,7 +1323,15 @@
             };
 
             const cap = (val) => Math.max(-2.5, Math.min(2.5, val));
-            const performanceScores = [getZScore('salto_horizontal_cm'), getZScore('vfc_rmssd')].filter(s => s != null);
+            
+            const saltoValue = latestEntry['salto_horizontal_cm'];
+            const vfcValue = latestEntry['vfc_rmssd'];
+
+            const performanceScores = [
+                (saltoValue != null && saltoValue > 0) ? getZScore('salto_horizontal_cm', saltoValue) : null,
+                (vfcValue != null && vfcValue > 0) ? getZScore('vfc_rmssd', vfcValue) : null
+            ].filter(s => s != null);
+            
             const performancePillar = performanceScores.length > 0 ? cap(getStats(performanceScores).mean) : 0;
 
             let hooperAdjustment = 0;
