@@ -1427,7 +1427,8 @@
                 }
             });
 
-            const statsByDay = dayNames.map((name, i) => {
+            // Return stats for Sun-Sat
+            return dayNames.map((name, i) => {
                 const dayResults = dailyData[i];
                 return {
                     day: name,
@@ -1436,11 +1437,6 @@
                     averageSaltoDiff: getStats(dayResults.map(r => r.saltoPercentDiff)).mean
                 };
             });
-
-            // Reorder to start with Monday: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
-            const sunday = statsByDay[0];
-            const weekDays = statsByDay.slice(1);
-            return [...weekDays, sunday];
         }
         
         function renderTeamDashboardProntidaoWithDailyCharts(dailyStats, latestDate, isDashboard = false, idPrefix = '') {
@@ -1786,19 +1782,18 @@
                             load: (e.pse_sessao || 0) * (e.duracao_sessao_min || 0)
                          }));
                         const loadStats = getStats(dailyEntries.map(e => e.load));
-                        // Monotony = mean daily load / std dev of daily load
                         const monotony = loadStats.mean > 0 && loadStats.stdDev > 0 ? loadStats.mean / loadStats.stdDev : 0;
                         return {
                             microciclo_id: id,
-                            totalLoad: loadStats.sum, // Carga Aguda (soma das cargas diárias da semana)
+                            totalLoad: loadStats.sum, 
                             monotony,
-                            strain: loadStats.sum * monotony, // Tensão (Carga Aguda * Monotonia)
+                            strain: loadStats.sum * monotony,
                             dailyEntries: dailyEntries
                         };
                     });
             }
 
-            const sortedMicrocycles = sortWeeks([...allMicrocycles]);
+            const sortedMicrocycles = sortWeeks([...allMicrocycles]).reverse();
             renderFilter(sortedMicrocycles);
         }
         
@@ -1808,7 +1803,7 @@
                 return;
             }
             const currentSelection = Array.from(document.querySelectorAll('.microciclo-checkbox:checked')).map(cb => cb.value);
-            const latestMicrocycle = microcycles[microcycles.length - 1];
+            const latestMicrocycle = microcycles[0]; // Is now reversed, so first is latest
             filterContainer.innerHTML = `
                 <div class="bg-white p-4 rounded-lg border shadow-sm">
                     <label class="font-semibold text-gray-700 block mb-2">Selecione o(s) Microciclo(s):</label>
@@ -1834,53 +1829,51 @@
             for (const athleteId in athleteMicrocycleData) {
                 const allAthleteCycles = athleteMicrocycleData[athleteId];
                 
-                // Pre-calculate weekly team data for charts
                 sortedSelectedIds.forEach(mc_id => {
                     const cycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === mc_id);
                     if (cycleIndex !== -1) {
                         const cycle = allAthleteCycles[cycleIndex];
-                        const chronicCycles = allAthleteCycles.slice(Math.max(0, cycleIndex - 4), cycleIndex);
+                        const acuteLoad = cycle.totalLoad;
+                        const chronicCycles = allAthleteCycles.slice(Math.max(0, cycleIndex - 3), cycleIndex + 1);
                         const chronicLoad = getStats(chronicCycles.map(c => c.totalLoad)).mean;
-                        const awcr = chronicLoad > 0 ? cycle.totalLoad / chronicLoad : null;
+                        const awcr = chronicLoad > 0 ? acuteLoad / chronicLoad : null;
+
                         if (selectedIds.length > 1) {
                             weeklyTeamData.push({ microciclo_id: mc_id, totalLoad: cycle.totalLoad, strain: cycle.strain, awcr: awcr });
                         }
                     }
                 });
                 
-                // Filter athlete's cycles based on selection
                 const selectedCycles = allAthleteCycles.filter(c => selectedIds.includes(c.microciclo_id));
                 if(selectedCycles.length === 0) continue;
 
-                // --- CORRECTED: Use average for multiple weeks ---
                 const avgWeeklyLoad = getStats(selectedCycles.map(c => c.totalLoad)).mean;
                 const avgMonotony = getStats(selectedCycles.map(c => c.monotony)).mean;
                 const avgStrain = getStats(selectedCycles.map(c => c.strain)).mean;
                 
                 const aggregatedDailyEntries = selectedCycles.flatMap(c => c.dailyEntries);
                 
-                // ACWR calculation based on the LAST selected microcycle
                 const lastSelectedCycleId = sortedSelectedIds[sortedSelectedIds.length - 1];
                 const lastCycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === lastSelectedCycleId);
                 let awcrForTable = null;
                 let hasEnoughDataForAwcr = false;
 
                 if (lastCycleIndex > -1) {
-                    const lastCycleAcuteLoad = allAthleteCycles[lastCycleIndex].totalLoad;
-                    const chronicCyclesForLast = allAthleteCycles.slice(Math.max(0, lastCycleIndex - 4), lastCycleIndex);
-                    const chronicLoadForLast = getStats(chronicCyclesForLast.map(c => c.totalLoad)).mean;
+                    const acuteLoad = allAthleteCycles[lastCycleIndex].totalLoad;
+                    const chronicCycles = allAthleteCycles.slice(Math.max(0, lastCycleIndex - 3), lastCycleIndex + 1);
+                    const chronicLoad = getStats(chronicCycles.map(c => c.totalLoad)).mean;
                     
-                    if (chronicLoadForLast > 0) {
-                        awcrForTable = lastCycleAcuteLoad / chronicLoadForLast;
+                    if (chronicLoad > 0) {
+                        awcrForTable = acuteLoad / chronicLoad;
                     }
-                    hasEnoughDataForAwcr = chronicCyclesForLast.length >= 4;
+                    hasEnoughDataForAwcr = chronicCycles.length >= 4;
                 }
                 
                 individualResults.push({
                     athleteId,
-                    totalLoad: avgWeeklyLoad, // Changed from sum to average
+                    totalLoad: avgWeeklyLoad,
                     monotony: avgMonotony,
-                    strain: avgStrain, // Changed from sum to average
+                    strain: avgStrain,
                     awcr: awcrForTable,
                     hasEnoughDataForAwcr,
                     chartData: {
@@ -1961,8 +1954,8 @@
             if (!ctx) return;
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
-            const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-            const dayOrder = [1,2,3,4,5,6,0]; // Monday to Sunday
+            const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            const dayOrder = [0,1,2,3,4,5,6]; // Sunday to Saturday
             const data = dayOrder.map(dayIndex => dailyData[dayIndex]);
             const backgroundColors = data.map(load => getCargaAgudaChartColor(load));
 
@@ -2259,8 +2252,8 @@
                 }
             });
 
-            const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-            const dayOrder = [1,2,3,4,5,6,0]; // Monday to Sunday
+            const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            const dayOrder = [0,1,2,3,4,5,6]; // Sunday to Saturday
             const data = dayOrder.map(dayIndex => dailyMaxLoad[dayIndex] || 0);
 
             const backgroundColors = data.map(load => {
