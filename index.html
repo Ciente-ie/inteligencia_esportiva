@@ -823,12 +823,12 @@
                     <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                         <div>
                             <h4 class="font-semibold text-gray-600 text-sm text-center mb-1">Treinos Físicos (${trainingsFisico.length})</h4>
-                            <ul class="text-left space-y-1 mb-2 p-2 bg-white rounded-md border">${weekTrainingsFisico}</ul>
+                            <ul class="text-left space-y-1 mb-2 p-2 bg-white rounded-md border min-h-[5rem]">${weekTrainingsFisico}</ul>
                             <div class="h-24"><canvas id="dashboardLoadChartFisico"></canvas></div>
                         </div>
                         <div>
                             <h4 class="font-semibold text-gray-600 text-sm text-center mb-1">Treinos de Campo (${trainingsCampo.length})</h4>
-                            <ul class="text-left space-y-1 mb-2 p-2 bg-white rounded-md border">${weekTrainingsCampo}</ul>
+                            <ul class="text-left space-y-1 mb-2 p-2 bg-white rounded-md border min-h-[5rem]">${weekTrainingsCampo}</ul>
                             <div class="h-24"><canvas id="dashboardLoadChartCampo"></canvas></div>
                         </div>
                     </div>
@@ -1009,7 +1009,6 @@
             pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
             pdfButton.disabled = true;
             
-            // For prontidao, keep details closed. For others, open them.
             if (type !== 'prontidao') {
                 const detailsSections = contentToPrint.querySelectorAll('.details-section');
                 detailsSections.forEach(el => el.classList.add('open'));
@@ -1732,7 +1731,8 @@
 
                 const aggregatedDailyEntries = selectedCycles.flatMap(c => c.dailyEntries);
                 const aggregatedLoadStats = getStats(aggregatedDailyEntries.map(e => e.load));
-                const aggregatedMonotony = aggregatedLoadStats.mean > 0 && aggregatedLoadStats.stdDev > 0 ? aggregatedLoadStats.mean / aggregatedLoadStats.stdDev : 0;
+                const avgMonotony = getStats(selectedCycles.map(c => c.monotony)).mean;
+                const totalStrain = selectedCycles.reduce((sum, c) => sum + c.strain, 0);
                 
                 const lastSelectedCycleId = sortedSelectedIds[sortedSelectedIds.length - 1];
                 const lastCycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === lastSelectedCycleId);
@@ -1742,8 +1742,8 @@
                 const awcrForTable = chronicLoadForLast > 0 ? lastCycleAcuteLoad / chronicLoadForLast : null;
                 
                 individualResults.push({
-                    athleteId, totalLoad: aggregatedLoadStats.sum, monotony: aggregatedMonotony,
-                    strain: aggregatedLoadStats.sum * aggregatedMonotony, awcr: awcrForTable,
+                    athleteId, totalLoad: aggregatedLoadStats.sum, monotony: avgMonotony,
+                    strain: totalStrain, awcr: awcrForTable,
                     hasEnoughDataForAwcr: chronicCyclesForLast.length >= 4,
                     chartData: {
                         labels: aggregatedDailyEntries.sort((a,b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`)).map(e => new Date(`${e.date}T00:00:00`).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})),
