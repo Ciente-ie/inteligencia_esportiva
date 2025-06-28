@@ -803,6 +803,10 @@
             let mainContentHtml;
 
             if (selectedPlanningWeeks.length === 1) {
+                const weekId = selectedPlanningWeeks[0];
+                const cargaForWeek = fullCargaData.filter(d => d.microciclo_id === weekId);
+                const athleteCount = new Set(cargaForWeek.map(d => d.atleta_id)).size;
+
                 const formatTrainingList = (trainings) => {
                     if (trainings.length === 0) {
                         return '<li class="text-xs text-gray-400">Nenhum treino na semana.</li>';
@@ -823,12 +827,12 @@
                     <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                         <div>
                             <h4 class="font-semibold text-gray-600 text-sm text-center mb-1">Treinos Físicos (${trainingsFisico.length})</h4>
-                            <ul class="text-left space-y-1 mb-2 p-2 bg-white rounded-md border min-h-[5rem]">${weekTrainingsFisico}</ul>
+                            <ul class="text-left space-y-1 mb-2 p-2 bg-white rounded-md border">${weekTrainingsFisico}</ul>
                             <div class="h-24"><canvas id="dashboardLoadChartFisico"></canvas></div>
                         </div>
                         <div>
                             <h4 class="font-semibold text-gray-600 text-sm text-center mb-1">Treinos de Campo (${trainingsCampo.length})</h4>
-                            <ul class="text-left space-y-1 mb-2 p-2 bg-white rounded-md border min-h-[5rem]">${weekTrainingsCampo}</ul>
+                            <ul class="text-left space-y-1 mb-2 p-2 bg-white rounded-md border">${weekTrainingsCampo}</ul>
                             <div class="h-24"><canvas id="dashboardLoadChartCampo"></canvas></div>
                         </div>
                     </div>
@@ -836,8 +840,16 @@
 
                 mainContentHtml = `
                     <div class="lg:col-span-2 flex flex-col justify-center bg-gray-50 p-6 rounded-lg">
-                        <h3 class="font-semibold text-gray-800 text-center">Total de Sessões na Semana</h3>
-                        <p class="text-6xl font-bold text-blue-600 text-center">${totalSessions}</p>
+                        <div class="flex justify-center items-end gap-x-6">
+                            <div class="text-center">
+                                <h3 class="font-semibold text-gray-800">Sessões</h3>
+                                <p class="text-6xl font-bold text-blue-600">${totalSessions}</p>
+                            </div>
+                            <div class="text-center pb-1">
+                                <h3 class="font-semibold text-gray-800">Atletas</h3>
+                                <p class="text-4xl font-bold text-gray-600">${athleteCount}</p>
+                            </div>
+                        </div>
                         ${detailsHtml}
                     </div>
                 `;
@@ -1000,6 +1012,7 @@
             pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
             pdfButton.disabled = true;
             
+            // For prontidao, keep details closed. For others, open them.
             if (type !== 'prontidao') {
                 const detailsSections = contentToPrint.querySelectorAll('.details-section');
                 detailsSections.forEach(el => el.classList.add('open'));
@@ -1810,8 +1823,31 @@
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
             activeCharts[canvasId] = new Chart(ctx, {
-                type: 'line', data: { labels: evolutionData.map(d => d.strain), datasets: [{ label: 'Strain', data: evolutionData.map(d => d.strain), borderColor: 'rgb(239, 68, 68)', fill: false, tension: 0.1 }] },
-                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, min: 0, max: 15000 }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { align: 'top' } } }
+                type: 'line', 
+                data: { 
+                    labels: evolutionData.map(d => d.microciclo_id), 
+                    datasets: [{ 
+                        label: 'Strain', 
+                        data: evolutionData.map(d => d.strain), 
+                        borderColor: 'rgb(239, 68, 68)', 
+                        fill: false, 
+                        tension: 0.1 
+                    }] 
+                },
+                options: { 
+                    maintainAspectRatio: false, 
+                    scales: { 
+                        y: { beginAtZero: true, min: 0, max: 15000 }, 
+                        x: { grid: { display: false } } 
+                    }, 
+                    plugins: { 
+                        legend: { display: false }, 
+                        datalabels: { 
+                            align: 'top',
+                            formatter: (value) => Math.round(value)
+                        } 
+                    } 
+                }
             });
         }
 
