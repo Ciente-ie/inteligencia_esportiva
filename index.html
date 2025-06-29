@@ -711,7 +711,9 @@
             resultsSection.classList.remove('hidden');
             
             const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
-            const selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
+            let selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
+            selectedWeeks = sortWeeks(selectedWeeks); // Ensure selection is sorted for charts
+            
             const filteredData = fullProntidaoData.filter(d => selectedWeeks.includes(d.semana_id));
 
             if (filteredData.length > 0) {
@@ -738,8 +740,9 @@
             processAndStoreLoadData();
             
             const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
-            const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-
+            let selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+            selectedIds = sortWeeks(selectedIds); // Ensure selection is sorted for charts
+            
             if (selectedIds.length > 0) {
                 displayFilteredLoadData(selectedIds);
             } else {
@@ -758,7 +761,7 @@
 
         function renderDashboardProntidao() {
             const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
-            const selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
+            const selectedWeeks = sortWeeks(Array.from(selectedCheckboxes).map(cb => cb.value));
             
             if (latestProntidaoData && latestProntidaoData.teamStats) {
                 if (selectedWeeks.length > 1 && latestProntidaoData.teamStats.evolutionData.length > 0) {
@@ -1920,7 +1923,7 @@
                 avgAcwr: getStats(individualResults.filter(r => r.acwr != null).map(r => r.acwr)).mean,
                 avgStrain: getStats(individualResults.map(r => r.strain)).mean,
                 dailyAverages: dailyAverages, evolutionData: evolutionData,
-                selectionCount: selectedIds.length, microcicloId: selectedIds.join(', ')
+                selectionCount: selectedIds.length, microcicloId: sortedSelectedIds.join(', ')
             };
             
             latestCargaData = teamStats;
