@@ -47,10 +47,7 @@
             color: #3b82f6;
             background-color: #eff6ff;
         }
-        /* Custom styles for timeline */
-        .timeline-day {
-            border-left-width: 3px;
-        }
+        /* Custom styles for load indicators */
         .carga-leve { border-color: #3b82f6; } /* Azul */
         .carga-moderada { border-color: #f59e0b; } /* Amarelo */
         .carga-alta { border-color: #f97316; } /* Laranja */
@@ -2192,12 +2189,12 @@
                             Exportar PDF
                         </button>
                     </div>
-                    <div id="timelineFisico" class="space-y-4 p-2 bg-gray-50 rounded-lg min-h-[10rem]"></div>
+                    <div id="timelineFisico" class="p-2 bg-gray-50 rounded-lg min-h-[10rem]"></div>
                     <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64"><canvas id="chartCargaFisico"></canvas></div>
                 </div>
                 <div class="mt-8">
                     <h3 class="text-2xl font-bold text-gray-900 mb-4">Treinos de Campo da Semana</h3>
-                    <div id="timelineCampo" class="space-y-4 p-2 bg-gray-50 rounded-lg min-h-[10rem]"></div>
+                    <div id="timelineCampo" class="p-2 bg-gray-50 rounded-lg min-h-[10rem]"></div>
                     <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64"><canvas id="chartCargaCampo"></canvas></div>
                 </div>`;
             
@@ -2239,7 +2236,7 @@
             );
         }
 
-        // *** REWORK: Redesigned timeline function for better layout ***
+        // *** REWORK: Redesigned timeline function for a more compact and discreet layout ***
         function renderTimeline(container, treinos, emptyMessage) {
             if (!container) return;
             container.innerHTML = '';
@@ -2263,35 +2260,44 @@
             sortedDates.forEach(date => {
                 const dayTrainings = trainingsByDate[date];
                 const dayElement = document.createElement('div');
-                const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
+                dayElement.className = 'mb-4'; // Margin bottom for each day group
 
-                let trainingsHtml = dayTrainings.map(treino => {
+                const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short' });
+
+                const trainingsHtml = dayTrainings.map(treino => {
                     const borderColorClass = `carga-${treino.carga}`;
-                    const objSecundarioText = Array.isArray(treino.objSecundario) && treino.objSecundario.length > 0 ? treino.objSecundario.join(', ') : 'Nenhum';
+                    const objSecundarioText = Array.isArray(treino.objSecundario) && treino.objSecundario.length > 0 ? treino.objSecundario.join(', ') : 'N/A';
                     const bgColor = treino.type === 'fisico' ? 'bg-blue-50' : 'bg-green-50';
+                    const iconColor = treino.type === 'fisico' ? 'text-blue-600' : 'text-green-600';
+                    const iconLetter = treino.type === 'fisico' ? 'F' : 'C';
 
                     return `
-                        <div class="timeline-day ${borderColorClass} ${bgColor} p-3 rounded-lg shadow-sm relative flex-1">
-                             <button class="remove-training-btn absolute top-1 right-1 text-gray-400 hover:text-red-500 text-lg font-bold leading-none p-1" data-id="${treino.id}" data-type="${treino.type}">&times;</button>
-                             <p class="font-semibold text-gray-800 text-sm">${treino.objPrincipal}</p>
-                             <p class="text-xs text-gray-500 mt-1">${treino.local || treino.campo}</p>
-                             <div class="mt-2 pt-2 border-t border-gray-200">
-                                <p class="text-xs font-semibold text-gray-700">Objetivos Sec.:</p>
-                                <p class="text-xs text-gray-600 break-words">${objSecundarioText}</p>
-                             </div>
-                             <p class="text-xs font-bold mt-2 text-right">${treino.cargaText}</p>
-                        </div>
+                        <li class="flex items-center gap-x-3 p-2 rounded-lg ${bgColor} border-l-4 ${borderColorClass}">
+                            <div class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full ${iconColor} bg-white font-bold text-sm shadow-sm">
+                                ${iconLetter}
+                            </div>
+                            <div class="flex-grow">
+                                <p class="font-semibold text-gray-800 text-sm leading-tight">${treino.objPrincipal} <span class="text-xs font-normal text-gray-500">(${treino.local || treino.campo})</span></p>
+                                <p class="text-xs text-gray-600 leading-tight" title="${objSecundarioText}">
+                                    ${objSecundarioText}
+                                </p>
+                            </div>
+                            <div class="flex-shrink-0 text-right w-28">
+                                <p class="text-xs font-semibold text-gray-700">${treino.cargaText}</p>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <button class="remove-training-btn text-gray-400 hover:text-red-500 text-xl font-bold leading-none p-1" data-id="${treino.id}" data-type="${treino.type}">&times;</button>
+                            </div>
+                        </li>
                     `;
                 }).join('');
 
-                dayElement.className = 'flex flex-col md:flex-row items-start gap-4';
                 dayElement.innerHTML = `
-                    <div class="w-full md:w-40 text-center md:text-right py-2">
-                        <p class="font-bold text-gray-700">${formattedDate.split(',')[0]}</p>
-                        <p class="text-sm text-gray-500">${formattedDate.split(',')[1]}</p>
-                    </div>
-                    <div class="w-full flex flex-col sm:flex-row gap-3">
-                        ${trainingsHtml}
+                    <div>
+                        <h4 class="font-bold text-gray-500 text-sm tracking-wider uppercase mb-2">${formattedDate}</h4>
+                        <ul class="space-y-2">
+                            ${trainingsHtml}
+                        </ul>
                     </div>
                 `;
 
