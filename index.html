@@ -1120,8 +1120,7 @@
                     const data = JSON.parse(button.dataset.chartdata);
                     renderAthleteChart(canvasId, data, 'Carga de Treino Diária (u.a.)');
                 }
-                // **MODIFICATION**: Render history charts on expand
-                if (type === 'prontidao' && button.dataset.history) {
+                if (type === 'prontidao' && button.dataset.history && button.dataset.history.trim() !== '') {
                     try {
                         const historyData = JSON.parse(button.dataset.history);
                         const uniqueId = targetId.replace('details-prontidao-', '');
@@ -1133,7 +1132,7 @@
                             renderAthleteHistoryChart('salto', `history-salto-${uniqueId}`, historyData.salto);
                         }
                     } catch(e) {
-                        console.error("Failed to parse or render history chart", e);
+                        console.error("Failed to parse or render history chart", e, button.dataset.history);
                     }
                 }
             }
@@ -1444,7 +1443,6 @@
 
                 const result = calculateAthleteReadiness(athleteId, representativeEntry, allHistoricalEntries, representativeEntry.data);
                 
-                // **NEW**: Calculate weekly history for charts if multiple weeks are selected
                 if (result && selectedWeeks.length > 1) {
                     const weeklyHooper = [];
                     const weeklySalto = [];
@@ -1841,7 +1839,6 @@
             
             const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
 
-            // **NEW**: Conditionally add history charts HTML
             const historyChartsHtml = result.history ? `
                 <div class="mt-4 pt-4 border-t col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -2000,7 +1997,6 @@
             });
         }
 
-        // **NEW FUNCTION**: Renders individual history charts for Hooper and Salto
         function renderAthleteHistoryChart(type, canvasId, data) {
             const ctx = document.getElementById(canvasId);
             if (!ctx) return;
