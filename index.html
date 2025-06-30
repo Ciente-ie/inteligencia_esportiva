@@ -48,8 +48,8 @@
             background-color: #eff6ff;
         }
         /* Custom styles for timeline */
-        .timeline-card {
-            border-left-width: 4px;
+        .timeline-day {
+            border-left-width: 3px;
         }
         .carga-leve { border-color: #3b82f6; } /* Azul */
         .carga-moderada { border-color: #f59e0b; } /* Amarelo */
@@ -141,7 +141,7 @@
                             <p>atleta_id,data,<strong class="text-blue-600">semana_id</strong>,qualidade_sono,niveis_stress,fadiga_geral,dor_muscular,hooper_score,salto_horizontal_cm,vfc_rmssd</p>
                         </div>
                          <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
-                             <li>O `semana_id` deve ser consistente (ex: "S25", "S26").</li>
+                             <li>O `semana_id` deve ser consistente (ex: "Sem25", "S26").</li>
                              <li>A análise comparará o dado mais recente de um atleta na semana selecionada com todos os seus dados anteriores.</li>
                         </ul>
                     </div>
@@ -206,7 +206,7 @@
                             <p>atleta_id,data,<strong class="text-blue-600">microciclo_id</strong>,pse_sessao,duracao_sessao_min</p>
                         </div>
                         <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
-                            <li>O `microciclo_id` deve ser consistente (ex: "Sem25", "Sem26").</li>
+                            <li>O `microciclo_id` deve ser consistente (ex: "Sem25", "S26").</li>
                             <li>Para o cálculo do ACWR, forneça dados de pelo menos <strong>4 microciclos</strong> anteriores.</li>
                         </ul>
                     </div>
@@ -274,7 +274,7 @@
                                 <input type="date" id="dataTreinoFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
                             </div>
                              <div>
-                                <label for="semanaIdFisico" class="block text-sm font-medium text-gray-700 mb-1">ID da Semana (ex: S25)</label>
+                                <label for="semanaIdFisico" class="block text-sm font-medium text-gray-700 mb-1">ID da Semana (ex: Sem25)</label>
                                 <input type="text" id="semanaIdFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                             </div>
                             <div>
@@ -317,7 +317,7 @@
                                 <input type="date" id="dataTreinoCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
                             </div>
                              <div>
-                                <label for="semanaIdCampo" class="block text-sm font-medium text-gray-700 mb-1">ID da Semana (ex: S25)</label>
+                                <label for="semanaIdCampo" class="block text-sm font-medium text-gray-700 mb-1">ID da Semana (ex: Sem25)</label>
                                 <input type="text" id="semanaIdCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                             </div>
                             <div>
@@ -752,7 +752,8 @@
                     renderTeamHooperChart('dashboard-team-hooper-chart', latestProntidaoData.teamStats.evolutionData);
                     renderTeamSaltoChart('dashboard-team-salto-chart', latestProntidaoData.teamStats.evolutionData);
                 } else if (selectedWeeks.length === 1 && latestProntidaoData.dailyStats) {
-                    dashboardProntidao.innerHTML = renderTeamDashboardProntidaoWithDailyCharts(latestProntidaoData.dailyStats, latestProntidaoData.latestDate, true, 'dashboard-');
+                    // *** FIX: Pass the selected week ID for correct title display ***
+                    dashboardProntidao.innerHTML = renderTeamDashboardProntidaoWithDailyCharts(latestProntidaoData.dailyStats, selectedWeeks[0], true, 'dashboard-');
                     renderTeamDailyIndexChart('dashboard-team-index-chart', latestProntidaoData.dailyStats);
                     renderTeamDailyHooperChart('dashboard-team-hooper-chart', latestProntidaoData.dailyStats);
                     renderTeamDailySaltoChart('dashboard-team-salto-chart', latestProntidaoData.dailyStats);
@@ -1187,11 +1188,13 @@
             } else if (typeof date.getTime !== 'function') {
                 d = new Date(date);
             }
-            const day = d.getUTCDay() || 7;
-            d.setUTCDate(d.getUTCDate() + 4 - day);
-            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            d.setUTCHours(0, 0, 0, 0);
+            // Monday is the first day of the week
+            d.setDate(d.getDate() + 4 - (d.getDay()||7));
+            const yearStart = new Date(d.getUTCFullYear(),0,1);
             const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-            return `S${String(weekNo).padStart(2, '0')}`;
+            // Use "Sem" prefix for consistency, e.g., Sem22
+            return `Sem${String(weekNo).padStart(2, '0')}`;
         }
         
         function sortWeeks(arr) {
@@ -1378,7 +1381,8 @@
         function renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeks, dailyStats) {
             const selectedWeeksCount = selectedWeeks.length;
             if (selectedWeeksCount === 1 && dailyStats) {
-                teamDashboard.innerHTML = renderTeamDashboardProntidaoWithDailyCharts(dailyStats, latestDate, false);
+                // *** FIX: Pass the week ID for correct title display ***
+                teamDashboard.innerHTML = renderTeamDashboardProntidaoWithDailyCharts(dailyStats, selectedWeeks[0], false);
                 renderTeamDailyIndexChart('team-index-chart', dailyStats);
                 renderTeamDailyHooperChart('team-hooper-chart', dailyStats);
                 renderTeamDailySaltoChart('team-salto-chart', dailyStats);
@@ -1431,12 +1435,13 @@
             });
         }
         
-        function renderTeamDashboardProntidaoWithDailyCharts(dailyStats, latestDate, isDashboard = false, idPrefix = '') {
+        // *** FIX: Changed latestDate parameter to weekId for correct title display ***
+        function renderTeamDashboardProntidaoWithDailyCharts(dailyStats, weekId, isDashboard = false, idPrefix = '') {
              const title = isDashboard ? 'Resumo da Prontidão' : 'Painel da Equipe';
-             const dateText = `Resumo Diário (Semana ${getWeekId(new Date(latestDate + 'T00:00:00'))})`;
+             const dateText = `Resumo Diário (${weekId})`;
 
              return `
-                <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(${dateText})</span></h2>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">${dateText}</span></h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
                     <div class="bg-white p-3 rounded-lg border shadow-sm min-h-[220px]">
                         <h3 class="font-semibold text-gray-700 text-center mb-2 text-sm">Índice Geral (Diário)</h3>
@@ -1451,6 +1456,16 @@
                         <div class="h-48"><canvas id="${idPrefix}team-salto-chart"></canvas></div>
                     </div>
                 </div>
+                <!-- *** ADDITION: Legend for the dashboard view *** -->
+                ${isDashboard ? `
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+                        <h4 class="font-bold text-sm mb-1 text-gray-700">Legenda: Índice Geral</h4>
+                        <p>O <strong>Índice Geral</strong> é calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p>
+                        <p class="mt-1"><strong class="text-green-600">> -0.5: Ótimo</strong> | <strong class="text-yellow-600">-0.5 a -1.5: Atenção</strong> | <strong class="text-red-600">< -1.5: Crítico</strong></p>
+                    </div>
+                </div>
+                ` : ''}
                 `;
         }
         
@@ -1518,10 +1533,13 @@
                         <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Recup. Muscular Média</p><p class="text-5xl font-bold ${saltoTeamClass}">${!isNaN(stats.averageSaltoDiff) ? `${stats.averageSaltoDiff >= 0 ? '+' : ''}${stats.averageSaltoDiff.toFixed(1)}%` : '--'}</p></div>
                         <div class="p-4 bg-gray-50 rounded-lg h-full flex flex-col min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2 text-center">Distribuição dos Atletas</p><div class="flex-grow flex items-center justify-around w-full"><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">${green}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-lg">${yellow}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-lg">${red}</div></div></div></div>
                     </div>
-                    <div class="mt-4 flex justify-center items-center gap-x-4 text-xs text-gray-500">
-                        <span><span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span>Ótimo</span>
-                        <span><span class="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-1"></span>Atenção</span>
-                        <span><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span>Crítico</span>
+                     <!-- *** ADDITION: Legend for the dashboard view *** -->
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+                            <h4 class="font-bold text-sm mb-1 text-gray-700">Legenda: Índice Geral</h4>
+                            <p>O <strong>Índice Geral</strong> é calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p>
+                            <p class="mt-1"><strong class="text-green-600">> -0.5: Ótimo</strong> | <strong class="text-yellow-600">-0.5 a -1.5: Atenção</strong> | <strong class="text-red-600">< -1.5: Crítico</strong></p>
+                        </div>
                     </div>
                     `;
         }
@@ -1567,11 +1585,16 @@
                         </div>
                     </div>
                 </div>
-                 <div class="mt-4 flex justify-center items-center gap-x-4 text-xs text-gray-500">
-                    <span><span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span>Ótimo</span>
-                    <span><span class="inline-block w-3 h-3 rounded-full bg-yellow-500 mr-1"></span>Atenção</span>
-                    <span><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span>Crítico</span>
+                 <!-- *** ADDITION: Legend for the dashboard view *** -->
+                ${isForDashboard ? `
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+                        <h4 class="font-bold text-sm mb-1 text-gray-700">Legenda: Índice Geral</h4>
+                        <p>O <strong>Índice Geral</strong> é calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p>
+                        <p class="mt-1"><strong class="text-green-600">> -0.5: Ótimo</strong> | <strong class="text-yellow-600">-0.5 a -1.5: Atenção</strong> | <strong class="text-red-600">< -1.5: Crítico</strong></p>
+                    </div>
                 </div>
+                ` : ''}
                 `;
         }
 
@@ -1610,7 +1633,7 @@
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
             const labels = evolutionData.map(d => d.weekId);
-            const data = evolutionData.map(d => parseFloat(d.averageIndex.toFixed(2)));
+            const data = evolutionData.map(d => d.averageIndex.toFixed(2));
 
             activeCharts[canvasId] = new Chart(ctx, {
                 type: 'line',
@@ -1619,14 +1642,10 @@
                     datasets: [{
                         label: 'Índice Geral',
                         data: data,
-                        tension: 0.3,
-                        segment: {
-                            borderColor: ctx => getIndexColor(ctx.p0.parsed.y),
-                        },
-                        pointBackgroundColor: ctx => getIndexColor(ctx.raw),
-                        pointHoverBackgroundColor: ctx => getIndexColor(ctx.raw),
-                        pointBorderColor: '#fff',
-                        pointHoverBorderColor: '#fff'
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        fill: true,
+                        tension: 0.3
                     }]
                 },
                 options: {
@@ -1856,24 +1875,12 @@
                 const selectedCycles = allAthleteCycles.filter(c => selectedIds.includes(c.microciclo_id));
                 if(selectedCycles.length === 0) continue;
 
-                // --- CORRECTED CALCULATION FOR MONOTONY AND STRAIN ---
-                const aggregatedDailyLoads = selectedCycles.flatMap(c => c.dailyEntries.map(e => e.load));
-                const periodStats = getStats(aggregatedDailyLoads);
-
-                let periodMonotony = 0;
-                if (periodStats.mean > 0 && periodStats.stdDev > 0) {
-                    periodMonotony = periodStats.mean / periodStats.stdDev;
-                } else if (periodStats.mean > 0 && periodStats.count > 1) {
-                    periodMonotony = 10; // Max monotony
-                }
-
-                const periodTotalLoad = periodStats.sum;
-                const periodStrain = periodTotalLoad * periodMonotony;
+                // --- CORRECTED: Use average for multiple weeks ---
+                const avgWeeklyLoad = getStats(selectedCycles.map(c => c.totalLoad)).mean;
+                const avgMonotony = getStats(selectedCycles.map(c => c.monotony)).mean;
+                const avgStrain = getStats(selectedCycles.map(c => c.strain)).mean;
                 
-                // This value is for display in the "Carga Aguda Média" column. It's the average of the weekly totals.
-                const avgWeeklyLoadForDisplay = getStats(selectedCycles.map(c => c.totalLoad)).mean;
-                
-                const aggregatedDailyEntriesForChart = selectedCycles.flatMap(c => c.dailyEntries);
+                const aggregatedDailyEntries = selectedCycles.flatMap(c => c.dailyEntries);
                 
                 // ACWR calculation based on the LAST selected microcycle
                 const lastSelectedCycleId = sortedSelectedIds[sortedSelectedIds.length - 1];
@@ -1894,17 +1901,17 @@
                 
                 individualResults.push({
                     athleteId,
-                    totalLoad: avgWeeklyLoadForDisplay,
-                    monotony: periodMonotony,
-                    strain: periodStrain,
+                    totalLoad: avgWeeklyLoad, // Changed from sum to average
+                    monotony: avgMonotony,
+                    strain: avgStrain, // Changed from sum to average
                     acwr: acwrForTable,
                     hasEnoughDataForAcwr,
                     chartData: {
-                        labels: aggregatedDailyEntriesForChart.sort((a,b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`)).map(e => new Date(`${e.date}T00:00:00`).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})),
-                        loads: aggregatedDailyEntriesForChart.sort((a,b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`)).map(e => e.load)
+                        labels: aggregatedDailyEntries.sort((a,b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`)).map(e => new Date(`${e.date}T00:00:00`).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})),
+                        loads: aggregatedDailyEntries.sort((a,b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`)).map(e => e.load)
                     }
                 });
-                allEntriesInCycles.push(...aggregatedDailyEntriesForChart);
+                allEntriesInCycles.push(...aggregatedDailyEntries);
             }
 
             const loadsByDayOfWeek = allEntriesInCycles.reduce((acc, entry) => {
@@ -2011,36 +2018,8 @@
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
             activeCharts[canvasId] = new Chart(ctx, {
-                type: 'line', 
-                data: { 
-                    labels: evolutionData.map(d => d.microciclo_id), 
-                    datasets: [{ 
-                        label: 'ACWR', 
-                        data: evolutionData.map(d => d.acwr), 
-                        tension: 0.1,
-                        segment: {
-                            borderColor: ctx => getAcwrColor(ctx.p0.parsed.y),
-                        },
-                        pointBackgroundColor: ctx => getAcwrColor(ctx.raw),
-                        pointHoverBackgroundColor: ctx => getAcwrColor(ctx.raw),
-                        pointBorderColor: '#fff',
-                        pointHoverBorderColor: '#fff'
-                    }] 
-                },
-                options: { 
-                    maintainAspectRatio: false, 
-                    scales: { 
-                        y: { beginAtZero: true, min: 0, max: 2 }, 
-                        x: { grid: { display: false } } 
-                    }, 
-                    plugins: { 
-                        legend: { display: false }, 
-                        datalabels: { 
-                            display: evolutionData.length <= 12, 
-                            align: 'top' 
-                        } 
-                    } 
-                }
+                type: 'line', data: { labels: evolutionData.map(d => d.microciclo_id), datasets: [{ label: 'ACWR', data: evolutionData.map(d => d.acwr), borderColor: 'rgb(234, 179, 8)', fill: false, tension: 0.1 }] },
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, min: 0, max: 2 }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { display: evolutionData.length <= 12, align: 'top' } } }
             });
         }
 
@@ -2057,14 +2036,9 @@
                     datasets: [{ 
                         label: 'Strain', 
                         data: evolutionData.map(d => d.strain), 
-                        tension: 0.1,
-                        segment: {
-                            borderColor: ctx => getStrainColor(ctx.p0.parsed.y),
-                        },
-                        pointBackgroundColor: ctx => getStrainColor(ctx.raw),
-                        pointHoverBackgroundColor: ctx => getStrainColor(ctx.raw),
-                        pointBorderColor: '#fff',
-                        pointHoverBorderColor: '#fff'
+                        borderColor: 'rgb(239, 68, 68)', 
+                        fill: false, 
+                        tension: 0.1 
                     }] 
                 },
                 options: { 
@@ -2218,12 +2192,12 @@
                             Exportar PDF
                         </button>
                     </div>
-                    <div id="timelineFisico" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]"></div>
+                    <div id="timelineFisico" class="space-y-4 p-2 bg-gray-50 rounded-lg min-h-[10rem]"></div>
                     <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64"><canvas id="chartCargaFisico"></canvas></div>
                 </div>
-                <div>
+                <div class="mt-8">
                     <h3 class="text-2xl font-bold text-gray-900 mb-4">Treinos de Campo da Semana</h3>
-                    <div id="timelineCampo" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 p-2 bg-gray-100 rounded-lg min-h-[10rem]"></div>
+                    <div id="timelineCampo" class="space-y-4 p-2 bg-gray-50 rounded-lg min-h-[10rem]"></div>
                     <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64"><canvas id="chartCargaCampo"></canvas></div>
                 </div>`;
             
@@ -2265,6 +2239,7 @@
             );
         }
 
+        // *** REWORK: Redesigned timeline function for better layout ***
         function renderTimeline(container, treinos, emptyMessage) {
             if (!container) return;
             container.innerHTML = '';
@@ -2272,20 +2247,58 @@
                  container.innerHTML = `<p class="col-span-full text-gray-500 text-center w-full py-8">${emptyMessage}</p>`;
                 return;
             }
-            treinos.sort((a, b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`));
-            treinos.forEach(treino => {
-                const card = document.createElement('div');
-                const borderColorClass = `carga-${treino.carga}`;
-                const formattedDate = new Date(treino.date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
-                const objSecundarioText = Array.isArray(treino.objSecundario) ? treino.objSecundario.join(', ') : '';
-                const bgColor = treino.type === 'fisico' ? 'bg-blue-50' : 'bg-green-50';
 
-                const cardContent = `<p class="font-semibold text-gray-800 text-sm">${treino.objPrincipal}</p><p class="text-xs text-gray-600 truncate mt-1" title="${objSecundarioText}">${objSecundarioText}</p><p class="text-xs text-gray-500 mt-1">${treino.local || treino.campo}</p><p class="text-xs font-semibold mt-2">${treino.cargaText}</p>`;
-                card.className = `timeline-card ${borderColorClass} ${bgColor} p-2 rounded-lg shadow-sm relative`;
-                card.innerHTML = `<p class="text-xs font-bold text-gray-500 mb-1">${formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}</p>${cardContent}<button class="remove-training-btn absolute top-0 right-0 text-gray-400 hover:text-red-500 text-lg font-bold leading-none p-1" data-id="${treino.id}" data-type="${treino.type}">&times;</button>`;
-                container.appendChild(card);
+            // Group trainings by date
+            const trainingsByDate = treinos.reduce((acc, treino) => {
+                if (!acc[treino.date]) {
+                    acc[treino.date] = [];
+                }
+                acc[treino.date].push(treino);
+                return acc;
+            }, {});
+
+            // Sort dates
+            const sortedDates = Object.keys(trainingsByDate).sort((a, b) => new Date(a) - new Date(b));
+
+            sortedDates.forEach(date => {
+                const dayTrainings = trainingsByDate[date];
+                const dayElement = document.createElement('div');
+                const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
+
+                let trainingsHtml = dayTrainings.map(treino => {
+                    const borderColorClass = `carga-${treino.carga}`;
+                    const objSecundarioText = Array.isArray(treino.objSecundario) && treino.objSecundario.length > 0 ? treino.objSecundario.join(', ') : 'Nenhum';
+                    const bgColor = treino.type === 'fisico' ? 'bg-blue-50' : 'bg-green-50';
+
+                    return `
+                        <div class="timeline-day ${borderColorClass} ${bgColor} p-3 rounded-lg shadow-sm relative flex-1">
+                             <button class="remove-training-btn absolute top-1 right-1 text-gray-400 hover:text-red-500 text-lg font-bold leading-none p-1" data-id="${treino.id}" data-type="${treino.type}">&times;</button>
+                             <p class="font-semibold text-gray-800 text-sm">${treino.objPrincipal}</p>
+                             <p class="text-xs text-gray-500 mt-1">${treino.local || treino.campo}</p>
+                             <div class="mt-2 pt-2 border-t border-gray-200">
+                                <p class="text-xs font-semibold text-gray-700">Objetivos Sec.:</p>
+                                <p class="text-xs text-gray-600 break-words">${objSecundarioText}</p>
+                             </div>
+                             <p class="text-xs font-bold mt-2 text-right">${treino.cargaText}</p>
+                        </div>
+                    `;
+                }).join('');
+
+                dayElement.className = 'flex flex-col md:flex-row items-start gap-4';
+                dayElement.innerHTML = `
+                    <div class="w-full md:w-40 text-center md:text-right py-2">
+                        <p class="font-bold text-gray-700">${formattedDate.split(',')[0]}</p>
+                        <p class="text-sm text-gray-500">${formattedDate.split(',')[1]}</p>
+                    </div>
+                    <div class="w-full flex flex-col sm:flex-row gap-3">
+                        ${trainingsHtml}
+                    </div>
+                `;
+
+                container.appendChild(dayElement);
             });
             
+            // Add event listeners after rendering
             document.querySelectorAll('.remove-training-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const { id, type } = e.currentTarget.dataset;
@@ -2293,6 +2306,7 @@
                 });
             });
         }
+
 
         function renderDailyLoadChart(canvasId, treinos, isDashboard = false) {
             const ctx = document.getElementById(canvasId);
@@ -2382,28 +2396,6 @@
             } catch (error) {
                 showToast("Erro ao remover o treino.");
             }
-        };
-
-        // --- COLOR HELPER FUNCTIONS FOR CHARTS ---
-        const getIndexColor = (value) => {
-            if (value == null) return 'rgba(156, 163, 175, 1)'; // gray-400
-            if (value < -1.5) return 'rgba(239, 68, 68, 1)';   // red-500
-            if (value < -0.5) return 'rgba(245, 158, 11, 1)';  // amber-500
-            return 'rgba(34, 197, 94, 1)';                    // green-500
-        };
-
-        const getAcwrColor = (value) => {
-            if (value == null) return 'rgba(156, 163, 175, 1)';
-            if (value > 1.5) return 'rgba(239, 68, 68, 1)';
-            if (value >= 0.8 && value <= 1.3) return 'rgba(34, 197, 94, 1)';
-            return 'rgba(245, 158, 11, 1)';
-        };
-
-        const getStrainColor = (value) => {
-            if (value == null) return 'rgba(156, 163, 175, 1)';
-            if (value > 10000) return 'rgba(239, 68, 68, 1)';
-            if (value > 6000) return 'rgba(245, 158, 11, 1)';
-            return 'rgba(34, 197, 94, 1)';
         };
 
         // --- CLASSIFICATION & LEGENDS ---
