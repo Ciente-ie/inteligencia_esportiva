@@ -899,10 +899,9 @@
                     renderTeamHooperChart('dashboard-team-hooper-chart', latestProntidaoData.teamStats.evolutionData);
                     renderTeamSaltoChart('dashboard-team-salto-chart', latestProntidaoData.teamStats.evolutionData);
                 } else if (selectedWeeks.length === 1 && latestProntidaoData.dailyStats) {
-                    dashboardProntidao.innerHTML = renderTeamDashboardProntidaoWithDailyCharts(latestProntidaoData.dailyStats, selectedWeeks[0], true, 'dashboard-');
+                    dashboardProntidao.innerHTML = renderTeamDashboardProntidaoWithDailyCharts(latestProntidaoData.dailyStats, latestProntidaoData.teamStats, selectedWeeks[0], true, 'dashboard-');
                     renderTeamDailyIndexChart('dashboard-team-index-chart', latestProntidaoData.dailyStats);
                     renderTeamDailyHooperChart('dashboard-team-hooper-chart', latestProntidaoData.dailyStats);
-                    renderTeamDailySaltoChart('dashboard-team-salto-chart', latestProntidaoData.dailyStats);
                 } else { 
                     const overallStats = {
                         averageIndex: latestProntidaoData.teamStats.averageIndex,
@@ -1403,20 +1402,23 @@
             const individualResults = Object.keys(athletesData).map(athleteId => {
                 const entriesInSelection = athletesData[athleteId];
                 if (entriesInSelection.length === 0) return null;
-                
-                const firstDateInSelection = entriesInSelection.reduce((minDate, entry) => new Date(`${entry.data}T00:00:00`) < minDate ? new Date(`${entry.data}T00:00:00`) : minDate, new Date());
-                const latestDateInSelection = entriesInSelection.reduce((maxDate, entry) => {
-                    const entryDate = new Date(`${entry.data}T00:00:00`);
-                    if (!latestDateOverall || entryDate > latestDateOverall) latestDateOverall = entryDate;
-                    return entryDate > maxDate ? entryDate : maxDate;
-                }, new Date(0));
 
-                const allHistoricalEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < firstDateInSelection).sort((a, b) => new Date(`${b.data}T00:00:00`) - new Date(`${a.data}T00:00:00`));
-                const representativeEntry = Object.keys(METRIC_NAMES).reduce((acc, key) => {
-                    acc[key] = getStats(entriesInSelection.map(e => e[key])).mean;
-                    return acc;
-                }, {});
-                return calculateAthleteReadiness(athleteId, representativeEntry, allHistoricalEntries, latestDateInSelection.toISOString().split('T')[0]);
+                // **FIX**: Find the single latest entry in the selection for this athlete
+                const latestEntryInSelection = entriesInSelection.sort((a, b) => new Date(`${b.data}T00:00:00`) - new Date(`${a.data}T00:00:00`))[0];
+                
+                const latestDate = new Date(`${latestEntryInSelection.data}T00:00:00`);
+                if (!latestDateOverall || latestDate > latestDateOverall) {
+                    latestDateOverall = latestDate;
+                }
+
+                // **FIX**: Historical entries are all entries *before* this latest entry
+                const allHistoricalEntries = fullProntidaoData.filter(d => 
+                    d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < latestDate
+                );
+
+                // **FIX**: Use the latest entry for calculation, not an average
+                return calculateAthleteReadiness(athleteId, latestEntryInSelection, allHistoricalEntries, latestEntryInSelection.data);
+
             }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
 
             const uniqueWeeksSorted = sortWeeks([...new Set(data.map(d => d.semana_id))]);
@@ -1530,10 +1532,10 @@
         function renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeks, dailyStats) {
             const selectedWeeksCount = selectedWeeks.length;
             if (selectedWeeksCount === 1 && dailyStats) {
-                teamDashboard.innerHTML = renderTeamDashboardProntidaoWithDailyCharts(dailyStats, selectedWeeks[0], false);
+                // **MODIFICATION**: Pass teamStats to daily chart renderer
+                teamDashboard.innerHTML = renderTeamDashboardProntidaoWithDailyCharts(dailyStats, teamStats, selectedWeeks[0], false);
                 renderTeamDailyIndexChart('team-index-chart', dailyStats);
                 renderTeamDailyHooperChart('team-hooper-chart', dailyStats);
-                renderTeamDailySaltoChart('team-salto-chart', dailyStats);
 
             } else {
                  teamDashboard.innerHTML = renderTeamDashboardProntidaoWithCharts(teamStats, latestDate, false, selectedWeeksCount);
@@ -1583,24 +1585,44 @@
             });
         }
         
-        function renderTeamDashboardProntidaoWithDailyCharts(dailyStats, weekId, isDashboard = false, idPrefix = '') {
+        function renderTeamDashboardProntidaoWithDailyCharts(dailyStats, teamStats, weekId, isDashboard = false, idPrefix = '') {
              const title = isDashboard ? 'Resumo da Prontidão' : 'Painel da Equipe';
              const dateText = `Resumo Diário (${weekId})`;
+             const { green = 0, yellow = 0, red = 0 } = teamStats.zoneCounts || {};
+             const saltoAvg = teamStats.averageSaltoDiff;
+             const saltoTeamClass = saltoAvg >= 0 ? 'text-green-600' : 'text-red-600';
 
              return `
                 <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">${dateText}</span></h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                    <div class="bg-white p-3 rounded-lg border shadow-sm min-h-[220px]">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+                    <div class="bg-white p-3 rounded-lg border shadow-sm">
                         <h3 class="font-semibold text-gray-700 text-center mb-2 text-sm">Índice Geral (Diário)</h3>
                         <div class="h-48"><canvas id="${idPrefix}team-index-chart"></canvas></div>
                     </div>
-                    <div class="bg-white p-3 rounded-lg border shadow-sm min-h-[220px]">
+                    <div class="bg-white p-3 rounded-lg border shadow-sm">
                         <h3 class="font-semibold text-gray-700 text-center mb-2 text-sm">Fadiga Hooper (Média Diária)</h3>
                         <div class="h-48"><canvas id="${idPrefix}team-hooper-chart"></canvas></div>
                     </div>
-                    <div class="bg-white p-3 rounded-lg border shadow-sm min-h-[220px]">
-                        <h3 class="font-semibold text-gray-700 text-center mb-2 text-sm">% Rec. Muscular (Média Diária)</h3>
-                        <div class="h-48"><canvas id="${idPrefix}team-salto-chart"></canvas></div>
+                    <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg border shadow-sm">
+                        <p class="text-sm font-medium text-gray-600 text-center">% Rec. Muscular Média</p>
+                        <p class="text-5xl font-bold ${saltoTeamClass}">${!isNaN(saltoAvg) ? `${saltoAvg >= 0 ? '+' : ''}${saltoAvg.toFixed(1)}%` : '--'}</p>
+                    </div>
+                     <div class="p-4 bg-gray-50 rounded-lg h-full flex flex-col justify-center border shadow-sm">
+                        <p class="text-sm font-medium text-gray-600 mb-2 text-center">Distribuição dos Atletas</p>
+                        <div class="flex-grow flex items-center justify-around w-full">
+                            <div class="text-center">
+                                <div class="w-12 h-12 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-xl">${green}</div>
+                                <p class="text-xs mt-1">Ótimo</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-12 h-12 mx-auto rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-xl">${yellow}</div>
+                                <p class="text-xs mt-1">Atenção</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-12 h-12 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-xl">${red}</div>
+                                <p class="text-xs mt-1">Crítico</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 ${isDashboard ? `
@@ -1768,7 +1790,7 @@
             
             const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
 
-            return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div><div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div><div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div><div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${hooperScoreValue}</span></div><div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-prontidao-${uniqueId}"><svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-prontidao-${uniqueId}"><div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="font-semibold text-sm mb-2">Detalhes (Valores médios da seleção):</h4><ul class="space-y-1">${detailsHtml}</ul></div><div class="bg-blue-50 border p-3 rounded-lg self-start"><h4 class="font-semibold text-sm mb-1">Sugestão:</h4><p class="text-sm">${recommendation}</p></div></div></div></div>`;
+            return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div><div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div><div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div><div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${hooperScoreValue}</span></div><div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-prontidao-${uniqueId}"><svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-prontidao-${uniqueId}"><div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="font-semibold text-sm mb-2">Detalhes (Valor da data vs. Média Histórica):</h4><ul class="space-y-1">${detailsHtml}</ul></div><div class="bg-blue-50 border p-3 rounded-lg self-start"><h4 class="font-semibold text-sm mb-1">Sugestão:</h4><p class="text-sm">${recommendation}</p></div></div></div></div>`;
         }
         
         function renderTeamIndexChart(canvasId, evolutionData) {
