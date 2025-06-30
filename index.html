@@ -1443,27 +1443,20 @@
 
                 const result = calculateAthleteReadiness(athleteId, representativeEntry, allHistoricalEntries, representativeEntry.data);
                 
-                if (result && selectedWeeks.length > 1) {
-                    const weeklyHooper = [];
-                    const weeklySalto = [];
+                // CHANGE: Collect daily data for history charts instead of weekly averages
+                if (result) {
+                    const sortedEntries = entriesInSelection.sort((a, b) => new Date(`${a.data}T00:00:00`) - new Date(`${b.data}T00:00:00`));
 
-                    sortWeeks(selectedWeeks).forEach(weekId => {
-                        const entriesForWeek = entriesInSelection.filter(e => e.semana_id === weekId);
-                        if (entriesForWeek.length > 0) {
-                            const hooperStats = getStats(entriesForWeek.map(e => e.hooper_score));
-                            if (hooperStats.count > 0) {
-                                weeklyHooper.push({ weekId, value: hooperStats.mean });
-                            }
+                    const dailyHooper = sortedEntries
+                        .filter(e => e.hooper_score != null)
+                        .map(e => ({ date: e.data, value: e.hooper_score }));
 
-                            const saltoStats = getStats(entriesForWeek.map(e => e.salto_horizontal_cm));
-                            if (saltoStats.count > 0) {
-                                weeklySalto.push({ weekId, value: saltoStats.mean });
-                            }
-                        }
-                    });
-                    
-                    if(weeklyHooper.length > 0 || weeklySalto.length > 0) {
-                        result.history = { hooper: weeklyHooper, salto: weeklySalto };
+                    const dailySalto = sortedEntries
+                        .filter(e => e.salto_horizontal_cm != null)
+                        .map(e => ({ date: e.data, value: e.salto_horizontal_cm }));
+
+                    if (dailyHooper.length > 0 || dailySalto.length > 0) {
+                        result.history = { hooper: dailyHooper, salto: dailySalto };
                     }
                 }
 
@@ -1839,15 +1832,16 @@
             
             const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
 
+            // CHANGE: Updated chart titles
             const historyChartsHtml = result.history ? `
                 <div class="mt-4 pt-4 border-t col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Histórico Hooper (Média Semanal)</h5>
-                        <div class="h-32"><canvas id="history-hooper-${uniqueId}"></canvas></div>
+                        <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Evolução Diária - Hooper</h5>
+                        <div class="h-40"><canvas id="history-hooper-${uniqueId}"></canvas></div>
                     </div>
                     <div>
-                        <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Histórico Salto (Média Semanal cm)</h5>
-                        <div class="h-32"><canvas id="history-salto-${uniqueId}"></canvas></div>
+                        <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Evolução Diária - Salto (cm)</h5>
+                        <div class="h-40"><canvas id="history-salto-${uniqueId}"></canvas></div>
                     </div>
                 </div>
             ` : '';
@@ -1997,20 +1991,23 @@
             });
         }
 
+        // CHANGE: Renders daily data as a line chart
         function renderAthleteHistoryChart(type, canvasId, data) {
             const ctx = document.getElementById(canvasId);
             if (!ctx) return;
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
-            const labels = data.map(d => d.weekId);
-            const values = data.map(d => d.value.toFixed(1));
+            const labels = data.map(d => new Date(d.date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}));
+            const values = data.map(d => parseFloat(d.value.toFixed(1)));
             
             let chartOptions = {
-                type: 'bar',
+                type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
                         data: values,
+                        tension: 0.2,
+                        fill: false,
                     }]
                 },
                 options: {
@@ -2023,6 +2020,7 @@
                     plugins: {
                         legend: { display: false },
                         datalabels: {
+                            display: data.length <= 15, 
                             anchor: 'end',
                             align: 'top',
                             font: { size: 10 }
@@ -2032,17 +2030,17 @@
             };
 
             if (type === 'hooper') {
-                chartOptions.data.datasets[0].backgroundColor = values.map(val => {
-                    if (val <= 9) return 'rgba(34, 197, 94, 0.7)';
-                    if (val <= 17) return 'rgba(245, 158, 11, 0.7)';
-                    return 'rgba(239, 68, 68, 0.7)';
-                });
+                chartOptions.data.datasets[0].borderColor = 'rgba(245, 158, 11, 1)';
+                chartOptions.data.datasets[0].backgroundColor = 'rgba(245, 158, 11, 0.2)';
                 chartOptions.options.scales.y.min = 4;
                 chartOptions.options.scales.y.max = 28;
             } else { // salto
-                chartOptions.data.datasets[0].backgroundColor = 'rgba(59, 130, 246, 0.7)';
+                chartOptions.data.datasets[0].borderColor = 'rgba(59, 130, 246, 1)';
+                chartOptions.data.datasets[0].backgroundColor = 'rgba(59, 130, 246, 0.2)';
                 const minVal = Math.min(...values);
-                chartOptions.options.scales.y.min = Math.floor(minVal / 10) * 10 - 10; // set a reasonable min
+                const maxVal = Math.max(...values);
+                chartOptions.options.scales.y.min = Math.floor(minVal / 10) * 10 - 10;
+                chartOptions.options.scales.y.max = Math.ceil(maxVal / 10) * 10 + 10;
             }
 
             activeCharts[canvasId] = new Chart(ctx, chartOptions);
