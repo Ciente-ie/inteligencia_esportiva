@@ -436,10 +436,10 @@
 
 
     <script type="module">
-        // --- Firebase v9+ modular imports ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs, where, updateDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        // --- Firebase v11+ modular imports ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 
         // --- FIREBASE SETUP ---
@@ -454,12 +454,13 @@
 
         // Initialize Firebase and services
         let db, auth;
+        let isAuthReady = false;
         try {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
         } catch (e) {
-            console.error("Firebase initialization failed. Please check your firebaseConfig.", e);
+            console.error("Firebase initialization failed:", e);
             showToast("Erro na configuração do Firebase. Verifique o console.");
         }
 
@@ -498,7 +499,6 @@
         let latestProntidaoData = null;
         let latestCargaData = null;
         let selectedPlanningWeeks = [getWeekId(new Date())];
-        let isInitialLoadComplete = false;
         let toastTimeout = null; 
 
         // --- DOM ELEMENTS ---
@@ -586,11 +586,13 @@
                 submitTreinoFisicoBtn.disabled = false;
                 submitTreinoCampoBtn.disabled = false;
                 submitLesaoBtn.disabled = false;
-                if (!isInitialLoadComplete) {
-                   loadInitialData();
+                if (!isAuthReady) {
+                   isAuthReady = true;
+                   initializeAndLoadData();
                 }
             } else {
                 currentUser = null;
+                isAuthReady = false;
                 authStatus.textContent = 'Offline';
                 authStatus.classList.add('text-red-600', 'font-semibold');
                 authStatus.classList.remove('text-green-600');
@@ -608,40 +610,11 @@
             showToast("Falha na autenticação. Os dados não serão salvos.");
         });
 
-        async function loadInitialData() {
-            isInitialLoadComplete = true; 
+        function initializeAndLoadData() {
             loaderText.textContent = 'Carregando dados...';
-            try {
-                const [prontidaoSnap, cargaSnap, fisicoSnap, campoSnap, lesoesSnap] = await Promise.all([
-                    getDocs(query(prontidaoCollection, orderBy("data", "desc"))),
-                    getDocs(query(cargaCollection, orderBy("data", "desc"))),
-                    getDocs(query(treinosFisicosCollection, orderBy("date", "asc"))),
-                    getDocs(query(treinosCampoCollection, orderBy("date", "asc"))),
-                    getDocs(query(lesoesCollection, orderBy("atleta"))),
-                ]);
-
-                fullProntidaoData = prontidaoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                fullCargaData = cargaSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                treinosFisicos = fisicoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                treinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                lesoesData = lesoesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                
-                renderAllTabs();
-
-                globalLoader.classList.add('hidden');
-                mainContent.classList.remove('hidden');
-
-                setupLiveListeners();
-
-            } catch (error) {
-                console.error("Error loading initial data:", error);
-                loaderText.textContent = "Erro ao carregar os dados. Verifique o console.";
-                showToast("Erro crítico ao carregar os dados iniciais.");
-            }
-        }
-        
-        function setupLiveListeners() {
-             onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
+            
+            // Setup live listeners
+            onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 renderPlanningView();
                 updateDashboardView();
@@ -672,8 +645,15 @@
                 renderLesoesTab();
                 updateDashboardView();
             });
+            
+            // Hide loader after a short delay to allow initial data to render
+            setTimeout(() => {
+                globalLoader.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                renderAllTabs();
+            }, 1500);
         }
-
+        
 
         // --- EVENT LISTENERS ---
         tabDashboardBtn.addEventListener('click', () => switchTab('dashboard'));
@@ -739,6 +719,7 @@
         document.getElementById('dataTreinoCampo').dispatchEvent(new Event('change'));
 
         function renderAllTabs() {
+            if (!isAuthReady) return;
             renderProntidaoTab();
             renderCargaTab();
             renderPlanningView();
@@ -748,7 +729,7 @@
 
         // --- MAIN RENDER FUNCTIONS ---
         function renderProntidaoTab() {
-            if (fullProntidaoData.length === 0) {
+            if (!isAuthReady || fullProntidaoData.length === 0) {
                 placeholderSectionProntidao.classList.remove('hidden');
                 resultsSection.classList.add('hidden');
                 latestProntidaoData = null;
@@ -776,7 +757,7 @@
         }
 
         function renderCargaTab() {
-            if (fullCargaData.length === 0) {
+            if (!isAuthReady || fullCargaData.length === 0) {
                 placeholderSectionCarga.classList.remove('hidden');
                 resultsSectionCarga.classList.add('hidden');
                 latestCargaData = null;
@@ -803,6 +784,7 @@
         }
 
         function renderLesoesTab() {
+            if (!isAuthReady) return;
             const activeLesoes = lesoesData.filter(l => l.status !== 'liberado');
             if (activeLesoes.length === 0) {
                 lesoesList.innerHTML = `<div class="text-center py-10 px-6 bg-gray-50 rounded-lg">
@@ -841,6 +823,7 @@
         }
 
         function updateDashboardView() {
+            if (!isAuthReady) return;
             renderDashboardLesoes();
             renderDashboardProntidao();
             renderDashboardCarga();
@@ -1120,16 +1103,20 @@
                     const data = JSON.parse(button.dataset.chartdata);
                     renderAthleteChart(canvasId, data, 'Carga de Treino Diária (u.a.)');
                 }
-                if (type === 'prontidao' && button.dataset.history && button.dataset.history.trim() !== '') {
+                if (type === 'prontidao' && button.dataset.history) {
                     try {
                         const historyData = JSON.parse(button.dataset.history);
                         const uniqueId = targetId.replace('details-prontidao-', '');
                         
                         if (historyData.hooper && historyData.hooper.length > 0) {
                             renderAthleteHistoryChart('hooper', `history-hooper-${uniqueId}`, historyData.hooper);
+                        } else {
+                            document.getElementById(`history-hooper-${uniqueId}`).parentElement.innerHTML = '<p class="text-xs text-center text-gray-500">Sem dados de Hooper para o período.</p>';
                         }
                         if (historyData.salto && historyData.salto.length > 0) {
                             renderAthleteHistoryChart('salto', `history-salto-${uniqueId}`, historyData.salto);
+                        } else {
+                             document.getElementById(`history-salto-${uniqueId}`).parentElement.innerHTML = '<p class="text-xs text-center text-gray-500">Sem dados de Salto para o período.</p>';
                         }
                     } catch(e) {
                         console.error("Failed to parse or render history chart", e, button.dataset.history);
@@ -1365,15 +1352,11 @@
         
         function sortWeeks(arr) {
             return arr.sort((a, b) => {
-                // Extrai a parte numérica da string da semana, ex: "Sem1" -> 1, "S25" -> 25, "Microciclo10" -> 10
                 const numA = parseInt(a.replace(/[^0-9]/g, ''), 10);
                 const numB = parseInt(b.replace(/[^0-9]/g, ''), 10);
-
-                // Se, por algum motivo, não houver um número, usa a ordenação de texto padrão
                 if (isNaN(numA) || isNaN(numB)) {
                     return a.localeCompare(b);
                 }
-
                 return numA - numB;
             });
         }
@@ -1443,7 +1426,6 @@
 
                 const result = calculateAthleteReadiness(athleteId, representativeEntry, allHistoricalEntries, representativeEntry.data);
                 
-                // CHANGE: Collect daily data for history charts instead of weekly averages
                 if (result) {
                     const sortedEntries = entriesInSelection.sort((a, b) => new Date(`${a.data}T00:00:00`) - new Date(`${b.data}T00:00:00`));
 
@@ -1832,19 +1814,24 @@
             
             const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
 
-            // CHANGE: Updated chart titles
-            const historyChartsHtml = result.history ? `
+            const historyChartsHtml = `
                 <div class="mt-4 pt-4 border-t col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Evolução Diária - Hooper</h5>
-                        <div class="h-40"><canvas id="history-hooper-${uniqueId}"></canvas></div>
+                        <div class="h-40 relative">
+                            <div class="absolute inset-0 flex items-center justify-center text-xs text-gray-400">Carregando gráfico...</div>
+                            <canvas id="history-hooper-${uniqueId}"></canvas>
+                        </div>
                     </div>
                     <div>
                         <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Evolução Diária - Salto (cm)</h5>
-                        <div class="h-40"><canvas id="history-salto-${uniqueId}"></canvas></div>
+                         <div class="h-40 relative">
+                            <div class="absolute inset-0 flex items-center justify-center text-xs text-gray-400">Carregando gráfico...</div>
+                            <canvas id="history-salto-${uniqueId}"></canvas>
+                        </div>
                     </div>
                 </div>
-            ` : '';
+            `;
 
             return `<div class="border-b last:border-b-0">
                         <div class="flex items-center p-4">
@@ -1991,11 +1978,15 @@
             });
         }
 
-        // CHANGE: Renders daily data as a line chart
         function renderAthleteHistoryChart(type, canvasId, data) {
             const ctx = document.getElementById(canvasId);
             if (!ctx) return;
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
+            
+            // Remove the loading text
+            if(ctx.previousElementSibling) {
+                ctx.previousElementSibling.remove();
+            }
 
             const labels = data.map(d => new Date(d.date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}));
             const values = data.map(d => parseFloat(d.value.toFixed(1)));
@@ -2108,10 +2099,8 @@
                             if (loadStats.stdDev > 0) {
                                 monotony = loadStats.mean / loadStats.stdDev;
                             } else if (loadStats.count > 1) {
-                                // Max monotony case: multiple sessions with the same load
-                                monotony = 10; // Assign a high arbitrary value for max monotony
+                                monotony = 10; 
                             }
-                            // If count <= 1, stdDev is 0, monotony remains 0, which is correct.
                         }
 
                         return {
@@ -2160,7 +2149,6 @@
             for (const athleteId in athleteMicrocycleData) {
                 const allAthleteCycles = athleteMicrocycleData[athleteId];
                 
-                // Pre-calculate weekly team data for charts
                 sortedSelectedIds.forEach(mc_id => {
                     const cycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === mc_id);
                     if (cycleIndex !== -1) {
@@ -2176,18 +2164,15 @@
                     }
                 });
                 
-                // Filter athlete's cycles based on selection
                 const selectedCycles = allAthleteCycles.filter(c => selectedIds.includes(c.microciclo_id));
                 if(selectedCycles.length === 0) continue;
 
-                // --- CORRECTED: Use average for multiple weeks ---
                 const avgWeeklyLoad = getStats(selectedCycles.map(c => c.totalLoad)).mean;
                 const avgMonotony = getStats(selectedCycles.map(c => c.monotony)).mean;
                 const avgStrain = getStats(selectedCycles.map(c => c.strain)).mean;
                 
                 const aggregatedDailyEntries = selectedCycles.flatMap(c => c.dailyEntries);
                 
-                // ACWR calculation based on the LAST selected microcycle
                 const lastSelectedCycleId = sortedSelectedIds[sortedSelectedIds.length - 1];
                 const lastCycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === lastSelectedCycleId);
                 let acwrForTable = null;
@@ -2206,9 +2191,9 @@
                 
                 individualResults.push({
                     athleteId,
-                    totalLoad: avgWeeklyLoad, // Changed from sum to average
+                    totalLoad: avgWeeklyLoad,
                     monotony: avgMonotony,
-                    strain: avgStrain, // Changed from sum to average
+                    strain: avgStrain,
                     acwr: acwrForTable,
                     hasEnoughDataForAcwr,
                     chartData: {
@@ -2556,7 +2541,6 @@
                 return;
             }
 
-            // Group trainings by date
             const trainingsByDate = treinos.reduce((acc, treino) => {
                 if (!acc[treino.date]) {
                     acc[treino.date] = [];
@@ -2565,7 +2549,6 @@
                 return acc;
             }, {});
 
-            // Sort dates
             const sortedDates = Object.keys(trainingsByDate).sort((a, b) => new Date(a) - new Date(b));
 
             sortedDates.forEach(date => {
@@ -2615,7 +2598,6 @@
                 container.appendChild(dayElement);
             });
             
-            // Add event listeners after rendering
             document.querySelectorAll('.remove-training-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const { id, type } = e.currentTarget.dataset;
