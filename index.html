@@ -571,8 +571,8 @@
             id: 'readinessZonePlugin',
             beforeDraw: (chart) => {
                 const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
-                // Apply only to line charts that have an active y-axis and are not in the dashboard (to avoid double rendering)
-                if (chart.config.type !== 'line' || !y || !y.getPixelForValue || chart.canvas.id.includes('dashboard')) return;
+                // Apply only to line charts that have an active y-axis
+                if (chart.config.type !== 'line' || !y || !y.getPixelForValue) return;
 
                 const greenZone = y.getPixelForValue(-0.5);
                 const yellowZone = y.getPixelForValue(-1.5);
@@ -1150,21 +1150,6 @@
                 }
                 if (type === 'prontidao') {
                     const uniqueId = targetId.replace('details-prontidao-', '');
-
-                    // Render weekly history chart
-                    if (button.dataset.history && button.dataset.history.trim() !== '') {
-                        try {
-                            const historyData = JSON.parse(button.dataset.history);
-                            if (historyData.hooper && historyData.hooper.length > 0) {
-                                renderAthleteHistoryChart('hooper', `history-hooper-${uniqueId}`, historyData.hooper);
-                            }
-                            if (historyData.salto && historyData.salto.length > 0) {
-                                renderAthleteHistoryChart('salto', `history-salto-${uniqueId}`, historyData.salto);
-                            }
-                        } catch(e) {
-                            console.error("Failed to parse or render weekly history chart", e, button.dataset.history);
-                        }
-                    }
                     
                     // Render daily charts
                     if (button.dataset.dailyHistory && button.dataset.dailyHistory.trim() !== '') {
@@ -1504,30 +1489,6 @@
 
                 if (result) {
                     result.dailyHistory = dailyHistoryData;
-                }
-                
-                if (result && selectedWeeks.length > 1) {
-                    const weeklyHooper = [];
-                    const weeklySalto = [];
-
-                    sortWeeks(selectedWeeks).forEach(weekId => {
-                        const entriesForWeek = entriesInSelection.filter(e => e.semana_id === weekId);
-                        if (entriesForWeek.length > 0) {
-                            const hooperStats = getStats(entriesForWeek.map(e => e.hooper_score));
-                            if (hooperStats.count > 0) {
-                                weeklyHooper.push({ weekId, value: hooperStats.mean });
-                            }
-
-                            const saltoStats = getStats(entriesForWeek.map(e => e.salto_horizontal_cm));
-                            if (saltoStats.count > 0) {
-                                weeklySalto.push({ weekId, value: saltoStats.mean });
-                            }
-                        }
-                    });
-                    
-                    if(weeklyHooper.length > 0 || weeklySalto.length > 0) {
-                        result.history = { hooper: weeklyHooper, salto: weeklySalto };
-                    }
                 }
 
                 return result;
@@ -1901,20 +1862,6 @@
             }).join('');
             
             const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
-            
-            // HTML for weekly evolution charts (if data exists)
-            const weeklyHistoryChartsHtml = result.history ? `
-                <div class="mt-4 pt-4 border-t col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Evolução Semanal Hooper</h5>
-                        <div class="h-32"><canvas id="history-hooper-${uniqueId}"></canvas></div>
-                    </div>
-                    <div>
-                        <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Evolução Semanal Salto (cm)</h5>
-                        <div class="h-32"><canvas id="history-salto-${uniqueId}"></canvas></div>
-                    </div>
-                </div>
-            ` : '';
 
             // HTML for daily charts (if data exists)
             const dailyChartsHtml = (result.dailyHistory && (result.dailyHistory.hooper.length > 0 || result.dailyHistory.salto.length > 0)) ? `
@@ -1940,7 +1887,6 @@
                             <div class="w-12 text-center">
                                 <button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" 
                                         data-target="details-prontidao-${uniqueId}" 
-                                        data-history='${result.history ? JSON.stringify(result.history) : ''}'
                                         data-daily-history='${result.dailyHistory ? JSON.stringify(result.dailyHistory) : ''}'>
                                     <svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                                 </button>
@@ -1957,7 +1903,6 @@
                                     <p class="text-sm">${recommendation}</p>
                                 </div>
                                 ${dailyChartsHtml}
-                                ${weeklyHistoryChartsHtml}
                             </div>
                         </div>
                     </div>`;
@@ -2077,57 +2022,6 @@
             });
         }
 
-        function renderAthleteHistoryChart(type, canvasId, data) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const labels = data.map(d => d.weekId);
-            const values = data.map(d => d.value.toFixed(1));
-            
-            let chartOptions = {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: values,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: false },
-                        x: { ticks: { font: { size: 10 } } }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            font: { size: 10 }
-                        }
-                    }
-                }
-            };
-
-            if (type === 'hooper') {
-                chartOptions.data.datasets[0].backgroundColor = values.map(val => {
-                    if (val <= 9) return 'rgba(34, 197, 94, 0.7)';
-                    if (val <= 17) return 'rgba(245, 158, 11, 0.7)';
-                    return 'rgba(239, 68, 68, 0.7)';
-                });
-                chartOptions.options.scales.y.min = 4;
-                chartOptions.options.scales.y.max = 28;
-            } else { // salto
-                chartOptions.data.datasets[0].backgroundColor = 'rgba(59, 130, 246, 0.7)';
-                const minVal = Math.min(...values);
-                chartOptions.options.scales.y.min = Math.floor(minVal / 10) * 10 - 10; // set a reasonable min
-            }
-
-            activeCharts[canvasId] = new Chart(ctx, chartOptions);
-        }
-
         function renderAthleteDailyChart(type, canvasId, data) {
             const ctx = document.getElementById(canvasId);
             if (!ctx || !data || data.length === 0) {
@@ -2178,13 +2072,13 @@
                     if (val <= 17) return 'rgba(245, 158, 11, 0.7)';
                     return 'rgba(239, 68, 68, 0.7)';
                 });
-                chartOptions.options.scales.y.min = 4;
-                chartOptions.options.scales.y.max = 20; // Adjusted from 28 to 20
+                chartOptions.options.scales.y.min = 0; // Adjusted from 4 to 0
+                chartOptions.options.scales.y.max = 20;
                 chartOptions.data.datasets[0].label = 'Hooper Score';
             } else { // salto
                 chartOptions.data.datasets[0].backgroundColor = 'rgba(59, 130, 246, 0.7)';
-                chartOptions.options.scales.y.min = 200; // Adjusted to fixed 200
-                chartOptions.options.scales.y.max = 320; // Adjusted to fixed 320
+                chartOptions.options.scales.y.min = 200;
+                chartOptions.options.scales.y.max = 320;
                 chartOptions.data.datasets[0].label = 'Salto (cm)';
             }
 
