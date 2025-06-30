@@ -565,6 +565,36 @@
 
         // --- SETUP ---
         Chart.register(ChartDataLabels);
+        
+        // Custom plugin for readiness zones background
+        const readinessZonePlugin = {
+            id: 'readinessZonePlugin',
+            beforeDraw: (chart) => {
+                const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
+                // Apply only to line charts that have an active y-axis and are not in the dashboard (to avoid double rendering)
+                if (chart.config.type !== 'line' || !y || !y.getPixelForValue || chart.canvas.id.includes('dashboard')) return;
+
+                const greenZone = y.getPixelForValue(-0.5);
+                const yellowZone = y.getPixelForValue(-1.5);
+
+                ctx.save();
+                // Green zone (from top to -0.5)
+                ctx.fillStyle = 'rgba(34, 197, 94, 0.1)';
+                ctx.fillRect(left, top, right - left, greenZone - top);
+
+                // Yellow zone (from -0.5 to -1.5)
+                ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
+                ctx.fillRect(left, greenZone, right - left, yellowZone - greenZone);
+
+                // Red zone (from -1.5 to bottom)
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
+                ctx.fillRect(left, yellowZone, right - left, bottom - yellowZone);
+
+                ctx.restore();
+            }
+        };
+        Chart.register(readinessZonePlugin);
+
         Chart.defaults.set('plugins.datalabels', {
             color: '#333',
             font: {
@@ -2149,12 +2179,12 @@
                     return 'rgba(239, 68, 68, 0.7)';
                 });
                 chartOptions.options.scales.y.min = 4;
-                chartOptions.options.scales.y.max = 28;
+                chartOptions.options.scales.y.max = 20; // Adjusted from 28 to 20
                 chartOptions.data.datasets[0].label = 'Hooper Score';
             } else { // salto
                 chartOptions.data.datasets[0].backgroundColor = 'rgba(59, 130, 246, 0.7)';
-                const minVal = Math.min(...values.map(Number));
-                chartOptions.options.scales.y.min = Math.floor(minVal / 10) * 10 - 10;
+                chartOptions.options.scales.y.min = 200; // Adjusted to fixed 200
+                chartOptions.options.scales.y.max = 320; // Adjusted to fixed 320
                 chartOptions.data.datasets[0].label = 'Salto (cm)';
             }
 
