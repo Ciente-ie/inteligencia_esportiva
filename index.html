@@ -198,7 +198,7 @@
             <div id="placeholderSectionProntidao" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
                 <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <h3 class="mt-4 text-xl font-semibold text-gray-800">Aguardando dados de Prontidão</h3>
-                <p class="mt-1 text-gray-500">Os dados salvos serão carregados automaticamente ou importe um novo arquivo.</p>
+                <p class="mt-1 text-gray-500">Selecione uma equipe ou importe um novo arquivo para começar.</p>
             </div>
         </div>
 
@@ -263,7 +263,7 @@
              <div id="placeholderSectionCarga" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
                 <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <h3 class="mt-4 text-xl font-semibold text-gray-800">Aguardando dados de Carga</h3>
-                <p class="mt-1 text-gray-500">Os dados salvos serão carregados automaticamente ou importe um novo arquivo.</p>
+                <p class="mt-1 text-gray-500">Selecione uma equipe ou importe um novo arquivo para começar.</p>
             </div>
         </div>
 
@@ -275,6 +275,10 @@
                     <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino Físico</h3>
                         <form id="formTreinoFisico" class="space-y-4">
+                            <div>
+                                <label for="equipeIdFisico" class="block text-sm font-medium text-gray-700 mb-1">ID da Equipe</label>
+                                <input type="text" id="equipeIdFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                            </div>
                             <div>
                                 <label for="dataTreinoFisico" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
                                 <input type="date" id="dataTreinoFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
@@ -318,6 +322,10 @@
                     <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino de Campo</h3>
                         <form id="formTreinoCampo" class="space-y-4">
+                           <div>
+                                <label for="equipeIdCampo" class="block text-sm font-medium text-gray-700 mb-1">ID da Equipe</label>
+                                <input type="text" id="equipeIdCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                            </div>
                            <div>
                                 <label for="dataTreinoCampo" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
                                 <input type="date" id="dataTreinoCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
@@ -378,7 +386,7 @@
                         <form id="formLesao" class="space-y-4">
                             <div>
                                 <label for="equipeIdLesao" class="block text-sm font-medium text-gray-700 mb-1">ID da Equipe</label>
-                                <input type="text" id="equipeIdLesao" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-100" readonly>
+                                <input type="text" id="equipeIdLesao" class="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
                             </div>
                             <div>
                                 <label for="atletaLesao" class="block text-sm font-medium text-gray-700 mb-1">Atleta</label>
@@ -510,14 +518,14 @@
         let selectedPlanningWeeks = [getWeekId(new Date())];
         let isInitialLoadComplete = false;
         let toastTimeout = null; 
-        let selectedTeam = 'all'; // NOVO: Estado para equipe selecionada
+        let selectedTeam = 'all'; 
 
         // --- DOM ELEMENTS ---
         const globalLoader = document.getElementById('globalLoader');
         const loaderText = document.getElementById('loaderText');
         const mainContent = document.getElementById('mainContent');
         const authStatus = document.getElementById('authStatus');
-        const teamFilterSelect = document.getElementById('teamFilterSelect'); // NOVO: Seletor de equipe
+        const teamFilterSelect = document.getElementById('teamFilterSelect'); 
         const tabDashboardBtn = document.getElementById('tabDashboardBtn');
         const tabProntidaoBtn = document.getElementById('tabProntidaoBtn');
         const tabCargaBtn = document.getElementById('tabCargaBtn');
@@ -565,12 +573,14 @@
         const submitTreinoCampoBtn = document.getElementById('submitTreinoCampo');
         const filterContainerPlanejamento = document.getElementById('filterContainerPlanejamento');
         const pdfContentPlanejamento = document.getElementById('pdf-content-planejamento');
+        const equipeIdFisicoInput = document.getElementById('equipeIdFisico');
+        const equipeIdCampoInput = document.getElementById('equipeIdCampo');
         // Lesões Elements
         const formLesao = document.getElementById('formLesao');
         const submitLesaoBtn = document.getElementById('submitLesao');
         const lesoesList = document.getElementById('lesoesList');
         const dashboardLesoes = document.getElementById('dashboardLesoes');
-        const equipeIdLesaoInput = document.getElementById('equipeIdLesao'); // NOVO: Campo de equipe no form de lesão
+        const equipeIdLesaoInput = document.getElementById('equipeIdLesao');
         // Dashboard Elements
         const dashboardProntidao = document.getElementById('dashboardProntidao');
         const dashboardCarga = document.getElementById('dashboardCarga');
@@ -581,30 +591,22 @@
         // --- SETUP ---
         Chart.register(ChartDataLabels);
         
-        // Custom plugin for readiness zones background
         const readinessZonePlugin = {
             id: 'readinessZonePlugin',
             beforeDraw: (chart) => {
                 const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
-                // Apply only to line charts that have an active y-axis
                 if (chart.config.type !== 'line' || !y || !y.getPixelForValue) return;
 
                 const greenZone = y.getPixelForValue(-0.5);
                 const yellowZone = y.getPixelForValue(-1.5);
 
                 ctx.save();
-                // Green zone (from top to -0.5)
                 ctx.fillStyle = 'rgba(34, 197, 94, 0.1)';
                 ctx.fillRect(left, top, right - left, greenZone - top);
-
-                // Yellow zone (from -0.5 to -1.5)
                 ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
                 ctx.fillRect(left, greenZone, right - left, yellowZone - greenZone);
-
-                // Red zone (from -1.5 to bottom)
                 ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
                 ctx.fillRect(left, yellowZone, right - left, bottom - yellowZone);
-
                 ctx.restore();
             }
         };
@@ -669,7 +671,8 @@
                 treinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 lesoesData = lesoesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 
-                populateTeamFilter(); // NOVO: Popula o filtro de equipes
+                populateTeamFilter(); 
+                handleTeamChange(); // Set initial state based on filter
                 renderAllTabs();
 
                 globalLoader.classList.add('hidden');
@@ -699,17 +702,15 @@
 
             onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
                 fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                populateTeamFilter(); // Atualiza o filtro de equipes se novos dados chegarem
+                populateTeamFilter(); 
                 populateAthleteDatalist();
-                renderFilterProntidao(fullProntidaoData); 
                 renderProntidaoTab(); 
             });
             
             onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
                 fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                populateTeamFilter(); // Atualiza o filtro de equipes
+                populateTeamFilter(); 
                 populateAthleteDatalist();
-                processAndStoreLoadData(); 
                 renderCargaTab(); 
             });
 
@@ -722,15 +723,27 @@
 
 
         // --- EVENT LISTENERS ---
-        teamFilterSelect.addEventListener('change', (e) => { // NOVO: Listener para o filtro de equipe
+        teamFilterSelect.addEventListener('change', (e) => {
             selectedTeam = e.target.value;
-            if(selectedTeam !== 'all'){
-                equipeIdLesaoInput.value = selectedTeam;
-            } else {
-                equipeIdLesaoInput.value = '';
-            }
+            handleTeamChange();
             renderAllTabs();
         });
+
+        function handleTeamChange() {
+            if(selectedTeam !== 'all'){
+                equipeIdLesaoInput.value = selectedTeam;
+                equipeIdFisicoInput.value = selectedTeam;
+                equipeIdCampoInput.value = selectedTeam;
+                submitTreinoFisicoBtn.disabled = false;
+                submitTreinoCampoBtn.disabled = false;
+            } else {
+                equipeIdLesaoInput.value = 'Selecione uma equipe';
+                equipeIdFisicoInput.value = 'Selecione uma equipe';
+                equipeIdCampoInput.value = 'Selecione uma equipe';
+                submitTreinoFisicoBtn.disabled = true;
+                submitTreinoCampoBtn.disabled = true;
+            }
+        }
 
         tabDashboardBtn.addEventListener('click', () => switchTab('dashboard'));
         tabProntidaoBtn.addEventListener('click', () => switchTab('prontidao'));
@@ -811,12 +824,12 @@
                 placeholderSectionProntidao.classList.remove('hidden');
                 resultsSection.classList.add('hidden');
                 latestProntidaoData = null;
-                filterContainerProntidao.innerHTML = ''; // Limpa filtro de semana se não houver dados para a equipe
+                filterContainerProntidao.innerHTML = '';
                 updateDashboardView();
                 return;
             }
             
-            renderFilterProntidao(dataForTeam); // Re-renderiza o filtro de semanas com base na equipe
+            renderFilterProntidao(dataForTeam); 
             
             placeholderSectionProntidao.classList.add('hidden');
             resultsSection.classList.remove('hidden');
@@ -824,23 +837,22 @@
             const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
             let selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
             
-            if(selectedWeeks.length === 0 && selectedCheckboxes.length > 0) {
-                // Se nenhum checkbox estiver marcado, mas existem opções, seleciona o último
-                 const lastWeek = document.querySelector('.week-checkbox:last-of-type');
-                 if(lastWeek) {
-                     lastWeek.checked = true;
-                     selectedWeeks = [lastWeek.value];
+            if(selectedWeeks.length === 0 && document.querySelectorAll('.week-checkbox').length > 0) {
+                 const lastWeekEl = document.querySelector('.week-checkbox:last-of-type');
+                 if(lastWeekEl) {
+                     lastWeekEl.checked = true;
+                     selectedWeeks = [lastWeekEl.value];
                  }
             }
             
-            selectedWeeks = sortWeeks(selectedWeeks); // Ensure selection is sorted for charts
+            selectedWeeks = sortWeeks(selectedWeeks);
             
-            const filteredData = dataForTeam.filter(d => selectedWeeks.includes(d.semana_id));
+            const filteredDataForWeeks = dataForTeam.filter(d => selectedWeeks.includes(d.semana_id));
 
-            if (filteredData.length > 0) {
-                displayFilteredProntidaoData(filteredData, selectedWeeks);
+            if (filteredDataForWeeks.length > 0) {
+                displayFilteredProntidaoData(filteredDataForWeeks, selectedWeeks);
             } else {
-                teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhuma dado de prontidão para a(s) semana(s) selecionada(s) nesta equipe.</p>';
+                teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s) nesta equipe.</p>';
                 resultsContainer.innerHTML = '';
                 latestProntidaoData = null;
             }
@@ -854,7 +866,7 @@
                 placeholderSectionCarga.classList.remove('hidden');
                 resultsSectionCarga.classList.add('hidden');
                 latestCargaData = null;
-                filterContainer.innerHTML = ''; // Limpa o filtro de microciclo
+                filterContainer.innerHTML = '';
                 updateDashboardView();
                 return;
             }
@@ -866,15 +878,15 @@
             const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
             let selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
             
-            if(selectedIds.length === 0 && selectedCheckboxes.length > 0) {
-                 const lastMc = document.querySelector('.microciclo-checkbox:last-of-type');
-                 if(lastMc) {
-                     lastMc.checked = true;
-                     selectedIds = [lastMc.value];
+            if(selectedIds.length === 0 && document.querySelectorAll('.microciclo-checkbox').length > 0) {
+                 const lastMcEl = document.querySelector('.microciclo-checkbox:last-of-type');
+                 if(lastMcEl) {
+                     lastMcEl.checked = true;
+                     selectedIds = [lastMcEl.value];
                  }
             }
 
-            selectedIds = sortWeeks(selectedIds); // Ensure selection is sorted for charts
+            selectedIds = sortWeeks(selectedIds);
             
             if (selectedIds.length > 0) {
                 displayFilteredLoadData(selectedIds, dataForTeam);
@@ -1024,9 +1036,11 @@
         }
 
         function renderDashboardPlanejamento() {
-            // Planejamento não tem equipe_id, então continua geral
-            const trainingsFisico = treinosFisicos.filter(t => selectedPlanningWeeks.includes(t.semana_id));
-            const trainingsCampo = treinosCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
+            const dataForTeamFisico = selectedTeam === 'all' ? treinosFisicos : treinosFisicos.filter(d => d.equipe_id === selectedTeam);
+            const dataForTeamCampo = selectedTeam === 'all' ? treinosCampo : treinosCampo.filter(d => d.equipe_id === selectedTeam);
+
+            const trainingsFisico = dataForTeamFisico.filter(t => selectedPlanningWeeks.includes(t.semana_id));
+            const trainingsCampo = dataForTeamCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
             const totalSessions = trainingsFisico.length + trainingsCampo.length;
 
             let mainContentHtml;
@@ -1090,7 +1104,7 @@
             }
 
             dashboardPlanejamento.innerHTML = `
-                <h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">Resumo do Planejamento</h2>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">Resumo do Planejamento <span class="text-base font-normal text-gray-500">(${selectedTeam === 'all' ? 'Geral' : selectedTeam})</span></h2>
                 <p class="text-center text-gray-600 mb-4">Semanas selecionadas: ${selectedPlanningWeeks.join(', ')}</p>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                    ${mainContentHtml}
@@ -1216,7 +1230,6 @@
                 if (type === 'prontidao') {
                     const uniqueId = targetId.replace('details-prontidao-', '');
                     
-                    // Render daily charts
                     if (button.dataset.dailyHistory && button.dataset.dailyHistory.trim() !== '') {
                         try {
                             const dailyHistoryData = JSON.parse(button.dataset.dailyHistory);
@@ -1451,25 +1464,19 @@
                 d = new Date(date);
             }
             d.setUTCHours(0, 0, 0, 0);
-            // Monday is the first day of the week
             d.setDate(d.getDate() + 4 - (d.getDay()||7));
             const yearStart = new Date(d.getUTCFullYear(),0,1);
             const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-            // Use "Sem" prefix for consistency, e.g., Sem22
             return `Sem${String(weekNo).padStart(2, '0')}`;
         }
         
         function sortWeeks(arr) {
             return arr.sort((a, b) => {
-                // Extrai a parte numérica da string da semana, ex: "Sem1" -> 1, "S25" -> 25, "Microciclo10" -> 10
                 const numA = parseInt(a.replace(/[^0-9]/g, ''), 10);
                 const numB = parseInt(b.replace(/[^0-9]/g, ''), 10);
-
-                // Se, por algum motivo, não houver um número, usa a ordenação de texto padrão
                 if (isNaN(numA) || isNaN(numB)) {
                     return a.localeCompare(b);
                 }
-
                 return numA - numB;
             });
         }
@@ -1485,7 +1492,7 @@
             
             filterContainerProntidao.innerHTML = `
                  <div class="bg-white p-4 rounded-lg border shadow-sm">
-                    <label class="font-semibold text-gray-700 block mb-2">Selecione a(s) Semana(s):</label>
+                    <label class="font-semibold text-gray-700 block mb-2">Selecione a(s) Semana(s) para Análise de Evolução:</label>
                     <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                         ${weekIds.map(week => `
                             <div class="flex items-center">
@@ -1513,36 +1520,31 @@
 
             let latestDateOverall = null;
 
+            // **AJUSTE LÓGICA PRONTIDÃO**
+            // Gera a tabela de resultados individuais com base no último dado do período selecionado
             const individualResults = Object.keys(athletesData).map(athleteId => {
                 const entriesInSelection = athletesData[athleteId];
                 if (entriesInSelection.length === 0) return null;
 
-                entriesInSelection.sort((a, b) => new Date(`${b.data}T00:00:00`) - new Date(`${a.data}T00:00:00`));
-                const latestDateInSelection = new Date(`${entriesInSelection[0].data}T00:00:00`);
-
-                const representativeEntry = {};
-                Object.keys(METRIC_NAMES).forEach(key => {
-                    const entryWithMetric = entriesInSelection.find(e => e[key] != null && !isNaN(e[key]));
-                    representativeEntry[key] = entryWithMetric ? entryWithMetric[key] : null;
-                });
-                
-                representativeEntry.atleta_id = athleteId;
-                representativeEntry.data = entriesInSelection[0].data;
+                // Ordena todos os dados do atleta no período e pega o mais recente
+                const latestEntry = entriesInSelection.sort((a, b) => new Date(`${b.data}T00:00:00`) - new Date(`${a.data}T00:00:00`))[0];
+                const latestDateInSelection = new Date(`${latestEntry.data}T00:00:00`);
 
                 if (!latestDateOverall || latestDateInSelection > latestDateOverall) {
                     latestDateOverall = latestDateInSelection;
                 }
 
-                // MODIFICADO: Passa todos os dados (independente da equipe) para o cálculo histórico
+                // Histórico para cálculo continua sendo todos os dados do atleta ANTERIORES a este último dado
                 const allHistoricalEntriesForAthlete = fullProntidaoData.filter(d => 
                     d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < latestDateInSelection
                 );
 
-                const result = calculateAthleteReadiness(athleteId, representativeEntry, allHistoricalEntriesForAthlete, representativeEntry.data);
+                const result = calculateAthleteReadiness(athleteId, latestEntry, allHistoricalEntriesForAthlete, latestEntry.data);
                 
+                // Pega o histórico diário apenas do período selecionado para o gráfico de detalhe
                 const dailyHistoryData = { hooper: [], salto: [] };
                 entriesInSelection
-                    .sort((a, b) => new Date(`${a.data}T00:00:00`) - new Date(`${b.data}T00:00:00`)) // sort by date ascending
+                    .sort((a, b) => new Date(`${a.data}T00:00:00`) - new Date(`${b.data}T00:00:00`))
                     .forEach(entry => {
                         if (entry.hooper_score != null) {
                             dailyHistoryData.hooper.push({ date: entry.data, value: entry.hooper_score });
@@ -1559,7 +1561,8 @@
                 return result;
 
             }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
-
+            
+            // Lógica de evolução da equipe (gráficos) continua a mesma, analisando cada semana
             const uniqueWeeksSorted = sortWeeks([...new Set(data.map(d => d.semana_id))]);
             const evolutionData = uniqueWeeksSorted.map(weekId => {
                 const dataForThisWeek = data.filter(d => d.semana_id === weekId);
@@ -1581,6 +1584,7 @@
                 };
             });
 
+            // Status geral da equipe é baseado nos dados individuais (ou seja, o último de cada atleta)
             const readyAthletesOverall = individualResults.filter(r => r.status === 'ready');
             const teamStats = {
                 averageIndex: getStats(readyAthletesOverall.map(r => parseFloat(r.index))).mean,
@@ -1612,7 +1616,7 @@
                         .map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
                 }
 
-                if (value == null || dataPoints.length === 0) return null;
+                if (value == null || dataPoints.length < 2) return 0; // Retorna 0 (neutro) se não houver histórico suficiente
                 const { mean, stdDev } = getStats(dataPoints);
                 return stdDev === 0 ? 0 : (value - mean) / stdDev;
             };
@@ -1687,7 +1691,7 @@
 
             resultsContainer.innerHTML = `
                 <div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0">
-                    <div class="w-1/3">Atleta</div>
+                    <div class="w-1/3">Atleta (Dado Mais Recente)</div>
                     <div class="w-1/6 text-center">Índice Geral</div>
                     <div class="w-1/6 text-center">Zona</div>
                     <div class="w-1/6 text-center">Fadiga (Hooper)</div>
@@ -1711,7 +1715,6 @@
                 }
             });
 
-            // Return stats for Sun-Sat
             return dayNames.map((name, i) => {
                 const dayResults = dailyData[i];
                 return {
@@ -1932,7 +1935,6 @@
             
             const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
 
-            // HTML for daily charts (if data exists)
             const dailyChartsHtml = (result.dailyHistory && (result.dailyHistory.hooper.length > 0 || result.dailyHistory.salto.length > 0)) ? `
                 <div class="mt-4 pt-4 border-t col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -2021,9 +2023,9 @@
             const labels = evolutionData.map(d => d.weekId);
             const data = evolutionData.map(d => d.averageHooper.toFixed(1));
             const backgroundColors = data.map(val => {
-                if (val <= 9) return 'rgba(34, 197, 94, 0.7)'; // green
-                if (val <= 17) return 'rgba(245, 158, 11, 0.7)'; // yellow
-                return 'rgba(239, 68, 68, 0.7)'; // red
+                if (val <= 9) return 'rgba(34, 197, 94, 0.7)';
+                if (val <= 17) return 'rgba(245, 158, 11, 0.7)';
+                return 'rgba(239, 68, 68, 0.7)';
             });
 
             activeCharts[canvasId] = new Chart(ctx, {
@@ -2126,7 +2128,7 @@
                     plugins: {
                         legend: { display: false },
                         datalabels: {
-                            display: data.length < 15, // Show labels only if not too cluttered
+                            display: data.length < 15,
                             anchor: 'end',
                             align: 'top',
                             font: { size: 10 }
@@ -2141,10 +2143,10 @@
                     if (val <= 17) return 'rgba(245, 158, 11, 0.7)';
                     return 'rgba(239, 68, 68, 0.7)';
                 });
-                chartOptions.options.scales.y.min = 0; // Adjusted from 4 to 0
+                chartOptions.options.scales.y.min = 0;
                 chartOptions.options.scales.y.max = 20;
                 chartOptions.data.datasets[0].label = 'Hooper Score';
-            } else { // salto
+            } else { 
                 chartOptions.data.datasets[0].backgroundColor = 'rgba(59, 130, 246, 0.7)';
                 chartOptions.options.scales.y.min = 200;
                 chartOptions.options.scales.y.max = 320;
@@ -2188,16 +2190,18 @@
                 return acc;
             }, {});
 
-            let allMicrocycles = new Set();
+            let allMicrocyclesForTeam = new Set();
+            Object.values(dataByAthlete).flat().forEach(row => {
+                if(row.microciclo_id) allMicrocyclesForTeam.add(row.microciclo_id);
+            });
+            
             athleteMicrocycleData = {};
 
             for (const athleteId in dataByAthlete) {
-                // MODIFICADO: usa fullCargaData para ter o histórico completo do atleta
                 const allAthleteData = fullCargaData.filter(d => d.atleta_id === athleteId);
 
                 const microcycles = allAthleteData.reduce((acc, row) => {
                     if (!row.microciclo_id) return acc;
-                    allMicrocycles.add(row.microciclo_id);
                     if (!acc[row.microciclo_id]) acc[row.microciclo_id] = { entries: [], minDate: row.data };
                     acc[row.microciclo_id].entries.push(row);
                     if (new Date(`${row.data}T00:00:00`) < new Date(`${acc[row.microciclo_id].minDate}T00:00:00`)) {
@@ -2234,7 +2238,7 @@
                     });
             }
 
-            const sortedMicrocycles = sortWeeks([...allMicrocycles]);
+            const sortedMicrocycles = sortWeeks([...allMicrocyclesForTeam]);
             renderFilter(sortedMicrocycles);
         }
         
@@ -2401,8 +2405,7 @@
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
             const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-            const dayOrder = [0,1,2,3,4,5,6]; // Sunday to Saturday
-            const data = dayOrder.map(dayIndex => dailyData[dayIndex]);
+            const data = labels.map((_, i) => dailyData[i] || 0);
             const backgroundColors = data.map(load => getCargaAgudaChartColor(load));
 
             activeCharts[canvasId] = new Chart(ctx, {
@@ -2505,15 +2508,20 @@
 
         async function handleFormFisicoSubmit(e) {
             e.preventDefault();
+            const equipeId = equipeIdFisicoInput.value;
+            if(!equipeId || equipeId === 'Selecione uma equipe') {
+                showToast("Selecione uma equipe para cadastrar o treino.");
+                return;
+            }
             const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true;
 
-            const objSecundarioEl = document.getElementById('objSecundarioFisico');
             const treino = {
+                equipe_id: equipeId,
                 type: 'fisico', date: document.getElementById('dataTreinoFisico').value,
                 semana_id: document.getElementById('semanaIdFisico').value,
                 objPrincipal: document.getElementById('objPrincipalFisico').value,
-                objSecundario: getSelectedOptions(objSecundarioEl),
+                objSecundario: getSelectedOptions(document.getElementById('objSecundarioFisico')),
                 local: document.getElementById('localTreinoFisico').value,
                 carga: document.getElementById('cargaTreinoFisico').value,
                 cargaText: document.getElementById('cargaTreinoFisico').options[document.getElementById('cargaTreinoFisico').selectedIndex].text,
@@ -2523,6 +2531,7 @@
                 await addDoc(treinosFisicosCollection, treino);
                 showToast('Treino Físico adicionado!', 'success');
                 formTreinoFisico.reset();
+                equipeIdFisicoInput.value = equipeId;
                 document.getElementById('dataTreinoFisico').valueAsDate = new Date();
                 document.getElementById('dataTreinoFisico').dispatchEvent(new Event('change'));
 
@@ -2535,15 +2544,20 @@
 
         async function handleFormCampoSubmit(e) {
             e.preventDefault();
+            const equipeId = equipeIdCampoInput.value;
+             if(!equipeId || equipeId === 'Selecione uma equipe') {
+                showToast("Selecione uma equipe para cadastrar o treino.");
+                return;
+            }
             const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true;
 
-            const objSecundarioEl = document.getElementById('objSecundarioCampo');
             const treino = {
+                equipe_id: equipeId,
                 type: 'campo', date: document.getElementById('dataTreinoCampo').value,
                 semana_id: document.getElementById('semanaIdCampo').value,
                 objPrincipal: document.getElementById('objPrincipalCampo').value,
-                objSecundario: getSelectedOptions(objSecundarioEl),
+                objSecundario: getSelectedOptions(document.getElementById('objSecundarioCampo')),
                 campo: document.getElementById('campoTreinoCampo').value,
                 carga: document.getElementById('cargaTreinoCampo').value,
                 cargaText: document.getElementById('cargaTreinoCampo').options[document.getElementById('cargaTreinoCampo').selectedIndex].text,
@@ -2553,6 +2567,7 @@
                 await addDoc(treinosCampoCollection, treino);
                 showToast('Treino de Campo adicionado!', 'success');
                 formTreinoCampo.reset();
+                equipeIdCampoInput.value = equipeId;
                 document.getElementById('dataTreinoCampo').valueAsDate = new Date();
                 document.getElementById('dataTreinoCampo').dispatchEvent(new Event('change'));
             } catch (error) {
@@ -2594,9 +2609,11 @@
         function renderPlanningView() {
             renderPlanningFilter();
 
-            const trainingsForWeek = (data) => data.filter(t => selectedPlanningWeeks.includes(t.semana_id));
-            const fisicoSemana = trainingsForWeek(treinosFisicos);
-            const campoSemana = trainingsForWeek(treinosCampo);
+            const dataForTeamFisico = selectedTeam === 'all' ? treinosFisicos : treinosFisicos.filter(d => d.equipe_id === selectedTeam);
+            const dataForTeamCampo = selectedTeam === 'all' ? treinosCampo : treinosCampo.filter(d => d.equipe_id === selectedTeam);
+
+            const fisicoSemana = dataForTeamFisico.filter(t => selectedPlanningWeeks.includes(t.semana_id));
+            const campoSemana = dataForTeamCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
 
             pdfContentPlanejamento.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -2621,8 +2638,8 @@
             
             document.getElementById('exportPdfBtnPlanejamento').addEventListener('click', () => exportToPDF('planejamento'));
 
-            renderTimeline(document.getElementById('timelineFisico'), fisicoSemana, 'Nenhum treino físico cadastrado para esta seleção.');
-            renderTimeline(document.getElementById('timelineCampo'), campoSemana, 'Nenhum treino de campo cadastrado para esta seleção.');
+            renderTimeline(document.getElementById('timelineFisico'), fisicoSemana, `Nenhum treino físico cadastrado para ${selectedTeam === 'all' ? 'as equipes' : 'esta equipe'} nesta seleção.`);
+            renderTimeline(document.getElementById('timelineCampo'), campoSemana, `Nenhum treino de campo cadastrado para ${selectedTeam === 'all' ? 'as equipes' : 'esta equipe'} nesta seleção.`);
             renderDailyLoadChart('chartCargaFisico', fisicoSemana);
             renderDailyLoadChart('chartCargaCampo', campoSemana);
         }
@@ -2665,7 +2682,6 @@
                 return;
             }
 
-            // Group trainings by date
             const trainingsByDate = treinos.reduce((acc, treino) => {
                 if (!acc[treino.date]) {
                     acc[treino.date] = [];
@@ -2674,7 +2690,6 @@
                 return acc;
             }, {});
 
-            // Sort dates
             const sortedDates = Object.keys(trainingsByDate).sort((a, b) => new Date(a) - new Date(b));
 
             sortedDates.forEach(date => {
@@ -2724,7 +2739,6 @@
                 container.appendChild(dayElement);
             });
             
-            // Add event listeners after rendering
             document.querySelectorAll('.remove-training-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const { id, type } = e.currentTarget.dataset;
@@ -2749,8 +2763,7 @@
             });
 
             const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-            const dayOrder = [0,1,2,3,4,5,6]; // Sunday to Saturday
-            const data = dayOrder.map(dayIndex => dailyMaxLoad[dayIndex] || 0);
+            const data = labels.map((_, i) => dailyMaxLoad[i] || 0);
 
             const backgroundColors = data.map(load => {
                 if (load === 100) return 'rgba(239, 68, 68, 0.7)'; if (load === 90) return 'rgba(249, 115, 22, 0.7)';
@@ -2788,12 +2801,11 @@
         }
 
         // --- LESÕES FUNCTIONS ---
-
         async function handleFormLesaoSubmit(e) {
             e.preventDefault();
             
             const equipeId = equipeIdLesaoInput.value;
-            if(!equipeId) {
+            if(!equipeId || equipeId === 'Selecione uma equipe') {
                 showToast("Por favor, selecione uma equipe antes de registrar uma lesão.");
                 return;
             }
@@ -2813,7 +2825,7 @@
                 await addDoc(lesoesCollection, lesao);
                 showToast('Registro de lesão salvo!', 'success');
                 formLesao.reset();
-                equipeIdLesaoInput.value = equipeId; // Mantém o ID da equipe no campo
+                equipeIdLesaoInput.value = equipeId;
             } catch (error) {
                 console.error("Erro ao salvar lesão: ", error);
                 showToast("Erro ao salvar o registro de lesão.");
@@ -2860,7 +2872,6 @@
             const allData = [...fullProntidaoData, ...fullCargaData, ...lesoesData];
             const teams = [...new Set(allData.map(d => d.equipe_id).filter(Boolean))].sort();
             
-            // Salva a seleção atual
             const currentSelectedTeam = teamFilterSelect.value;
             
             teamFilterSelect.innerHTML = `<option value="all">Todas as Equipes</option>`;
@@ -2871,7 +2882,6 @@
                 teamFilterSelect.appendChild(option);
             });
 
-            // Restaura a seleção se ainda existir
             if(teams.includes(currentSelectedTeam)){
                 teamFilterSelect.value = currentSelectedTeam;
             } else {
