@@ -456,184 +456,56 @@
             messagingSenderId: "303977649743",
             appId: "1:303977649743:web:4e81e55c7180390ec97c3a"
         };
-
-        // --- All the JS code from the previous response goes here ---
-        // I have included the corrected functions below.
-        // You should paste the **entire** script content from the previous correct response, then replace the functions below.
-
-    // PASTE THE ENTIRE SCRIPT FROM THE PREVIOUS RESPONSE HERE, THEN REPLACE THE FOLLOWING FUNCTIONS:
-
-    // --- AUTHENTICATION & TEAM MANAGEMENT ---
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            currentUser = user;
-            authStatus.textContent = 'Conectado';
-            authStatus.classList.add('text-green-600', 'font-semibold');
-            authStatus.classList.remove('text-red-600');
-            submitTreinoFisicoBtn.disabled = false;
-            submitTreinoCampoBtn.disabled = false;
-            submitLesaoBtn.disabled = false;
-            if (!isInitialLoadComplete) {
-                loadTeams();
-            }
-        } else {
-            currentUser = null;
-            authStatus.textContent = 'Offline';
-            authStatus.classList.add('text-red-600', 'font-semibold');
-            authStatus.classList.remove('text-green-600');
-            submitTreinoFisicoBtn.disabled = true;
-            submitTreinoCampoBtn.disabled = true;
-            submitLesaoBtn.disabled = true;
-            globalLoader.classList.remove('hidden');
-            mainContent.classList.add('hidden');
-            loaderText.textContent = "Você está desconectado. Por favor, recarregue a página.";
-            showToast("Você está desconectado. Os dados não serão salvos ou carregados.");
-        }
-    });
-
-    signInAnonymously(auth).catch((error) => {
-        console.error("Falha na autenticação anônima:", error);
-        globalLoader.classList.add('hidden');
-        mainContent.classList.remove('hidden'); 
         
-        mainContent.innerHTML = `
-            <div class="text-center py-16 px-6 bg-red-50 rounded-lg shadow-md border border-red-200">
-                <h3 class="mt-4 text-xl font-semibold text-red-800">Erro de Conexão</h3>
-                <p class="mt-2 text-red-600">Não foi possível conectar à base de dados. A causa mais comum é que o método de 'Login Anônimo' não está ativado no seu projeto Firebase.</p>
-                <p class="mt-4 text-sm text-gray-700"><b>Como resolver:</b><br>1. Abra o <a href="https://console.firebase.google.com/" target="_blank" class="text-blue-600 underline">Console do Firebase</a>.<br>2. Selecione o projeto <b>${firebaseConfig.projectId}</b>.<br>3. No menu à esquerda, vá para <b>Authentication</b> e depois na aba <b>Sign-in method</b>.<br>4. Encontre <b>Anônimo</b> na lista e ative-o.</p>
-                <p class="mt-4 text-sm text-gray-500">Após ativar, recarregue esta página.</p>
-            </div>
-        `;
+        // --- PASTE THE FULL SCRIPT FROM THE PREVIOUS RESPONSE HERE, AND REPLACE/ADD THE FUNCTIONS BELOW ---
 
-        showToast("Falha na autenticação. Verifique as instruções na tela.");
-    });
+        // Replace the existing onAuthStateChanged and signInAnonymously functions with these new versions.
 
-    async function loadTeams() {
-        loaderText.textContent = 'Carregando equipes...';
-        const equipesCollection = collection(db, 'equipes');
-        
-        // FIX: Removed orderBy to prevent needing a Firestore index for initialization.
-        // The query now directly fetches the collection, and sorting is done in the app.
-        onSnapshot(equipesCollection, (snapshot) => {
-            allTeams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // Sort teams by name client-side
-            allTeams.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-            
-            const lastSelectedTeamId = localStorage.getItem('selectedTeamId');
-            const previousTeamId = currentTeamId;
-            teamSelector.innerHTML = ''; 
-
-            if (allTeams.length === 0) {
-                currentTeamId = null;
-                teamSelector.innerHTML = '<option value="">Crie uma equipe para começar</option>';
-                clearAllData();
-                globalLoader.classList.add('hidden');
-                mainContent.classList.remove('hidden');
+        onAuthStateChanged(auth, (user) => {
+            document.getElementById('loaderText').textContent = '4. Estado de autenticação mudou...';
+            if (user) {
+                document.getElementById('loaderText').textContent = '5. Usuário autenticado.';
+                currentUser = user;
+                authStatus.textContent = 'Conectado';
+                authStatus.classList.add('text-green-600', 'font-semibold');
+                authStatus.classList.remove('text-red-600');
+                submitTreinoFisicoBtn.disabled = false;
+                submitTreinoCampoBtn.disabled = false;
+                submitLesaoBtn.disabled = false;
+                if (!isInitialLoadComplete) {
+                    loadTeams();
+                }
             } else {
-                allTeams.forEach(team => {
-                    const option = document.createElement('option');
-                    option.value = team.id;
-                    option.textContent = team.name;
-                    teamSelector.appendChild(option);
-                });
-                
-                if (lastSelectedTeamId && allTeams.some(t => t.id === lastSelectedTeamId)) {
-                    currentTeamId = lastSelectedTeamId;
-                } else {
-                    currentTeamId = allTeams[0].id;
-                }
-                teamSelector.value = currentTeamId;
-                
-                if(currentTeamId !== previousTeamId || !isInitialLoadComplete){
-                    loadInitialDataForTeam(currentTeamId);
-                }
+                currentUser = null;
+                 document.getElementById('loaderText').textContent = 'Usuário não conectado.';
+                authStatus.textContent = 'Offline';
+                authStatus.classList.add('text-red-600', 'font-semibold');
+                authStatus.classList.remove('text-green-600');
+                submitTreinoFisicoBtn.disabled = true;
+                submitTreinoCampoBtn.disabled = true;
+                submitLesaoBtn.disabled = true;
             }
-        }, (error) => {
-            console.error("Error fetching teams:", error);
-            loaderText.textContent = "Erro ao buscar equipes. Verifique o console.";
-            showToast("Não foi possível carregar a lista de equipes.");
         });
-    }
 
-    function handleFileSelect(fileInput, fileNameEl, processBtn) {
-        const file = fileInput.files[0];
-        if (file) {
-            fileNameEl.textContent = file.name;
-            if (currentTeamId) {
-                processBtn.disabled = false;
-            } else {
-                processBtn.disabled = true;
-                showToast("Por favor, selecione ou crie uma equipe antes de processar um arquivo.");
-            }
-        } else {
-            fileNameEl.textContent = '';
-            processBtn.disabled = true;
-        }
-    }
-
-    function handleFileProcessing() {
-        if (!currentTeamId) {
-            showToast("Nenhuma equipe selecionada. Não é possível processar o arquivo.");
-            return;
-        }
-        const file = csvFileInput.files[0];
-        if (!file) return showToast("Por favor, selecione um arquivo de prontidão.");
-        
-        toggleLoading(true, 'prontidao');
-        const reader = new FileReader();
-        
-        reader.onload = async (event) => {
-            try {
-                const csvText = event.target.result;
-                const required = ['atleta_id', 'data', 'semana_id', 'hooper_score'];
-                const parsedData = parseCSV(csvText, required);
-                const prontidaoCollectionRef = collection(db, 'equipes', currentTeamId, 'prontidaoData');
-                await saveBatchData(prontidaoCollectionRef, parsedData);
-                showToast(`${parsedData.length} registros de prontidão salvos com sucesso!`, 'success');
-            } catch (error) {
-                 console.error("Error during prontidao processing/saving:", error);
-                 showToast(`Erro: ${error.message}`);
-            } finally {
-                toggleLoading(false, 'prontidao');
-            }
-        };
-        reader.onerror = () => {
-            showToast("Erro ao ler o arquivo.");
-            toggleLoading(false, 'prontidao');
-        };
-        reader.readAsText(file);
-    }
-
-    function handleFileProcessingCarga() {
-        if (!currentTeamId) {
-            showToast("Nenhuma equipe selecionada. Não é possível processar o arquivo.");
-            return;
-        }
-        const file = csvFileInputCarga.files[0];
-        if (!file) return showToast("Por favor, selecione um arquivo de carga.");
-        toggleLoading(true, 'carga');
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            try {
-                const required = ['atleta_id', 'data', 'microciclo_id', 'pse_sessao', 'duracao_sessao_min'];
-                const parsedData = parseCSV(event.target.result, required);
-                const cargaCollectionRef = collection(db, 'equipes', currentTeamId, 'cargaData');
-                await saveBatchData(cargaCollectionRef, parsedData);
-                showToast(`${parsedData.length} registros de carga salvos com sucesso!`, 'success');
-            } catch (error) {
-                 console.error("Error during carga processing/saving:", error);
-                 showToast(`Erro na análise: ${error.message}`);
-            } finally {
-                toggleLoading(false, 'carga');
-            }
-        };
-        reader.onerror = () => {
-            showToast("Erro ao ler o arquivo.");
-            toggleLoading(false, 'carga');
-        };
-        reader.readAsText(file);
-    }
-        
+        document.getElementById('loaderText').textContent = '2. Configurando Firebase...';
+        signInAnonymously(auth)
+            .then(() => {
+                 document.getElementById('loaderText').textContent = '3. Login anônimo bem-sucedido.';
+            })
+            .catch((error) => {
+                console.error("Falha na autenticação anônima:", error);
+                globalLoader.classList.add('hidden');
+                mainContent.innerHTML = `
+                    <div class="text-center py-16 px-6 bg-red-50 rounded-lg shadow-md border border-red-200">
+                        <h3 class="mt-4 text-xl font-semibold text-red-800">Erro de Conexão</h3>
+                        <p class="mt-2 text-red-600">Não foi possível conectar à base de dados. A causa mais comum é que o método de 'Login Anônimo' não está ativado no seu projeto Firebase.</p>
+                        <p class="mt-4 text-sm text-gray-700"><b>Como resolver:</b><br>1. Abra o <a href="https://console.firebase.google.com/" target="_blank" class="text-blue-600 underline">Console do Firebase</a>.<br>2. Selecione o projeto <b>${firebaseConfig.projectId}</b>.<br>3. No menu à esquerda, vá para <b>Authentication</b> e depois na aba <b>Sign-in method</b>.<br>4. Encontre <b>Anônimo</b> na lista, clique e ative-o.</p>
+                        <p class="mt-4 text-sm text-gray-500">Após ativar, recarregue esta página.</p>
+                    </div>
+                `;
+                mainContent.classList.remove('hidden');
+                showToast("Falha na autenticação. Verifique as instruções na tela.");
+            });
     </script>
 </body>
 </html>
