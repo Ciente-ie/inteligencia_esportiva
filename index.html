@@ -83,7 +83,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl flex-grow hidden" id="mainContent">
         <header class="text-center mb-8">
-            <div class="flex justify-center items-center gap-4">
+             <div class="flex justify-center items-center gap-4 mb-4">
                 <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Monitoramento Integrado de Atletas</h1>
                  <div class="flex items-center gap-x-4">
                      <div id="authStatusContainer" class="bg-gray-100 p-2 rounded-lg text-sm">
@@ -91,7 +91,14 @@
                     </div>
                 </div>
             </div>
-            <p class="text-gray-600 mt-2 text-lg">Analise a prontidão, controle a carga, planeje os treinos e monitore lesões da sua equipe.</p>
+             <div class="flex justify-center items-center gap-x-4 bg-gray-100 p-2 rounded-lg max-w-md mx-auto border">
+                <label for="teamSelector" class="font-semibold text-gray-700">Equipe:</label>
+                <select id="teamSelector" class="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Carregando equipes...</option>
+                </select>
+                <button id="addTeamBtn" title="Adicionar Nova Equipe" class="btn bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">+</button>
+            </div>
+            <p class="text-gray-600 mt-4 text-lg">Analise a prontidão, controle a carga, planeje os treinos e monitore lesões da sua equipe.</p>
         </header>
 
         <div class="mb-8">
@@ -190,7 +197,7 @@
             <div id="placeholderSectionProntidao" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
                 <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <h3 class="mt-4 text-xl font-semibold text-gray-800">Aguardando dados de Prontidão</h3>
-                <p class="mt-1 text-gray-500">Os dados salvos serão carregados automaticamente ou importe um novo arquivo.</p>
+                <p class="mt-1 text-gray-500">Selecione uma equipe ou importe um novo arquivo.</p>
             </div>
         </div>
 
@@ -255,7 +262,7 @@
              <div id="placeholderSectionCarga" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
                 <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 <h3 class="mt-4 text-xl font-semibold text-gray-800">Aguardando dados de Carga</h3>
-                <p class="mt-1 text-gray-500">Os dados salvos serão carregados automaticamente ou importe um novo arquivo.</p>
+                <p class="mt-1 text-gray-500">Selecione uma equipe ou importe um novo arquivo.</p>
             </div>
         </div>
 
@@ -461,14 +468,6 @@
             showToast("Erro na configuração do Firebase. Verifique o console.");
         }
 
-        // Firebase Collection References
-        const treinosFisicosCollection = collection(db, 'treinosFisicos');
-        const treinosCampoCollection = collection(db, 'treinosCampo');
-        const prontidaoCollection = collection(db, 'prontidaoData');
-        const cargaCollection = collection(db, 'cargaData');
-        const lesoesCollection = collection(db, 'lesoes');
-
-
         // --- CONSTANTS AND GLOBAL STATE ---
         const METRIC_NAMES = {
             qualidade_sono: 'Qualidade do Sono',
@@ -493,6 +492,9 @@
         let treinosFisicos = [];
         let treinosCampo = [];
         let currentUser = null;
+        let currentTeamId = null;
+        let allTeams = [];
+        let unsubscribeListeners = [];
         let latestProntidaoData = null;
         let latestCargaData = null;
         let selectedPlanningWeeks = [getWeekId(new Date())];
@@ -504,6 +506,8 @@
         const loaderText = document.getElementById('loaderText');
         const mainContent = document.getElementById('mainContent');
         const authStatus = document.getElementById('authStatus');
+        const teamSelector = document.getElementById('teamSelector');
+        const addTeamBtn = document.getElementById('addTeamBtn');
         const tabDashboardBtn = document.getElementById('tabDashboardBtn');
         const tabProntidaoBtn = document.getElementById('tabProntidaoBtn');
         const tabCargaBtn = document.getElementById('tabCargaBtn');
@@ -603,7 +607,6 @@
             formatter: (value, context) => value ? (context.dataset.label.includes('%') ? `${value}%` : Math.round(value * 100) / 100) : null
         });
 
-
         // --- AUTHENTICATION & DATA LOADING ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -611,20 +614,16 @@
                 authStatus.textContent = 'Conectado';
                 authStatus.classList.add('text-green-600', 'font-semibold');
                 authStatus.classList.remove('text-red-600');
-                submitTreinoFisicoBtn.disabled = false;
-                submitTreinoCampoBtn.disabled = false;
-                submitLesaoBtn.disabled = false;
                 if (!isInitialLoadComplete) {
-                   loadInitialData();
+                   loadTeams();
                 }
             } else {
                 currentUser = null;
                 authStatus.textContent = 'Offline';
                 authStatus.classList.add('text-red-600', 'font-semibold');
                 authStatus.classList.remove('text-green-600');
-                submitTreinoFisicoBtn.disabled = true;
-                submitTreinoCampoBtn.disabled = true;
-                submitLesaoBtn.disabled = true;
+                globalLoader.classList.remove('hidden');
+                mainContent.classList.add('hidden');
                 loaderText.textContent = "Você está desconectado. Por favor, recarregue a página.";
                 showToast("Você está desconectado. Os dados não serão salvos ou carregados.");
             }
@@ -636,16 +635,98 @@
             showToast("Falha na autenticação. Os dados não serão salvos.");
         });
 
-        async function loadInitialData() {
+        function clearAllData() {
+            // Unsubscribe from previous team's listeners
+            unsubscribeListeners.forEach(unsub => unsub());
+            unsubscribeListeners = [];
+
+            // Reset all data arrays
+            fullProntidaoData = [];
+            fullCargaData = [];
+            lesoesData = [];
+            treinosFisicos = [];
+            treinosCampo = [];
+            athleteMicrocycleData = {};
+            latestProntidaoData = null;
+            latestCargaData = null;
+            
+            // Clear all UI containers
+            document.querySelectorAll('.placeholder-section, .results-section, .dashboard-section').forEach(el => {
+                if (el.classList.contains('placeholder-section')) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+            resultsContainer.innerHTML = '';
+            resultsContainerCarga.innerHTML = '';
+            teamDashboard.innerHTML = '';
+            teamDashboardCarga.innerHTML = '';
+            pdfContentPlanejamento.innerHTML = '';
+            lesoesList.innerHTML = '';
+            dashboardLesoes.innerHTML = '';
+            dashboardProntidao.innerHTML = '';
+            dashboardCarga.innerHTML = '';
+            dashboardPlanejamento.innerHTML = '';
+        }
+
+        async function loadTeams() {
+            loaderText.textContent = 'Carregando equipes...';
+            const equipesCollection = collection(db, 'equipes');
+            
+            onSnapshot(query(equipesCollection, orderBy("name")), (snapshot) => {
+                allTeams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                const lastSelectedTeamId = localStorage.getItem('selectedTeamId');
+                teamSelector.innerHTML = ''; // Clear existing options
+
+                if (allTeams.length === 0) {
+                    teamSelector.innerHTML = '<option value="">Crie uma equipe para começar</option>';
+                    globalLoader.classList.add('hidden');
+                    mainContent.classList.remove('hidden');
+                    clearAllData();
+                } else {
+                    allTeams.forEach(team => {
+                        const option = document.createElement('option');
+                        option.value = team.id;
+                        option.textContent = team.name;
+                        teamSelector.appendChild(option);
+                    });
+
+                    // Set current team
+                    if (lastSelectedTeamId && allTeams.some(t => t.id === lastSelectedTeamId)) {
+                        currentTeamId = lastSelectedTeamId;
+                    } else {
+                        currentTeamId = allTeams[0].id;
+                    }
+                    teamSelector.value = currentTeamId;
+                    
+                    loadInitialDataForTeam(currentTeamId);
+                }
+            });
+        }
+        
+        async function loadInitialDataForTeam(teamId) {
             isInitialLoadComplete = true; 
-            loaderText.textContent = 'Carregando dados...';
+            globalLoader.classList.remove('hidden');
+            loaderText.textContent = `Carregando dados da equipe...`;
+            
+            clearAllData();
+
+            if (!teamId) {
+                globalLoader.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                return;
+            }
+
             try {
+                const baseCollection = collection(db, 'equipes', teamId);
                 const [prontidaoSnap, cargaSnap, fisicoSnap, campoSnap, lesoesSnap] = await Promise.all([
-                    getDocs(query(prontidaoCollection, orderBy("data", "desc"))),
-                    getDocs(query(cargaCollection, orderBy("data", "desc"))),
-                    getDocs(query(treinosFisicosCollection, orderBy("date", "asc"))),
-                    getDocs(query(treinosCampoCollection, orderBy("date", "asc"))),
-                    getDocs(query(lesoesCollection, orderBy("atleta"))),
+                    getDocs(query(collection(baseCollection, "prontidaoData"), orderBy("data", "desc"))),
+                    getDocs(query(collection(baseCollection, "cargaData"), orderBy("data", "desc"))),
+                    getDocs(query(collection(baseCollection, "treinosFisicos"), orderBy("date", "asc"))),
+                    getDocs(query(collection(baseCollection, "treinosCampo"), orderBy("date", "asc"))),
+                    getDocs(query(collection(baseCollection, "lesoes"), orderBy("atleta"))),
                 ]);
 
                 fullProntidaoData = prontidaoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -655,55 +736,81 @@
                 lesoesData = lesoesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 
                 renderAllTabs();
-
-                globalLoader.classList.add('hidden');
-                mainContent.classList.remove('hidden');
-
-                setupLiveListeners();
+                setupLiveListenersForTeam(teamId);
 
             } catch (error) {
-                console.error("Error loading initial data:", error);
+                console.error("Error loading initial data for team:", error);
                 loaderText.textContent = "Erro ao carregar os dados. Verifique o console.";
-                showToast("Erro crítico ao carregar os dados iniciais.");
+                showToast("Erro crítico ao carregar os dados da equipe.");
+            } finally {
+                globalLoader.classList.add('hidden');
+                mainContent.classList.remove('hidden');
             }
         }
         
-        function setupLiveListeners() {
-             onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
+        function setupLiveListenersForTeam(teamId) {
+            if (!teamId) return;
+            const baseCollection = collection(db, 'equipes', teamId);
+
+            const unsubFisico = onSnapshot(query(collection(baseCollection, 'treinosFisicos'), orderBy("date", "asc")), (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 renderPlanningView();
                 updateDashboardView();
             });
 
-            onSnapshot(query(treinosCampoCollection, orderBy("date", "asc")), (snapshot) => {
+            const unsubCampo = onSnapshot(query(collection(baseCollection, 'treinosCampo'), orderBy("date", "asc")), (snapshot) => {
                 treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 renderPlanningView();
                 updateDashboardView();
             });
 
-            onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
+            const unsubProntidao = onSnapshot(query(collection(baseCollection, 'prontidaoData'), orderBy("data", "desc")), (snapshot) => {
                 fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 populateAthleteDatalist();
                 renderFilterProntidao(fullProntidaoData); 
                 renderProntidaoTab(); 
             });
             
-            onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
+            const unsubCarga = onSnapshot(query(collection(baseCollection, 'cargaData'), orderBy("data", "desc")), (snapshot) => {
                 fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 populateAthleteDatalist();
                 processAndStoreLoadData(); 
                 renderCargaTab(); 
             });
 
-            onSnapshot(query(lesoesCollection, orderBy("createdAt", "desc")), (snapshot) => {
+            const unsubLesoes = onSnapshot(query(collection(baseCollection, 'lesoes'), orderBy("createdAt", "desc")), (snapshot) => {
                 lesoesData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 renderLesoesTab();
                 updateDashboardView();
             });
+            
+            unsubscribeListeners.push(unsubFisico, unsubCampo, unsubProntidao, unsubCarga, unsubLesoes);
         }
 
-
         // --- EVENT LISTENERS ---
+        addTeamBtn.addEventListener('click', async () => {
+            const teamName = prompt("Digite o nome da nova equipe:");
+            if (teamName && teamName.trim() !== '') {
+                try {
+                    const equipesCollection = collection(db, 'equipes');
+                    await addDoc(equipesCollection, { name: teamName.trim() });
+                    showToast(`Equipe "${teamName}" criada com sucesso!`, 'success');
+                    // The live listener on `loadTeams` will handle the rest.
+                } catch(e) {
+                    console.error("Error creating team: ", e);
+                    showToast("Erro ao criar a equipe.");
+                }
+            }
+        });
+        
+        teamSelector.addEventListener('change', (e) => {
+            const newTeamId = e.target.value;
+            if (newTeamId && newTeamId !== currentTeamId) {
+                localStorage.setItem('selectedTeamId', newTeamId);
+                loadInitialDataForTeam(newTeamId);
+            }
+        });
+
         tabDashboardBtn.addEventListener('click', () => switchTab('dashboard'));
         tabProntidaoBtn.addEventListener('click', () => switchTab('prontidao'));
         tabCargaBtn.addEventListener('click', () => switchTab('carga'));
@@ -715,7 +822,7 @@
         exportPdfBtnProntidao.addEventListener('click', () => exportToPDF('prontidao'));
         resultsContainer.addEventListener('click', (e) => toggleDetails(e, 'prontidao'));
         filterContainerProntidao.addEventListener('change', () => renderProntidaoTab());
-        clearProntidaoDataBtn.addEventListener('click', clearProntidaoData);
+        clearProntidaoDataBtn.addEventListener('click', () => clearDataForSubcollection('prontidaoData', 'Prontidão'));
 
         csvFileInputCarga.addEventListener('change', () => handleFileSelect(csvFileInputCarga, fileNameCargaEl, processBtnCarga));
         processBtnCarga.addEventListener('click', handleFileProcessingCarga);
@@ -726,7 +833,7 @@
                 renderCargaTab();
             }
         });
-        clearCargaDataBtn.addEventListener('click', clearCargaData);
+        clearCargaDataBtn.addEventListener('click', () => clearDataForSubcollection('cargaData', 'Carga'));
         
         formTreinoFisico.addEventListener('submit', handleFormFisicoSubmit);
         formTreinoCampo.addEventListener('submit', handleFormCampoSubmit);
@@ -776,6 +883,11 @@
 
         // --- MAIN RENDER FUNCTIONS ---
         function renderProntidaoTab() {
+            if (!currentTeamId) {
+                placeholderSectionProntidao.classList.remove('hidden');
+                resultsSection.classList.add('hidden');
+                return;
+            }
             if (fullProntidaoData.length === 0) {
                 placeholderSectionProntidao.classList.remove('hidden');
                 resultsSection.classList.add('hidden');
@@ -796,7 +908,7 @@
             if (filteredData.length > 0) {
                 displayFilteredProntidaoData(filteredData, selectedWeeks);
             } else {
-                teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhuma dado de prontidão para a(s) semana(s) selecionada(s).</p>';
+                teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s).</p>';
                 resultsContainer.innerHTML = '';
                 latestProntidaoData = null;
             }
@@ -804,6 +916,11 @@
         }
 
         function renderCargaTab() {
+            if (!currentTeamId) {
+                placeholderSectionCarga.classList.remove('hidden');
+                resultsSectionCarga.classList.add('hidden');
+                return;
+            }
             if (fullCargaData.length === 0) {
                 placeholderSectionCarga.classList.remove('hidden');
                 resultsSectionCarga.classList.add('hidden');
@@ -855,11 +972,11 @@
                     const title = newStatus === 'liberado' ? 'Liberar Atleta' : 'Remover Registro';
                     
                     showConfirmationModal(text, async () => {
+                        const lesaoRef = doc(db, "equipes", currentTeamId, "lesoes", id);
                         if (newStatus === 'delete') {
-                            await deleteDoc(doc(db, "lesoes", id));
+                            await deleteDoc(lesaoRef);
                             showToast(`${atleta} removido dos registros de lesão.`, 'success');
                         } else {
-                            const lesaoRef = doc(db, "lesoes", id);
                             await updateDoc(lesaoRef, { status: newStatus });
                             showToast(`${atleta} foi liberado.`, 'success');
                         }
@@ -868,6 +985,8 @@
             });
         }
 
+        // --- Other render functions (updateDashboardView, renderDashboardLesoes, etc.) remain largely the same ---
+        // They will just work with the already-filtered global data arrays.
         function updateDashboardView() {
             renderDashboardLesoes();
             renderDashboardProntidao();
@@ -917,6 +1036,11 @@
         }
 
         function renderDashboardProntidao() {
+            if (!currentTeamId || !latestProntidaoData) {
+                 dashboardProntidao.innerHTML = `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Prontidão</h2><div class="text-center py-10 px-6"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de prontidão</h3><p class="mt-1 text-sm text-gray-500">Importe um arquivo na aba 'Análise de Prontidão'.</p></div>`;
+                 return;
+            }
+
             const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
             const selectedWeeks = sortWeeks(Array.from(selectedCheckboxes).map(cb => cb.value));
             
@@ -939,12 +1063,14 @@
                     };
                     dashboardProntidao.innerHTML = renderTeamDashboardProntidaoWithCards(overallStats, latestProntidaoData.latestDate);
                 }
-            } else {
-                dashboardProntidao.innerHTML = `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Prontidão</h2><div class="text-center py-10 px-6"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de prontidão carregado</h3><p class="mt-1 text-sm text-gray-500">Vá para a aba 'Análise de Prontidão' para importar um arquivo.</p></div>`;
             }
         }
 
         function renderDashboardCarga() {
+            if (!currentTeamId || !latestCargaData) {
+                 dashboardCarga.innerHTML = `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Carga de Treino</h2><div class="text-center py-10 px-6"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de carga</h3><p class="mt-1 text-sm text-gray-500">Importe um arquivo na aba 'Controle de Carga'.</p></div>`;
+                 return;
+            }
             if (latestCargaData) {
                 dashboardCarga.innerHTML = renderTeamDashboardCarga(latestCargaData, true);
                  if (latestCargaData.selectionCount > 1) {
@@ -954,12 +1080,15 @@
                 } else if (latestCargaData) {
                     renderTeamDailyLoadChart(latestCargaData.dailyAverages, 'dashboard-');
                 }
-            } else {
-                dashboardCarga.innerHTML = `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Carga de Treino</h2><div class="text-center py-10 px-6"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de carga carregado</h3><p class="mt-1 text-sm text-gray-500">Vá para a aba 'Controle de Carga' para importar um arquivo.</p></div>`;
             }
         }
 
         function renderDashboardPlanejamento() {
+            if (!currentTeamId) {
+                dashboardPlanejamento.innerHTML = `<h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">Resumo do Planejamento</h2><p class="text-center text-gray-500">Nenhum planejamento disponível. Selecione uma equipe.</p>`;
+                return;
+            }
+
             const trainingsFisico = treinosFisicos.filter(t => selectedPlanningWeeks.includes(t.semana_id));
             const trainingsCampo = treinosCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
             const totalSessions = trainingsFisico.length + trainingsCampo.length;
@@ -1148,7 +1277,7 @@
                     const data = JSON.parse(button.dataset.chartdata);
                     renderAthleteChart(canvasId, data, 'Carga de Treino Diária (u.a.)');
                 }
-                if (type === 'prontidao') {
+                 if (type === 'prontidao') {
                     const uniqueId = targetId.replace('details-prontidao-', '');
                     
                     // Render daily charts
@@ -1315,6 +1444,10 @@
         }
         
         async function saveBatchData(collectionRef, data) {
+            if (!currentTeamId) {
+                showToast("Nenhuma equipe selecionada para salvar os dados.");
+                return;
+            }
             const batch = writeBatch(db);
             data.forEach(item => {
                 const docRef = doc(collectionRef); 
@@ -1323,31 +1456,22 @@
             await batch.commit();
         }
         
-        function clearProntidaoData() {
+        function clearDataForSubcollection(subcollectionName, displayName) {
+            if (!currentTeamId) {
+                showToast("Nenhuma equipe selecionada.");
+                return;
+            }
             showConfirmationModal(
-                'Tem certeza que deseja apagar TODOS os dados de Prontidão? Esta ação não pode ser desfeita.',
+                `Tem certeza que deseja apagar TODOS os dados de ${displayName} para a equipe atual? Esta ação não pode ser desfeita.`,
                 async () => {
-                    showToast('Limpando dados de prontidão...', 'success');
-                    const snapshot = await getDocs(query(prontidaoCollection));
+                    showToast(`Limpando dados de ${displayName}...`, 'success');
+                    const subcollectionRef = collection(db, 'equipes', currentTeamId, subcollectionName);
+                    const snapshot = await getDocs(query(subcollectionRef));
                     const batch = writeBatch(db);
                     snapshot.docs.forEach(d => batch.delete(d.ref));
                     await batch.commit();
-                    showToast('Dados de prontidão removidos.', 'success');
-                }, 'Apagar Dados de Prontidão'
-            );
-        }
-
-        function clearCargaData() {
-            showConfirmationModal(
-                'Tem certeza que deseja apagar TODOS os dados de Carga? Esta ação não pode ser desfeita.',
-                async () => {
-                    showToast('Limpando dados de carga...', 'success');
-                    const snapshot = await getDocs(query(cargaCollection));
-                    const batch = writeBatch(db);
-                    snapshot.docs.forEach(d => batch.delete(d.ref));
-                    await batch.commit();
-                    showToast('Dados de carga removidos.', 'success');
-                }, 'Apagar Dados de Carga'
+                    showToast(`Dados de ${displayName} removidos.`, 'success');
+                }, `Apagar Dados de ${displayName}`
             );
         }
 
@@ -1361,7 +1485,8 @@
                     const csvText = event.target.result;
                     const required = ['atleta_id', 'data', 'semana_id', 'hooper_score'];
                     const parsedData = parseCSV(csvText, required);
-                    await saveBatchData(prontidaoCollection, parsedData);
+                    const prontidaoCollectionRef = collection(db, 'equipes', currentTeamId, 'prontidaoData');
+                    await saveBatchData(prontidaoCollectionRef, parsedData);
                     showToast(`${parsedData.length} registros de prontidão salvos com sucesso!`, 'success');
                 } catch (error) {
                      console.error("Error during prontidao processing/saving:", error);
@@ -1490,7 +1615,7 @@
                 if (result) {
                     result.dailyHistory = dailyHistoryData;
                 }
-
+                
                 return result;
 
             }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
@@ -2072,7 +2197,7 @@
                     if (val <= 17) return 'rgba(245, 158, 11, 0.7)';
                     return 'rgba(239, 68, 68, 0.7)';
                 });
-                chartOptions.options.scales.y.min = 0; // Adjusted from 4 to 0
+                chartOptions.options.scales.y.min = 0;
                 chartOptions.options.scales.y.max = 20;
                 chartOptions.data.datasets[0].label = 'Hooper Score';
             } else { // salto
@@ -2096,7 +2221,8 @@
                 try {
                     const required = ['atleta_id', 'data', 'microciclo_id', 'pse_sessao', 'duracao_sessao_min'];
                     const parsedData = parseCSV(event.target.result, required);
-                    await saveBatchData(cargaCollection, parsedData);
+                    const cargaCollectionRef = collection(db, 'equipes', currentTeamId, 'cargaData');
+                    await saveBatchData(cargaCollectionRef, parsedData);
                     showToast(`${parsedData.length} registros de carga salvos com sucesso!`, 'success');
                 } catch (error) {
                      console.error("Error during carga processing/saving:", error);
@@ -2434,6 +2560,7 @@
 
         async function handleFormFisicoSubmit(e) {
             e.preventDefault();
+            if (!currentTeamId) { showToast("Selecione uma equipe primeiro."); return; }
             const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true;
 
@@ -2449,7 +2576,8 @@
                 createdAt: serverTimestamp()
             };
             try {
-                await addDoc(treinosFisicosCollection, treino);
+                const treinosFisicosCollectionRef = collection(db, 'equipes', currentTeamId, 'treinosFisicos');
+                await addDoc(treinosFisicosCollectionRef, treino);
                 showToast('Treino Físico adicionado!', 'success');
                 formTreinoFisico.reset();
                 document.getElementById('dataTreinoFisico').valueAsDate = new Date();
@@ -2464,6 +2592,7 @@
 
         async function handleFormCampoSubmit(e) {
             e.preventDefault();
+            if (!currentTeamId) { showToast("Selecione uma equipe primeiro."); return; }
             const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true;
 
@@ -2479,7 +2608,8 @@
                 createdAt: serverTimestamp()
             };
             try {
-                await addDoc(treinosCampoCollection, treino);
+                const treinosCampoCollectionRef = collection(db, 'equipes', currentTeamId, 'treinosCampo');
+                await addDoc(treinosCampoCollectionRef, treino);
                 showToast('Treino de Campo adicionado!', 'success');
                 formTreinoCampo.reset();
                 document.getElementById('dataTreinoCampo').valueAsDate = new Date();
@@ -2557,6 +2687,7 @@
         }
         
         async function deleteSelectedPlanningWeeks() {
+            if (!currentTeamId) { showToast("Selecione uma equipe primeiro."); return; }
             const selectedCheckboxes = document.querySelectorAll('.planning-week-checkbox:checked');
             const weeksToDelete = Array.from(selectedCheckboxes).map(cb => cb.value);
 
@@ -2571,8 +2702,8 @@
                     showToast('Excluindo treinos...', 'success');
                     const batch = writeBatch(db);
                     
-                    const qFisico = query(treinosFisicosCollection, where("semana_id", "in", weeksToDelete));
-                    const qCampo = query(treinosCampoCollection, where("semana_id", "in", weeksToDelete));
+                    const qFisico = query(collection(db, 'equipes', currentTeamId, 'treinosFisicos'), where("semana_id", "in", weeksToDelete));
+                    const qCampo = query(collection(db, 'equipes', currentTeamId, 'treinosCampo'), where("semana_id", "in", weeksToDelete));
 
                     const [fisicoSnap, campoSnap] = await Promise.all([getDocs(qFisico), getDocs(qCampo)]);
 
@@ -2720,6 +2851,7 @@
 
         async function handleFormLesaoSubmit(e) {
             e.preventDefault();
+            if (!currentTeamId) { showToast("Selecione uma equipe primeiro."); return; }
             submitLesaoBtn.disabled = true;
 
             const lesao = {
@@ -2731,7 +2863,8 @@
             };
 
             try {
-                await addDoc(lesoesCollection, lesao);
+                const lesoesCollectionRef = collection(db, 'equipes', currentTeamId, 'lesoes');
+                await addDoc(lesoesCollectionRef, lesao);
                 showToast('Registro de lesão salvo!', 'success');
                 formLesao.reset();
             } catch (error) {
@@ -2813,10 +2946,12 @@
         }
 
         async function removeTraining(id, type) {
+            if (!currentTeamId) { showToast("Nenhuma equipe selecionada."); return; }
             showToast(`Removendo treino...`, 'success');
             try {
                 const collectionName = type === 'fisico' ? 'treinosFisicos' : 'treinosCampo';
-                await deleteDoc(doc(db, collectionName, id));
+                const docRef = doc(db, 'equipes', currentTeamId, collectionName, id);
+                await deleteDoc(docRef);
             } catch (error) {
                 showToast("Erro ao remover o treino.");
             }
