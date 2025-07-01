@@ -87,11 +87,9 @@
                 <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Monitoramento Integrado de Atletas</h1>
                  <div class="flex items-center gap-x-4">
                      <div class="bg-white p-2 rounded-lg border shadow-sm">
-                        <label for="teamSelector" class="text-sm font-medium text-gray-500 mr-2">Equipe:</label>
-                        <select id="teamSelector" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <option value="equipe_principal">Equipe Principal</option>
-                            <option value="sub_20">Sub-20</option>
-                            <option value="sub_17">Sub-17</option>
+                        <label for="teamFilterSelector" class="text-sm font-medium text-gray-500 mr-2">Filtrar Equipe:</label>
+                        <select id="teamFilterSelector" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="all">Todas as Equipes</option>
                         </select>
                      </div>
                      <div id="authStatusContainer" class="bg-gray-100 p-2 rounded-lg text-sm">
@@ -142,9 +140,9 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                     <div>
                         <h2 class="text-xl font-semibold text-gray-800 mb-3">1. Prepare seu arquivo de Prontidão</h2>
-                        <p class="text-gray-600 mb-4">O arquivo CSV deve conter as colunas abaixo. Os dados serão salvos para a equipe <strong id="prontidaoTeamLabel" class="text-blue-600"></strong>.</p>
+                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo, incluindo a coluna <strong class="text-blue-600">equipe_id</strong>.</p>
                         <div class="bg-gray-100 p-4 rounded-lg text-sm text-gray-700 font-mono border">
-                            <p>atleta_id,data,semana_id,qualidade_sono,niveis_stress,fadiga_geral,dor_muscular,hooper_score,salto_horizontal_cm,vfc_rmssd</p>
+                            <p><strong class="text-blue-600">equipe_id</strong>,atleta_id,data,semana_id,qualidade_sono,niveis_stress,fadiga_geral,dor_muscular,hooper_score,salto_horizontal_cm,vfc_rmssd</p>
                         </div>
                          <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
                              <li>O `semana_id` deve ser consistente (ex: "Sem25", "S26").</li>
@@ -207,9 +205,9 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                     <div>
                         <h2 class="text-xl font-semibold text-gray-800 mb-3">1. Prepare seu arquivo de Carga</h2>
-                        <p class="text-gray-600 mb-4">O arquivo CSV deve conter as colunas abaixo. Os dados serão salvos para a equipe <strong id="cargaTeamLabel" class="text-blue-600"></strong>.</p>
+                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo, incluindo a coluna <strong class="text-blue-600">equipe_id</strong>.</p>
                         <div class="bg-gray-100 p-4 rounded-lg text-sm text-gray-700 font-mono border">
-                            <p>atleta_id,data,microciclo_id,pse_sessao,duracao_sessao_min</p>
+                            <p><strong class="text-blue-600">equipe_id</strong>,atleta_id,data,microciclo_id,pse_sessao,duracao_sessao_min</p>
                         </div>
                         <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
                             <li>O `microciclo_id` deve ser consistente (ex: "Sem25", "S26").</li>
@@ -275,6 +273,7 @@
                     <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino Físico</h3>
                         <form id="formTreinoFisico" class="space-y-4">
+                             <input type="hidden" id="equipeIdFisico" value="">
                             <div>
                                 <label for="dataTreinoFisico" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
                                 <input type="date" id="dataTreinoFisico" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
@@ -318,6 +317,7 @@
                     <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino de Campo</h3>
                         <form id="formTreinoCampo" class="space-y-4">
+                            <input type="hidden" id="equipeIdCampo" value="">
                            <div>
                                 <label for="dataTreinoCampo" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
                                 <input type="date" id="dataTreinoCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
@@ -376,6 +376,7 @@
                     <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Registrar Lesão</h3>
                         <form id="formLesao" class="space-y-4">
+                            <input type="hidden" id="equipeIdLesao" value="">
                             <div>
                                 <label for="atletaLesao" class="block text-sm font-medium text-gray-700 mb-1">Atleta</label>
                                 <input list="atleta-list-options" type="text" id="atletaLesao" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
@@ -494,14 +495,15 @@
             maxima: 100
         };
         let activeCharts = {};
-        let fullProntidaoData = [];
-        let fullCargaData = [];
-        let lesoesData = [];
+        // MODIFIED: These will now hold ALL data, unfiltered by team
+        let allProntidaoData = [];
+        let allCargaData = [];
+        let allLesoesData = [];
+        let allTreinosFisicos = [];
+        let allTreinosCampo = [];
+
         let athleteMicrocycleData = {};
-        let treinosFisicos = [];
-        let treinosCampo = [];
         let currentUser = null;
-        let selectedTeamId = null; // NEW: Holds the active team ID
         let latestProntidaoData = null;
         let latestCargaData = null;
         let selectedPlanningWeeks = [getWeekId(new Date())];
@@ -513,7 +515,7 @@
         const loaderText = document.getElementById('loaderText');
         const mainContent = document.getElementById('mainContent');
         const authStatus = document.getElementById('authStatus');
-        const teamSelector = document.getElementById('teamSelector'); // NEW: Team selector
+        const teamFilterSelector = document.getElementById('teamFilterSelector'); // NEW: Team filter
         const tabDashboardBtn = document.getElementById('tabDashboardBtn');
         const tabProntidaoBtn = document.getElementById('tabProntidaoBtn');
         const tabCargaBtn = document.getElementById('tabCargaBtn');
@@ -540,7 +542,6 @@
         const exportPdfBtnProntidao = document.getElementById('exportPdfBtnProntidao');
         const legendsProntidao = document.getElementById('legendsProntidao');
         const clearProntidaoDataBtn = document.getElementById('clearProntidaoDataBtn');
-        const prontidaoTeamLabel = document.getElementById('prontidaoTeamLabel'); // NEW
         // Carga Elements
         const csvFileInputCarga = document.getElementById('csvFileInputCarga');
         const fileNameCargaEl = document.getElementById('fileNameCarga');
@@ -555,7 +556,6 @@
         const exportPdfBtnCarga = document.getElementById('exportPdfBtnCarga');
         const legendsCarga = document.getElementById('legendsCarga');
         const clearCargaDataBtn = document.getElementById('clearCargaDataBtn');
-        const cargaTeamLabel = document.getElementById('cargaTeamLabel'); // NEW
         // Planejamento Elements
         const formTreinoFisico = document.getElementById('formTreinoFisico');
         const formTreinoCampo = document.getElementById('formTreinoCampo');
@@ -578,30 +578,20 @@
         // --- SETUP ---
         Chart.register(ChartDataLabels);
         
-        // Custom plugin for readiness zones background
         const readinessZonePlugin = {
             id: 'readinessZonePlugin',
             beforeDraw: (chart) => {
                 const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
-                // Apply only to line charts that have an active y-axis
                 if (chart.config.type !== 'line' || !y || !y.getPixelForValue) return;
-
                 const greenZone = y.getPixelForValue(-0.5);
                 const yellowZone = y.getPixelForValue(-1.5);
-
                 ctx.save();
-                // Green zone (from top to -0.5)
                 ctx.fillStyle = 'rgba(34, 197, 94, 0.1)';
                 ctx.fillRect(left, top, right - left, greenZone - top);
-
-                // Yellow zone (from -0.5 to -1.5)
                 ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
                 ctx.fillRect(left, greenZone, right - left, yellowZone - greenZone);
-
-                // Red zone (from -1.5 to bottom)
                 ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
                 ctx.fillRect(left, yellowZone, right - left, bottom - yellowZone);
-
                 ctx.restore();
             }
         };
@@ -626,14 +616,9 @@
                 submitTreinoFisicoBtn.disabled = false;
                 submitTreinoCampoBtn.disabled = false;
                 submitLesaoBtn.disabled = false;
-                
-                // NEW: Initialize with team selection
                 if (!isInitialLoadComplete) {
-                   const savedTeam = localStorage.getItem('selectedTeamId') || 'equipe_principal';
-                   teamSelector.value = savedTeam;
-                   handleTeamChange();
+                   loadInitialData();
                 }
-
             } else {
                 currentUser = null;
                 authStatus.textContent = 'Offline';
@@ -653,41 +638,33 @@
             showToast("Falha na autenticação. Os dados não serão salvos.");
         });
 
+        // MODIFIED: Loads ALL data, does not filter by team
         async function loadInitialData() {
-            if (!selectedTeamId) return; // Don't load if no team is selected
             isInitialLoadComplete = true; 
-            loaderText.textContent = `Carregando dados da equipe: ${teamSelector.options[teamSelector.selectedIndex].text}...`;
-            globalLoader.classList.remove('hidden');
-            mainContent.classList.add('hidden');
-
+            loaderText.textContent = 'Carregando todos os dados...';
             try {
-                // MODIFIED: All queries now filter by equipe_id
-                const qProntidao = query(prontidaoCollection, where("equipe_id", "==", selectedTeamId), orderBy("data", "desc"));
-                const qCarga = query(cargaCollection, where("equipe_id", "==", selectedTeamId), orderBy("data", "desc"));
-                const qFisico = query(treinosFisicosCollection, where("equipe_id", "==", selectedTeamId), orderBy("date", "asc"));
-                const qCampo = query(treinosCampoCollection, where("equipe_id", "==", selectedTeamId), orderBy("date", "asc"));
-                const qLesoes = query(lesoesCollection, where("equipe_id", "==", selectedTeamId), orderBy("createdAt", "desc"));
-
+                // Queries now fetch all documents, ordered by date/time
                 const [prontidaoSnap, cargaSnap, fisicoSnap, campoSnap, lesoesSnap] = await Promise.all([
-                    getDocs(qProntidao),
-                    getDocs(qCarga),
-                    getDocs(qFisico),
-                    getDocs(qCampo),
-                    getDocs(qLesoes),
+                    getDocs(query(prontidaoCollection, orderBy("data", "desc"))),
+                    getDocs(query(cargaCollection, orderBy("data", "desc"))),
+                    getDocs(query(treinosFisicosCollection, orderBy("date", "asc"))),
+                    getDocs(query(treinosCampoCollection, orderBy("date", "asc"))),
+                    getDocs(query(lesoesCollection, orderBy("createdAt", "desc"))),
                 ]);
 
-                fullProntidaoData = prontidaoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                fullCargaData = cargaSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                treinosFisicos = fisicoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                treinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                lesoesData = lesoesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                allProntidaoData = prontidaoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                allCargaData = cargaSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                allTreinosFisicos = fisicoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                allTreinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                allLesoesData = lesoesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 
-                renderAllTabs();
+                populateTeamFilter(); // NEW: Populate filter based on loaded data
+                renderAllTabs(); // Render based on the current filter selection
 
                 globalLoader.classList.add('hidden');
                 mainContent.classList.remove('hidden');
 
-                setupLiveListeners(); // Setup listeners after initial load
+                setupLiveListeners();
 
             } catch (error) {
                 console.error("Error loading initial data:", error);
@@ -696,60 +673,50 @@
             }
         }
         
-        let unsubscribes = []; // To hold listener unsubscribe functions
+        // MODIFIED: Listeners now update the global "all data" stores
         function setupLiveListeners() {
-             // Unsubscribe from previous listeners before creating new ones
-            unsubscribes.forEach(unsub => unsub());
-            unsubscribes = [];
-
-            if (!selectedTeamId) return;
-
-            // MODIFIED: All listeners now filter by equipe_id
-            const queries = {
-                fisico: query(treinosFisicosCollection, where("equipe_id", "==", selectedTeamId), orderBy("date", "asc")),
-                campo: query(treinosCampoCollection, where("equipe_id", "==", selectedTeamId), orderBy("date", "asc")),
-                prontidao: query(prontidaoCollection, where("equipe_id", "==", selectedTeamId), orderBy("data", "desc")),
-                carga: query(cargaCollection, where("equipe_id", "==", selectedTeamId), orderBy("data", "desc")),
-                lesoes: query(lesoesCollection, where("equipe_id", "==", selectedTeamId), orderBy("createdAt", "desc"))
-            };
-
-            unsubscribes.push(onSnapshot(queries.fisico, (snapshot) => {
-                treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+             onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
+                allTreinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                populateTeamFilter();
                 renderPlanningView();
                 updateDashboardView();
-            }));
+            });
 
-            unsubscribes.push(onSnapshot(queries.campo, (snapshot) => {
-                treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            onSnapshot(query(treinosCampoCollection, orderBy("date", "asc")), (snapshot) => {
+                allTreinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                populateTeamFilter();
                 renderPlanningView();
                 updateDashboardView();
-            }));
+            });
 
-            unsubscribes.push(onSnapshot(queries.prontidao, (snapshot) => {
-                fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                populateAthleteDatalist();
-                renderFilterProntidao(fullProntidaoData); 
-                renderProntidaoTab(); 
-            }));
+            onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
+                allProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                populateTeamFilter();
+                renderProntidaoTab();
+            });
             
-            unsubscribes.push(onSnapshot(queries.carga, (snapshot) => {
-                fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                populateAthleteDatalist();
-                processAndStoreLoadData(); 
-                renderCargaTab(); 
-            }));
+            onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
+                allCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                populateTeamFilter();
+                renderCargaTab();
+            });
 
-            unsubscribes.push(onSnapshot(queries.lesoes, (snapshot) => {
-                lesoesData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            onSnapshot(query(lesoesCollection, orderBy("createdAt", "desc")), (snapshot) => {
+                allLesoesData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                populateTeamFilter();
                 renderLesoesTab();
                 updateDashboardView();
-            }));
+            });
         }
 
 
         // --- EVENT LISTENERS ---
-        teamSelector.addEventListener('change', handleTeamChange); // NEW
-        
+        // NEW: When the filter changes, re-render everything
+        teamFilterSelector.addEventListener('change', () => {
+             localStorage.setItem('selectedTeamFilter', teamFilterSelector.value);
+             renderAllTabs();
+        });
+
         tabDashboardBtn.addEventListener('click', () => switchTab('dashboard'));
         tabProntidaoBtn.addEventListener('click', () => switchTab('prontidao'));
         tabCargaBtn.addEventListener('click', () => switchTab('carga'));
@@ -812,16 +779,25 @@
         document.getElementById('dataTreinoCampo').valueAsDate = new Date();
         document.getElementById('dataTreinoCampo').dispatchEvent(new Event('change'));
         
-        // NEW: Handles team selection change
-        function handleTeamChange() {
-            selectedTeamId = teamSelector.value;
-            localStorage.setItem('selectedTeamId', selectedTeamId);
-            const teamName = teamSelector.options[teamSelector.selectedIndex].text;
-            prontidaoTeamLabel.textContent = teamName;
-            cargaTeamLabel.textContent = teamName;
-            
-            // Re-load all data for the new team
-            loadInitialData(); 
+        // NEW: This function filters data based on the dropdown selection
+        function getFilteredData() {
+            const selectedTeam = teamFilterSelector.value;
+            if (selectedTeam === 'all') {
+                return {
+                    prontidao: allProntidaoData,
+                    carga: allCargaData,
+                    lesoes: allLesoesData,
+                    treinosFisicos: allTreinosFisicos,
+                    treinosCampo: allTreinosCampo
+                };
+            }
+            return {
+                prontidao: allProntidaoData.filter(d => d.equipe_id === selectedTeam),
+                carga: allCargaData.filter(d => d.equipe_id === selectedTeam),
+                lesoes: allLesoesData.filter(d => d.equipe_id === selectedTeam),
+                treinosFisicos: allTreinosFisicos.filter(d => d.equipe_id === selectedTeam),
+                treinosCampo: allTreinosCampo.filter(d => d.equipe_id === selectedTeam)
+            };
         }
 
         function renderAllTabs() {
@@ -830,11 +806,14 @@
             renderPlanningView();
             renderLesoesTab();
             updateDashboardView();
+            populateAthleteDatalist();
         }
 
         // --- MAIN RENDER FUNCTIONS ---
         function renderProntidaoTab() {
-            if (fullProntidaoData.length === 0) {
+            const { prontidao: prontidaoData } = getFilteredData(); // Get filtered data
+            
+            if (prontidaoData.length === 0) {
                 placeholderSectionProntidao.classList.remove('hidden');
                 resultsSection.classList.add('hidden');
                 latestProntidaoData = null;
@@ -845,16 +824,17 @@
             placeholderSectionProntidao.classList.add('hidden');
             resultsSection.classList.remove('hidden');
             
+            renderFilterProntidao(prontidaoData); // Render week filters based on the team's data
             const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
             let selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
-            selectedWeeks = sortWeeks(selectedWeeks); // Ensure selection is sorted for charts
+            selectedWeeks = sortWeeks(selectedWeeks);
             
-            const filteredData = fullProntidaoData.filter(d => selectedWeeks.includes(d.semana_id));
+            const filteredData = prontidaoData.filter(d => selectedWeeks.includes(d.semana_id));
 
             if (filteredData.length > 0) {
                 displayFilteredProntidaoData(filteredData, selectedWeeks);
             } else {
-                teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhuma dado de prontidão para a(s) semana(s) selecionada(s).</p>';
+                teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s) nesta equipe.</p>';
                 resultsContainer.innerHTML = '';
                 latestProntidaoData = null;
             }
@@ -862,7 +842,9 @@
         }
 
         function renderCargaTab() {
-            if (fullCargaData.length === 0) {
+            const { carga: cargaData } = getFilteredData(); // Get filtered data
+
+            if (cargaData.length === 0) {
                 placeholderSectionCarga.classList.remove('hidden');
                 resultsSectionCarga.classList.add('hidden');
                 latestCargaData = null;
@@ -872,16 +854,16 @@
             placeholderSectionCarga.classList.add('hidden');
             resultsSectionCarga.classList.remove('hidden');
             
-            processAndStoreLoadData();
+            processAndStoreLoadData(cargaData); // Process only filtered data
             
             const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
             let selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-            selectedIds = sortWeeks(selectedIds); // Ensure selection is sorted for charts
+            selectedIds = sortWeeks(selectedIds);
             
             if (selectedIds.length > 0) {
                 displayFilteredLoadData(selectedIds);
             } else {
-                teamDashboardCarga.innerHTML = '<p class="text-center text-gray-500">Nenhum microciclo selecionado.</p>';
+                teamDashboardCarga.innerHTML = '<p class="text-center text-gray-500">Nenhum microciclo selecionado para esta equipe.</p>';
                 resultsContainerCarga.innerHTML = '';
                 latestCargaData = null;
             }
@@ -889,14 +871,16 @@
         }
 
         function renderLesoesTab() {
+            const { lesoes: lesoesData } = getFilteredData(); // Get filtered data
             const activeLesoes = lesoesData.filter(l => l.status !== 'liberado');
+
             if (activeLesoes.length === 0) {
                 lesoesList.innerHTML = `<div class="text-center py-10 px-6 bg-gray-50 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum atleta no departamento médico</h3>
-                    <p class="mt-1 text-sm text-gray-500">Todos os atletas estão liberados.</p>
+                    <p class="mt-1 text-sm text-gray-500">Todos os atletas desta equipe estão liberados.</p>
                 </div>`;
             } else {
                 lesoesList.innerHTML = activeLesoes.map(createLesaoCard).join('');
@@ -927,7 +911,9 @@
         }
 
         function updateDashboardView() {
-            const teamName = teamSelector.options[teamSelector.selectedIndex].text;
+            const selectedTeam = teamFilterSelector.value;
+            const teamName = selectedTeam === 'all' ? 'Todas as Equipes' : selectedTeam;
+
             renderDashboardLesoes(teamName);
             renderDashboardProntidao(teamName);
             renderDashboardCarga(teamName);
@@ -935,6 +921,7 @@
         }
 
         function renderDashboardLesoes(teamName) {
+            const { lesoes: lesoesData } = getFilteredData();
             const activeLesoes = lesoesData.filter(l => l.status !== 'liberado');
             
             let contentHtml = '';
@@ -1019,6 +1006,7 @@
         }
 
         function renderDashboardPlanejamento(teamName) {
+            const { treinosFisicos, treinosCampo } = getFilteredData();
             const trainingsFisico = treinosFisicos.filter(t => selectedPlanningWeeks.includes(t.semana_id));
             const trainingsCampo = treinosCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
             const totalSessions = trainingsFisico.length + trainingsCampo.length;
@@ -1210,7 +1198,6 @@
                 if (type === 'prontidao') {
                     const uniqueId = targetId.replace('details-prontidao-', '');
                     
-                    // Render daily charts
                     if (button.dataset.dailyHistory && button.dataset.dailyHistory.trim() !== '') {
                         try {
                             const dailyHistoryData = JSON.parse(button.dataset.dailyHistory);
@@ -1242,9 +1229,11 @@
                 return;
             }
             const contentId = `pdf-content-${type}`;
-            const teamName = teamSelector.options[teamSelector.selectedIndex].text.replace(/\s+/g, '_');
+            const selectedTeam = teamFilterSelector.value;
+            const teamName = (selectedTeam === 'all' ? 'Todas_Equipes' : selectedTeam).replace(/\s+/g, '_');
             const fileName = `relatorio_${type}_${teamName}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
             const contentToPrint = document.getElementById(contentId);
+
             if (!contentToPrint) {
                 showToast(`Conteúdo para PDF (id: ${contentId}) não encontrado.`);
                 return;
@@ -1323,6 +1312,7 @@
             }
         }
 
+        // MODIFIED: Now requires equipe_id
         function parseCSV(text, requiredHeaders) {
             const lines = text.trim().replace(/\r/g, '').split('\n');
             if (lines.length < 2) throw new Error("O arquivo CSV está vazio ou contém apenas o cabeçalho.");
@@ -1343,7 +1333,8 @@
                 headers.forEach((header, index) => {
                     if (header) { 
                         const value = values[index] ? values[index].trim() : null;
-                        if (['atleta_id', 'data', 'microciclo_id', 'semana_id'].includes(header)) {
+                        // Changed to handle 'equipe_id' as text
+                        if (['equipe_id', 'atleta_id', 'data', 'microciclo_id', 'semana_id'].includes(header)) {
                              if (header === 'data' && value && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
                                 const parts = value.split('/');
                                 entry[header] = `${parts[2]}-${parts[1]}-${parts[0]}`; 
@@ -1356,11 +1347,10 @@
                         }
                     }
                 });
-                if (!entry.atleta_id || !entry.data || (requiredHeaders.includes('microciclo_id') && !entry.microciclo_id) || (requiredHeaders.includes('semana_id') && !entry.semana_id)) {
-                    console.warn(`Linha ${i + 2} ignorada por falta de dados essenciais.`);
+                if (!entry.atleta_id || !entry.data || !entry.equipe_id || (requiredHeaders.includes('microciclo_id') && !entry.microciclo_id) || (requiredHeaders.includes('semana_id') && !entry.semana_id)) {
+                    console.warn(`Linha ${i + 2} ignorada por falta de dados essenciais (atleta_id, equipe_id, data, etc).`);
                     return null;
                 };
-                entry.equipe_id = selectedTeamId; // NEW: Tag with selected team ID
                 return entry;
             }).filter(Boolean);
         }
@@ -1384,37 +1374,31 @@
             await batch.commit();
         }
         
-        // MODIFIED: Clears data only for the selected team
         function clearProntidaoData() {
-            const teamName = teamSelector.options[teamSelector.selectedIndex].text;
             showConfirmationModal(
-                `Tem certeza que deseja apagar TODOS os dados de Prontidão da equipe ${teamName}? Esta ação não pode ser desfeita.`,
+                'Tem certeza que deseja apagar TODOS os dados de Prontidão de TODAS as equipes? Esta ação não pode ser desfeita.',
                 async () => {
-                    showToast(`Limpando dados de prontidão da equipe ${teamName}...`, 'success');
-                    const q = query(prontidaoCollection, where("equipe_id", "==", selectedTeamId));
-                    const snapshot = await getDocs(q);
+                    showToast('Limpando todos os dados de prontidão...', 'success');
+                    const snapshot = await getDocs(query(prontidaoCollection));
                     const batch = writeBatch(db);
                     snapshot.docs.forEach(d => batch.delete(d.ref));
                     await batch.commit();
                     showToast('Dados de prontidão removidos.', 'success');
-                }, 'Apagar Dados de Prontidão'
+                }, 'Apagar Todos os Dados de Prontidão'
             );
         }
 
-        // MODIFIED: Clears data only for the selected team
         function clearCargaData() {
-            const teamName = teamSelector.options[teamSelector.selectedIndex].text;
             showConfirmationModal(
-                `Tem certeza que deseja apagar TODOS os dados de Carga da equipe ${teamName}? Esta ação não pode ser desfeita.`,
+                'Tem certeza que deseja apagar TODOS os dados de Carga de TODAS as equipes? Esta ação não pode ser desfeita.',
                 async () => {
-                    showToast(`Limpando dados de carga da equipe ${teamName}...`, 'success');
-                    const q = query(cargaCollection, where("equipe_id", "==", selectedTeamId));
-                    const snapshot = await getDocs(q);
+                    showToast('Limpando todos os dados de carga...', 'success');
+                    const snapshot = await getDocs(query(cargaCollection));
                     const batch = writeBatch(db);
                     snapshot.docs.forEach(d => batch.delete(d.ref));
                     await batch.commit();
                     showToast('Dados de carga removidos.', 'success');
-                }, 'Apagar Dados de Carga'
+                }, 'Apagar Todos os Dados de Carga'
             );
         }
 
@@ -1426,7 +1410,8 @@
             reader.onload = async (event) => {
                 try {
                     const csvText = event.target.result;
-                    const required = ['atleta_id', 'data', 'semana_id', 'hooper_score'];
+                    // MODIFIED: equipe_id is now required in the CSV
+                    const required = ['equipe_id', 'atleta_id', 'data', 'semana_id', 'hooper_score'];
                     const parsedData = parseCSV(csvText, required);
                     await saveBatchData(prontidaoCollection, parsedData);
                     showToast(`${parsedData.length} registros de prontidão salvos com sucesso!`, 'success');
@@ -1453,25 +1438,19 @@
                 d = new Date(date);
             }
             d.setUTCHours(0, 0, 0, 0);
-            // Monday is the first day of the week
             d.setDate(d.getDate() + 4 - (d.getDay()||7));
             const yearStart = new Date(d.getUTCFullYear(),0,1);
             const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-            // Use "Sem" prefix for consistency, e.g., Sem22
             return `Sem${String(weekNo).padStart(2, '0')}`;
         }
         
         function sortWeeks(arr) {
             return arr.sort((a, b) => {
-                // Extrai a parte numérica da string da semana, ex: "Sem1" -> 1, "S25" -> 25, "Microciclo10" -> 10
                 const numA = parseInt(a.replace(/[^0-9]/g, ''), 10);
                 const numB = parseInt(b.replace(/[^0-9]/g, ''), 10);
-
-                // Se, por algum motivo, não houver um número, usa a ordenação de texto padrão
                 if (isNaN(numA) || isNaN(numB)) {
                     return a.localeCompare(b);
                 }
-
                 return numA - numB;
             });
         }
@@ -1507,6 +1486,7 @@
         }
 
         function analyzeProntidaoData(data, selectedWeeks) {
+            const { prontidao: fullProntidaoData } = getFilteredData(); // Use filtered global data for historical context
             const athletesData = data.reduce((acc, row) => {
                 if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
                 acc[row.atleta_id].push(row);
@@ -1539,12 +1519,11 @@
                     d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < latestDateInSelection
                 );
 
-                const result = calculateAthleteReadiness(athleteId, representativeEntry, allHistoricalEntries, representativeEntry.data);
+                const result = calculateAthleteReadiness(athleteId, representativeEntry, allHistoricalEntries, representativeEntry.data, fullProntidaoData);
                 
-                // Collect daily data for selected weeks
                 const dailyHistoryData = { hooper: [], salto: [] };
                 entriesInSelection
-                    .sort((a, b) => new Date(`${a.data}T00:00:00`) - new Date(`${b.data}T00:00:00`)) // sort by date ascending
+                    .sort((a, b) => new Date(`${a.data}T00:00:00`) - new Date(`${b.data}T00:00:00`))
                     .forEach(entry => {
                         if (entry.hooper_score != null) {
                             dailyHistoryData.hooper.push({ date: entry.data, value: entry.hooper_score });
@@ -1571,7 +1550,7 @@
                     if (entriesInWeek.length === 0) return null;
                     const latestEntryInWeek = entriesInWeek.sort((a,b) => new Date(`${b.data}T00:00:00`) - new Date(`${a.data}T00:00:00`))[0];
                     const historicalEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < new Date(`${latestEntryInWeek.data}T00:00:00`));
-                    return calculateAthleteReadiness(athleteId, latestEntryInWeek, historicalEntries, latestEntryInWeek.data);
+                    return calculateAthleteReadiness(athleteId, latestEntryInWeek, historicalEntries, latestEntryInWeek.data, fullProntidaoData);
                 }).filter(Boolean);
                 
                 const readyAthletesThisWeek = resultsForThisWeek.filter(r => r.status === 'ready');
@@ -1598,18 +1577,18 @@
             let dailyStats = null;
             if (selectedWeeks.length === 1) {
                 const weekData = fullProntidaoData.filter(d => d.semana_id === selectedWeeks[0]);
-                dailyStats = analyzeDailyProntidao(weekData);
+                dailyStats = analyzeDailyProntidao(weekData, fullProntidaoData);
             }
             
             const latestDate = latestDateOverall ? latestDateOverall.toISOString().split('T')[0] : null;
             return { individualResults, teamStats, latestDate, dailyStats };
         }
 
-        function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, displayDate) {
+        function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, displayDate, fullDataContext) {
             const getZScore = (key, value) => {
                 let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
                 if (dataPoints.length === 0) {
-                     dataPoints = fullProntidaoData
+                     dataPoints = fullDataContext
                         .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
                         .map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
                 }
@@ -1649,7 +1628,7 @@
                  let mean = getStats(dataPoints).mean;
 
                  if (dataPoints.length === 0) {
-                     const allOtherEntries = fullProntidaoData
+                     const allOtherEntries = fullDataContext
                         .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
                         .map(e => e[key])
                         .filter(v => v != null && !isNaN(v));
@@ -1672,7 +1651,8 @@
 
         function renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeks, dailyStats) {
             const selectedWeeksCount = selectedWeeks.length;
-            const teamName = teamSelector.options[teamSelector.selectedIndex].text;
+            const selectedTeam = teamFilterSelector.value;
+            const teamName = selectedTeam === 'all' ? 'Todas as Equipes' : selectedTeam;
             if (selectedWeeksCount === 1 && dailyStats) {
                 teamDashboard.innerHTML = renderTeamDashboardProntidaoWithDailyCharts(dailyStats, teamStats, selectedWeeks[0], false, '', teamName);
                 renderTeamDailyIndexChart('team-index-chart', dailyStats);
@@ -1701,20 +1681,19 @@
             renderLegends('prontidao');
         }
         
-        function analyzeDailyProntidao(data) {
+        function analyzeDailyProntidao(data, fullContext) {
             const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
             const dailyData = Array.from({length: 7}, () => []);
 
             data.forEach(row => {
                 const dayOfWeek = new Date(row.data + 'T00:00:00').getUTCDay();
-                const historicalEntries = fullProntidaoData.filter(d => d.atleta_id === row.atleta_id && new Date(d.data + 'T00:00:00') < new Date(row.data + 'T00:00:00'));
-                const readiness = calculateAthleteReadiness(row.atleta_id, row, historicalEntries, row.data);
+                const historicalEntries = fullContext.filter(d => d.atleta_id === row.atleta_id && new Date(d.data + 'T00:00:00') < new Date(row.data + 'T00:00:00'));
+                const readiness = calculateAthleteReadiness(row.atleta_id, row, historicalEntries, row.data, fullContext);
                 if (readiness) {
                     dailyData[dayOfWeek].push(readiness);
                 }
             });
 
-            // Return stats for Sun-Sat
             return dayNames.map((name, i) => {
                 const dayResults = dailyData[i];
                 return {
@@ -1727,7 +1706,7 @@
         }
         
         function renderTeamDashboardProntidaoWithDailyCharts(dailyStats, teamStats, weekId, isDashboard = false, idPrefix = '', teamName) {
-             const title = isDashboard ? `Resumo da Prontidão (${teamName})` : 'Painel da Equipe';
+             const title = isDashboard ? `Resumo da Prontidão (${teamName})` : `Painel da Equipe (${teamName})`;
              const dateText = `Resumo Diário (${weekId})`;
              const { green = 0, yellow = 0, red = 0 } = teamStats.zoneCounts || {};
              const saltoAvg = teamStats.averageSaltoDiff;
@@ -1855,7 +1834,7 @@
         function renderTeamDashboardProntidaoWithCharts(stats, latestDate, isForDashboard = false, selectedWeeksCount = 1, idPrefix = '', teamName) {
             if (!stats) return '';
             const { green = 0, yellow = 0, red = 0 } = stats.zoneCounts || {};
-            const title = isForDashboard ? `Resumo da Prontidão (${teamName})` : 'Painel da Equipe';
+            const title = isForDashboard ? `Resumo da Prontidão (${teamName})` : `Painel da Equipe (${teamName})`;
             const dateText = selectedWeeksCount > 1 
                 ? `Evolução Semanal` 
                 : `Dados de: ${latestDate ? new Date(latestDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A'}`;
@@ -1931,7 +1910,6 @@
             
             const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
 
-            // HTML for daily charts (if data exists)
             const dailyChartsHtml = (result.dailyHistory && (result.dailyHistory.hooper.length > 0 || result.dailyHistory.salto.length > 0)) ? `
                 <div class="mt-4 pt-4 border-t col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -2020,9 +1998,9 @@
             const labels = evolutionData.map(d => d.weekId);
             const data = evolutionData.map(d => d.averageHooper.toFixed(1));
             const backgroundColors = data.map(val => {
-                if (val <= 9) return 'rgba(34, 197, 94, 0.7)'; // green
-                if (val <= 17) return 'rgba(245, 158, 11, 0.7)'; // yellow
-                return 'rgba(239, 68, 68, 0.7)'; // red
+                if (val <= 9) return 'rgba(34, 197, 94, 0.7)';
+                if (val <= 17) return 'rgba(245, 158, 11, 0.7)';
+                return 'rgba(239, 68, 68, 0.7)';
             });
 
             activeCharts[canvasId] = new Chart(ctx, {
@@ -2125,7 +2103,7 @@
                     plugins: {
                         legend: { display: false },
                         datalabels: {
-                            display: data.length < 15, // Show labels only if not too cluttered
+                            display: data.length < 15,
                             anchor: 'end',
                             align: 'top',
                             font: { size: 10 }
@@ -2140,7 +2118,7 @@
                     if (val <= 17) return 'rgba(245, 158, 11, 0.7)';
                     return 'rgba(239, 68, 68, 0.7)';
                 });
-                chartOptions.options.scales.y.min = 0; // Adjusted from 4 to 0
+                chartOptions.options.scales.y.min = 0;
                 chartOptions.options.scales.y.max = 20;
                 chartOptions.data.datasets[0].label = 'Hooper Score';
             } else { // salto
@@ -2162,7 +2140,8 @@
             const reader = new FileReader();
             reader.onload = async (event) => {
                 try {
-                    const required = ['atleta_id', 'data', 'microciclo_id', 'pse_sessao', 'duracao_sessao_min'];
+                    // MODIFIED: equipe_id is now required in the CSV
+                    const required = ['equipe_id', 'atleta_id', 'data', 'microciclo_id', 'pse_sessao', 'duracao_sessao_min'];
                     const parsedData = parseCSV(event.target.result, required);
                     await saveBatchData(cargaCollection, parsedData);
                     showToast(`${parsedData.length} registros de carga salvos com sucesso!`, 'success');
@@ -2180,8 +2159,9 @@
             reader.readAsText(file);
         }
 
-        function processAndStoreLoadData() {
-            const dataByAthlete = fullCargaData.reduce((acc, row) => {
+        // MODIFIED: Accepts filtered data as an argument
+        function processAndStoreLoadData(cargaData) {
+            const dataByAthlete = cargaData.reduce((acc, row) => {
                 if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
                 acc[row.atleta_id].push(row);
                 return acc;
@@ -2216,10 +2196,8 @@
                             if (loadStats.stdDev > 0) {
                                 monotony = loadStats.mean / loadStats.stdDev;
                             } else if (loadStats.count > 1) {
-                                // Max monotony case: multiple sessions with the same load
-                                monotony = 10; // Assign a high arbitrary value for max monotony
+                                monotony = 10;
                             }
-                            // If count <= 1, stdDev is 0, monotony remains 0, which is correct.
                         }
 
                         return {
@@ -2268,7 +2246,6 @@
             for (const athleteId in athleteMicrocycleData) {
                 const allAthleteCycles = athleteMicrocycleData[athleteId];
                 
-                // Pre-calculate weekly team data for charts
                 sortedSelectedIds.forEach(mc_id => {
                     const cycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === mc_id);
                     if (cycleIndex !== -1) {
@@ -2284,18 +2261,15 @@
                     }
                 });
                 
-                // Filter athlete's cycles based on selection
                 const selectedCycles = allAthleteCycles.filter(c => selectedIds.includes(c.microciclo_id));
                 if(selectedCycles.length === 0) continue;
 
-                // --- CORRECTED: Use average for multiple weeks ---
                 const avgWeeklyLoad = getStats(selectedCycles.map(c => c.totalLoad)).mean;
                 const avgMonotony = getStats(selectedCycles.map(c => c.monotony)).mean;
                 const avgStrain = getStats(selectedCycles.map(c => c.strain)).mean;
                 
                 const aggregatedDailyEntries = selectedCycles.flatMap(c => c.dailyEntries);
                 
-                // ACWR calculation based on the LAST selected microcycle
                 const lastSelectedCycleId = sortedSelectedIds[sortedSelectedIds.length - 1];
                 const lastCycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === lastSelectedCycleId);
                 let acwrForTable = null;
@@ -2314,9 +2288,9 @@
                 
                 individualResults.push({
                     athleteId,
-                    totalLoad: avgWeeklyLoad, // Changed from sum to average
+                    totalLoad: avgWeeklyLoad,
                     monotony: avgMonotony,
-                    strain: avgStrain, // Changed from sum to average
+                    strain: avgStrain,
                     acwr: acwrForTable,
                     hasEnoughDataForAcwr,
                     chartData: {
@@ -2354,8 +2328,9 @@
             latestCargaData = teamStats;
             updateDashboardView();
             individualResults.sort((a, b) => (b.acwr ?? -1) - (a.acwr ?? -1));
-            
-            const teamName = teamSelector.options[teamSelector.selectedIndex].text;
+
+            const selectedTeam = teamFilterSelector.value;
+            const teamName = selectedTeam === 'all' ? 'Todas as Equipes' : selectedTeam;
             teamDashboardCarga.innerHTML = renderTeamDashboardCarga(teamStats, false, teamName);
             renderLoadTable(individualResults);
             renderLegends('carga');
@@ -2373,7 +2348,7 @@
              if(!stats) return '';
             const avgAcwr = stats.avgAcwr ? stats.avgAcwr.toFixed(2) : '--';
             const avgStrain = stats.avgStrain ? Math.round(stats.avgStrain) : '--';
-            const title = isForDashboard ? `Resumo da Carga de Treino (${teamName})` : 'Painel da Equipe';
+            const title = isForDashboard ? `Resumo da Carga de Treino (${teamName})` : `Painel da Equipe (${teamName})`;
             const prefix = isForDashboard ? 'dashboard-' : '';
 
             let chartsHtml = '';
@@ -2399,7 +2374,7 @@
             if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
             const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-            const dayOrder = [0,1,2,3,4,5,6]; // Sunday to Saturday
+            const dayOrder = [0,1,2,3,4,5,6];
             const data = dayOrder.map(dayIndex => dailyData[dayIndex]);
             const backgroundColors = data.map(load => getCargaAgudaChartColor(load));
 
@@ -2501,15 +2476,21 @@
             return Array.from(selectElement.selectedOptions).map(option => option.value);
         }
 
-        // MODIFIED: Adds equipe_id to the document
         async function handleFormFisicoSubmit(e) {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true;
 
+            const selectedTeam = teamFilterSelector.value;
+            if (selectedTeam === 'all') {
+                showToast("Por favor, selecione uma equipe específica para cadastrar treinos.");
+                btn.disabled = false;
+                return;
+            }
+
             const objSecundarioEl = document.getElementById('objSecundarioFisico');
             const treino = {
-                equipe_id: selectedTeamId, // NEW
+                equipe_id: selectedTeam, // NEW: Assign to the currently selected team
                 type: 'fisico', date: document.getElementById('dataTreinoFisico').value,
                 semana_id: document.getElementById('semanaIdFisico').value,
                 objPrincipal: document.getElementById('objPrincipalFisico').value,
@@ -2533,15 +2514,21 @@
             }
         }
         
-        // MODIFIED: Adds equipe_id to the document
         async function handleFormCampoSubmit(e) {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true;
 
+            const selectedTeam = teamFilterSelector.value;
+            if (selectedTeam === 'all') {
+                showToast("Por favor, selecione uma equipe específica para cadastrar treinos.");
+                btn.disabled = false;
+                return;
+            }
+            
             const objSecundarioEl = document.getElementById('objSecundarioCampo');
             const treino = {
-                equipe_id: selectedTeamId, // NEW
+                equipe_id: selectedTeam, // NEW: Assign to the currently selected team
                 type: 'campo', date: document.getElementById('dataTreinoCampo').value,
                 semana_id: document.getElementById('semanaIdCampo').value,
                 objPrincipal: document.getElementById('objPrincipalCampo').value,
@@ -2565,6 +2552,7 @@
         }
         
         function renderPlanningFilter() {
+            const { treinosFisicos, treinosCampo } = getFilteredData();
             const allTrainings = [...treinosFisicos, ...treinosCampo];
             const existingWeeks = [...new Set(allTrainings.map(t => t.semana_id))];
             const futureWeeks = Array.from({length: 5}, (_, i) => {
@@ -2595,6 +2583,7 @@
 
         function renderPlanningView() {
             renderPlanningFilter();
+            const { treinosFisicos, treinosCampo } = getFilteredData();
 
             const trainingsForWeek = (data) => data.filter(t => selectedPlanningWeeks.includes(t.semana_id));
             const fisicoSemana = trainingsForWeek(treinosFisicos);
@@ -2630,6 +2619,11 @@
         }
         
         async function deleteSelectedPlanningWeeks() {
+            const selectedTeam = teamFilterSelector.value;
+            if (selectedTeam === 'all') {
+                showToast("Selecione uma equipe específica para excluir semanas de planejamento.");
+                return;
+            }
             const selectedCheckboxes = document.querySelectorAll('.planning-week-checkbox:checked');
             const weeksToDelete = Array.from(selectedCheckboxes).map(cb => cb.value);
 
@@ -2639,14 +2633,13 @@
             }
 
             showConfirmationModal(
-                `Tem certeza que deseja apagar todos os treinos da(s) semana(s) ${weeksToDelete.join(', ')} para a equipe atual? Esta ação não pode ser desfeita.`,
+                `Tem certeza que deseja apagar todos os treinos da(s) semana(s) ${weeksToDelete.join(', ')} para a equipe ${selectedTeam}? Esta ação não pode ser desfeita.`,
                 async () => {
                     showToast('Excluindo treinos...', 'success');
                     const batch = writeBatch(db);
                     
-                    // MODIFIED: Queries include equipe_id filter
-                    const qFisico = query(treinosFisicosCollection, where("equipe_id", "==", selectedTeamId), where("semana_id", "in", weeksToDelete));
-                    const qCampo = query(treinosCampoCollection, where("equipe_id", "==", selectedTeamId), where("semana_id", "in", weeksToDelete));
+                    const qFisico = query(treinosFisicosCollection, where("equipe_id", "==", selectedTeam), where("semana_id", "in", weeksToDelete));
+                    const qCampo = query(treinosCampoCollection, where("equipe_id", "==", selectedTeam), where("semana_id", "in", weeksToDelete));
 
                     const [fisicoSnap, campoSnap] = await Promise.all([getDocs(qFisico), getDocs(qCampo)]);
 
@@ -2668,7 +2661,6 @@
                 return;
             }
 
-            // Group trainings by date
             const trainingsByDate = treinos.reduce((acc, treino) => {
                 if (!acc[treino.date]) {
                     acc[treino.date] = [];
@@ -2677,7 +2669,6 @@
                 return acc;
             }, {});
 
-            // Sort dates
             const sortedDates = Object.keys(trainingsByDate).sort((a, b) => new Date(a) - new Date(b));
 
             sortedDates.forEach(date => {
@@ -2727,7 +2718,6 @@
                 container.appendChild(dayElement);
             });
             
-            // Add event listeners after rendering
             document.querySelectorAll('.remove-training-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const { id, type } = e.currentTarget.dataset;
@@ -2752,7 +2742,7 @@
             });
 
             const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-            const dayOrder = [0,1,2,3,4,5,6]; // Sunday to Saturday
+            const dayOrder = [0,1,2,3,4,5,6];
             const data = dayOrder.map(dayIndex => dailyMaxLoad[dayIndex] || 0);
 
             const backgroundColors = data.map(load => {
@@ -2783,7 +2773,6 @@
                  options.scales.y.ticks = { display: false };
             }
 
-
             activeCharts[canvasId] = new Chart(ctx, {
                 type: 'bar', data: { labels, datasets: [{ label: 'Carga Planejada (%)', data, backgroundColor: backgroundColors }] },
                 options: options
@@ -2791,14 +2780,19 @@
         }
 
         // --- LESÕES FUNCTIONS ---
-
-        // MODIFIED: Adds equipe_id to the document
         async function handleFormLesaoSubmit(e) {
             e.preventDefault();
             submitLesaoBtn.disabled = true;
 
+            const selectedTeam = teamFilterSelector.value;
+            if (selectedTeam === 'all') {
+                showToast("Por favor, selecione uma equipe específica para registrar uma lesão.");
+                submitLesaoBtn.disabled = false;
+                return;
+            }
+
             const lesao = {
-                equipe_id: selectedTeamId, // NEW
+                equipe_id: selectedTeam, // NEW: Assign to the currently selected team
                 atleta: document.getElementById('atletaLesao').value,
                 lesao: document.getElementById('lesao').value,
                 tratamento: document.getElementById('tratamento').value,
@@ -2851,15 +2845,41 @@
                 </div>
             `;
         }
-        
-        // MODIFIED: Populates based on the current team's data
+
         function populateAthleteDatalist() {
-            const athleteNamesFromProntidao = fullProntidaoData.map(d => d.atleta_id);
-            const athleteNamesFromCarga = fullCargaData.map(d => d.atleta_id);
+            const { prontidao, carga } = getFilteredData();
+            const athleteNamesFromProntidao = prontidao.map(d => d.atleta_id);
+            const athleteNamesFromCarga = carga.map(d => d.atleta_id);
             const allNames = [...new Set([...athleteNamesFromProntidao, ...athleteNamesFromCarga])];
             
             const datalist = document.getElementById('atleta-list-options');
-            datalist.innerHTML = allNames.map(name => `<option value="${name}"></option>`).join('');
+            if (datalist) {
+                datalist.innerHTML = allNames.map(name => `<option value="${name}"></option>`).join('');
+            }
+        }
+        
+        // NEW: Dynamically populates the team filter dropdown
+        function populateTeamFilter() {
+            const allData = [...allProntidaoData, ...allCargaData, ...allLesoesData, ...allTreinosFisicos, ...allTreinosCampo];
+            const teamIds = [...new Set(allData.map(d => d.equipe_id).filter(Boolean))].sort();
+
+            const savedValue = localStorage.getItem('selectedTeamFilter') || 'all';
+            
+            // Keep track of existing options to avoid flicker
+            const existingOptions = new Set(Array.from(teamFilterSelector.options).map(opt => opt.value));
+
+            // Add new teams
+            teamIds.forEach(teamId => {
+                if (!existingOptions.has(teamId)) {
+                    const option = document.createElement('option');
+                    option.value = teamId;
+                    option.textContent = teamId;
+                    teamFilterSelector.appendChild(option);
+                }
+            });
+
+            // Set the saved value
+            teamFilterSelector.value = savedValue;
         }
 
         function showConfirmationModal(text, onConfirm, title = "Confirmar Ação") {
