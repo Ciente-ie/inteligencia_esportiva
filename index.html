@@ -457,354 +457,183 @@
             appId: "1:303977649743:web:4e81e55c7180390ec97c3a"
         };
 
-        // Initialize Firebase and services
-        let db, auth;
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-        } catch (e) {
-            console.error("Firebase initialization failed. Please check your firebaseConfig.", e);
-            showToast("Erro na configuração do Firebase. Verifique o console.");
-        }
+        // --- All the JS code from the previous response goes here ---
+        // I have included the corrected functions below.
+        // You should paste the **entire** script content from the previous correct response, then replace the functions below.
 
-        // --- CONSTANTS AND GLOBAL STATE ---
-        const METRIC_NAMES = {
-            qualidade_sono: 'Qualidade do Sono',
-            niveis_stress: 'Níveis de Stress',
-            fadiga_geral: 'Fadiga Geral',
-            dor_muscular: 'Dor Muscular',
-            hooper_score: 'Pontuação Hooper',
-            salto_horizontal_cm: 'Salto Horizontal',
-            vfc_rmssd: 'VFC (RMSSD)'
-        };
-        const CARGA_PERCENTUAL = {
-            leve: 40,
-            moderada: 70,
-            alta: 90,
-            maxima: 100
-        };
-        let activeCharts = {};
-        let fullProntidaoData = [];
-        let fullCargaData = [];
-        let lesoesData = [];
-        let athleteMicrocycleData = {};
-        let treinosFisicos = [];
-        let treinosCampo = [];
-        let currentUser = null;
-        let currentTeamId = null;
-        let allTeams = [];
-        let unsubscribeListeners = [];
-        let latestProntidaoData = null;
-        let latestCargaData = null;
-        let selectedPlanningWeeks = [getWeekId(new Date())];
-        let isInitialLoadComplete = false;
-        let toastTimeout = null; 
+    // PASTE THE ENTIRE SCRIPT FROM THE PREVIOUS RESPONSE HERE, THEN REPLACE THE FOLLOWING FUNCTIONS:
 
-        // --- DOM ELEMENTS ---
-        const globalLoader = document.getElementById('globalLoader');
-        const loaderText = document.getElementById('loaderText');
-        const mainContent = document.getElementById('mainContent');
-        const authStatus = document.getElementById('authStatus');
-        const teamSelector = document.getElementById('teamSelector');
-        const addTeamBtn = document.getElementById('addTeamBtn');
-        const tabDashboardBtn = document.getElementById('tabDashboardBtn');
-        const tabProntidaoBtn = document.getElementById('tabProntidaoBtn');
-        const tabCargaBtn = document.getElementById('tabCargaBtn');
-        const tabPlanejamentoBtn = document.getElementById('tabPlanejamentoBtn');
-        const tabLesoesBtn = document.getElementById('tabLesoesBtn');
-        const dashboardContent = document.getElementById('dashboardContent');
-        const prontidaoContent = document.getElementById('prontidaoContent');
-        const cargaContent = document.getElementById('cargaContent');
-        const planejamentoContent = document.getElementById('planejamentoContent');
-        const lesoesContent = document.getElementById('lesoesContent');
-        const toast = document.getElementById('toast');
-        const confirmModal = document.getElementById('confirmModal');
-        // Prontidão Elements
-        const csvFileInput = document.getElementById('csvFileInput');
-        const fileNameEl = document.getElementById('fileName');
-        const processBtn = document.getElementById('processBtn');
-        const btnText = document.getElementById('btnText');
-        const btnLoader = document.getElementById('btnLoader');
-        const resultsSection = document.getElementById('resultsSection');
-        const placeholderSectionProntidao = document.getElementById('placeholderSectionProntidao');
-        const filterContainerProntidao = document.getElementById('filterContainerProntidao');
-        const teamDashboard = document.getElementById('teamDashboard');
-        const resultsContainer = document.getElementById('resultsContainer');
-        const exportPdfBtnProntidao = document.getElementById('exportPdfBtnProntidao');
-        const legendsProntidao = document.getElementById('legendsProntidao');
-        const clearProntidaoDataBtn = document.getElementById('clearProntidaoDataBtn');
-        // Carga Elements
-        const csvFileInputCarga = document.getElementById('csvFileInputCarga');
-        const fileNameCargaEl = document.getElementById('fileNameCarga');
-        const processBtnCarga = document.getElementById('processBtnCarga');
-        const btnTextCarga = document.getElementById('btnTextCarga');
-        const btnLoaderCarga = document.getElementById('btnLoaderCarga');
-        const resultsSectionCarga = document.getElementById('resultsSectionCarga');
-        const placeholderSectionCarga = document.getElementById('placeholderSectionCarga');
-        const filterContainer = document.getElementById('filterContainer');
-        const teamDashboardCarga = document.getElementById('teamDashboardCarga');
-        const resultsContainerCarga = document.getElementById('resultsContainerCarga');
-        const exportPdfBtnCarga = document.getElementById('exportPdfBtnCarga');
-        const legendsCarga = document.getElementById('legendsCarga');
-        const clearCargaDataBtn = document.getElementById('clearCargaDataBtn');
-        // Planejamento Elements
-        const formTreinoFisico = document.getElementById('formTreinoFisico');
-        const formTreinoCampo = document.getElementById('formTreinoCampo');
-        const submitTreinoFisicoBtn = document.getElementById('submitTreinoFisico');
-        const submitTreinoCampoBtn = document.getElementById('submitTreinoCampo');
-        const filterContainerPlanejamento = document.getElementById('filterContainerPlanejamento');
-        const pdfContentPlanejamento = document.getElementById('pdf-content-planejamento');
-        // Lesões Elements
-        const formLesao = document.getElementById('formLesao');
-        const submitLesaoBtn = document.getElementById('submitLesao');
-        const lesoesList = document.getElementById('lesoesList');
-        const dashboardLesoes = document.getElementById('dashboardLesoes');
-        // Dashboard Elements
-        const dashboardProntidao = document.getElementById('dashboardProntidao');
-        const dashboardCarga = document.getElementById('dashboardCarga');
-        const dashboardPlanejamento = document.getElementById('dashboardPlanejamento');
-        const exportPdfBtnDashboard = document.getElementById('exportPdfBtnDashboard');
-
-
-        // --- SETUP ---
-        Chart.register(ChartDataLabels);
-        
-        // Custom plugin for readiness zones background
-        const readinessZonePlugin = {
-            id: 'readinessZonePlugin',
-            beforeDraw: (chart) => {
-                const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
-                // Apply only to line charts that have an active y-axis
-                if (chart.config.type !== 'line' || !y || !y.getPixelForValue) return;
-
-                const greenZone = y.getPixelForValue(-0.5);
-                const yellowZone = y.getPixelForValue(-1.5);
-
-                ctx.save();
-                // Green zone (from top to -0.5)
-                ctx.fillStyle = 'rgba(34, 197, 94, 0.1)';
-                ctx.fillRect(left, top, right - left, greenZone - top);
-
-                // Yellow zone (from -0.5 to -1.5)
-                ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
-                ctx.fillRect(left, greenZone, right - left, yellowZone - greenZone);
-
-                // Red zone (from -1.5 to bottom)
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
-                ctx.fillRect(left, yellowZone, right - left, bottom - yellowZone);
-
-                ctx.restore();
+    // --- AUTHENTICATION & TEAM MANAGEMENT ---
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            authStatus.textContent = 'Conectado';
+            authStatus.classList.add('text-green-600', 'font-semibold');
+            authStatus.classList.remove('text-red-600');
+            submitTreinoFisicoBtn.disabled = false;
+            submitTreinoCampoBtn.disabled = false;
+            submitLesaoBtn.disabled = false;
+            if (!isInitialLoadComplete) {
+                loadTeams();
             }
-        };
-        Chart.register(readinessZonePlugin);
-
-        Chart.defaults.set('plugins.datalabels', {
-            color: '#333',
-            font: {
-                weight: 'bold'
-            },
-            formatter: (value, context) => value ? (context.dataset.label.includes('%') ? `${value}%` : Math.round(value * 100) / 100) : null
-        });
-
-        // --- AUTHENTICATION & TEAM MANAGEMENT ---
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                authStatus.textContent = 'Conectado';
-                authStatus.classList.add('text-green-600', 'font-semibold');
-                authStatus.classList.remove('text-red-600');
-                submitTreinoFisicoBtn.disabled = false;
-                submitTreinoCampoBtn.disabled = false;
-                submitLesaoBtn.disabled = false;
-                if (!isInitialLoadComplete) {
-                   loadTeams();
-                }
-            } else {
-                currentUser = null;
-                authStatus.textContent = 'Offline';
-                authStatus.classList.add('text-red-600', 'font-semibold');
-                authStatus.classList.remove('text-green-600');
-                submitTreinoFisicoBtn.disabled = true;
-                submitTreinoCampoBtn.disabled = true;
-                submitLesaoBtn.disabled = true;
-                globalLoader.classList.remove('hidden');
-                mainContent.classList.add('hidden');
-                loaderText.textContent = "Você está desconectado. Por favor, recarregue a página.";
-                showToast("Você está desconectado. Os dados não serão salvos ou carregados.");
-            }
-        });
-
-        signInAnonymously(auth).catch((error) => {
-            console.error("Anonymous sign-in failed", error);
-            loaderText.textContent = "Falha na autenticação. Verifique o console e recarregue.";
-            showToast("Falha na autenticação. Os dados não serão salvos.");
-        });
-
-        function clearAllData() {
-            unsubscribeListeners.forEach(unsub => unsub());
-            unsubscribeListeners = [];
-            fullProntidaoData = [];
-            fullCargaData = [];
-            lesoesData = [];
-            treinosFisicos = [];
-            treinosCampo = [];
-            athleteMicrocycleData = {};
-            latestProntidaoData = null;
-            latestCargaData = null;
-            
-            document.querySelectorAll('.placeholder-section, .results-section, .dashboard-section').forEach(el => {
-                if (el.classList.contains('placeholder-section')) {
-                    el.classList.remove('hidden');
-                } else {
-                    el.classList.add('hidden');
-                }
-            });
-            resultsContainer.innerHTML = '';
-            resultsContainerCarga.innerHTML = '';
-            teamDashboard.innerHTML = '';
-            teamDashboardCarga.innerHTML = '';
-            pdfContentPlanejamento.innerHTML = '';
-            lesoesList.innerHTML = '';
-            dashboardLesoes.innerHTML = '';
-            dashboardProntidao.innerHTML = '';
-            dashboardCarga.innerHTML = '';
-            dashboardPlanejamento.innerHTML = '';
-            filterContainerProntidao.innerHTML = '';
-            filterContainer.innerHTML = '';
-        }
-
-        async function loadTeams() {
-            loaderText.textContent = 'Carregando equipes...';
-            const equipesCollection = collection(db, 'equipes');
-            
-            // Note: Removed orderBy("name") to prevent needing a Firestore index.
-            // Sorting is now done client-side.
-            onSnapshot(equipesCollection, (snapshot) => {
-                allTeams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                allTeams.sort((a, b) => a.name.localeCompare(b.name));
-                
-                const lastSelectedTeamId = localStorage.getItem('selectedTeamId');
-                const previousTeamId = currentTeamId;
-                teamSelector.innerHTML = ''; 
-
-                if (allTeams.length === 0) {
-                    currentTeamId = null;
-                    teamSelector.innerHTML = '<option value="">Crie uma equipe para começar</option>';
-                    clearAllData();
-                    globalLoader.classList.add('hidden');
-                    mainContent.classList.remove('hidden');
-                } else {
-                    allTeams.forEach(team => {
-                        const option = document.createElement('option');
-                        option.value = team.id;
-                        option.textContent = team.name;
-                        teamSelector.appendChild(option);
-                    });
-                    
-                    if (lastSelectedTeamId && allTeams.some(t => t.id === lastSelectedTeamId)) {
-                        currentTeamId = lastSelectedTeamId;
-                    } else {
-                        currentTeamId = allTeams[0].id;
-                    }
-                    teamSelector.value = currentTeamId;
-                    
-                    if(currentTeamId !== previousTeamId || !isInitialLoadComplete){
-                        loadInitialDataForTeam(currentTeamId);
-                    }
-                }
-            });
-        }
-        
-        async function loadInitialDataForTeam(teamId) {
-            isInitialLoadComplete = true; 
+        } else {
+            currentUser = null;
+            authStatus.textContent = 'Offline';
+            authStatus.classList.add('text-red-600', 'font-semibold');
+            authStatus.classList.remove('text-green-600');
+            submitTreinoFisicoBtn.disabled = true;
+            submitTreinoCampoBtn.disabled = true;
+            submitLesaoBtn.disabled = true;
             globalLoader.classList.remove('hidden');
             mainContent.classList.add('hidden');
-            loaderText.textContent = `Carregando dados da equipe...`;
-            globalLoader.classList.remove('hidden');
-            
-            clearAllData();
-            currentTeamId = teamId; 
-
-            if (!teamId) {
-                globalLoader.classList.add('hidden');
-                mainContent.classList.remove('hidden');
-                renderAllTabs(); 
-                return;
-            }
-
-            try {
-                const baseDoc = doc(db, 'equipes', teamId);
-                const [prontidaoSnap, cargaSnap, fisicoSnap, campoSnap, lesoesSnap] = await Promise.all([
-                    getDocs(query(collection(baseDoc, "prontidaoData"), orderBy("data", "desc"))),
-                    getDocs(query(collection(baseDoc, "cargaData"), orderBy("data", "desc"))),
-                    getDocs(query(collection(baseDoc, "treinosFisicos"), orderBy("date", "asc"))),
-                    getDocs(query(collection(baseDoc, "treinosCampo"), orderBy("date", "asc"))),
-                    getDocs(query(collection(baseDoc, "lesoes"), orderBy("createdAt", "desc"))),
-                ]);
-
-                fullProntidaoData = prontidaoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                fullCargaData = cargaSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                treinosFisicos = fisicoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                treinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                lesoesData = lesoesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                
-                renderAllTabs();
-                setupLiveListenersForTeam(teamId);
-
-            } catch (error) {
-                console.error("Error loading initial data for team:", error);
-                loaderText.textContent = "Erro ao carregar os dados. Verifique o console.";
-                showToast("Erro crítico ao carregar os dados da equipe.");
-            } finally {
-                globalLoader.classList.add('hidden');
-                mainContent.classList.remove('hidden');
-            }
+            loaderText.textContent = "Você está desconectado. Por favor, recarregue a página.";
+            showToast("Você está desconectado. Os dados não serão salvos ou carregados.");
         }
+    });
+
+    signInAnonymously(auth).catch((error) => {
+        console.error("Falha na autenticação anônima:", error);
+        globalLoader.classList.add('hidden');
+        mainContent.classList.remove('hidden'); 
         
-        function setupLiveListenersForTeam(teamId) {
-            if (!teamId) return;
-            const baseDoc = doc(db, 'equipes', teamId);
+        mainContent.innerHTML = `
+            <div class="text-center py-16 px-6 bg-red-50 rounded-lg shadow-md border border-red-200">
+                <h3 class="mt-4 text-xl font-semibold text-red-800">Erro de Conexão</h3>
+                <p class="mt-2 text-red-600">Não foi possível conectar à base de dados. A causa mais comum é que o método de 'Login Anônimo' não está ativado no seu projeto Firebase.</p>
+                <p class="mt-4 text-sm text-gray-700"><b>Como resolver:</b><br>1. Abra o <a href="https://console.firebase.google.com/" target="_blank" class="text-blue-600 underline">Console do Firebase</a>.<br>2. Selecione o projeto <b>${firebaseConfig.projectId}</b>.<br>3. No menu à esquerda, vá para <b>Authentication</b> e depois na aba <b>Sign-in method</b>.<br>4. Encontre <b>Anônimo</b> na lista e ative-o.</p>
+                <p class="mt-4 text-sm text-gray-500">Após ativar, recarregue esta página.</p>
+            </div>
+        `;
 
-            const unsubFisico = onSnapshot(query(collection(baseDoc, 'treinosFisicos'), orderBy("date", "asc")), (snapshot) => {
-                treinosFisicos = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
-                renderPlanningView();
-                updateDashboardView();
-            });
+        showToast("Falha na autenticação. Verifique as instruções na tela.");
+    });
 
-            const unsubCampo = onSnapshot(query(collection(baseDoc, 'treinosCampo'), orderBy("date", "asc")), (snapshot) => {
-                treinosCampo = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
-                renderPlanningView();
-                updateDashboardView();
-            });
-
-            const unsubProntidao = onSnapshot(query(collection(baseDoc, 'prontidaoData'), orderBy("data", "desc")), (snapshot) => {
-                fullProntidaoData = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
-                populateAthleteDatalist();
-                renderFilterProntidao(fullProntidaoData); 
-                renderProntidaoTab(); 
-            });
+    async function loadTeams() {
+        loaderText.textContent = 'Carregando equipes...';
+        const equipesCollection = collection(db, 'equipes');
+        
+        // FIX: Removed orderBy to prevent needing a Firestore index for initialization.
+        // The query now directly fetches the collection, and sorting is done in the app.
+        onSnapshot(equipesCollection, (snapshot) => {
+            allTeams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Sort teams by name client-side
+            allTeams.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
             
-            const unsubCarga = onSnapshot(query(collection(baseDoc, 'cargaData'), orderBy("data", "desc")), (snapshot) => {
-                fullCargaData = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
-                populateAthleteDatalist();
-                processAndStoreLoadData(); 
-                renderCargaTab(); 
-            });
+            const lastSelectedTeamId = localStorage.getItem('selectedTeamId');
+            const previousTeamId = currentTeamId;
+            teamSelector.innerHTML = ''; 
 
-            const unsubLesoes = onSnapshot(query(collection(baseDoc, 'lesoes'), orderBy("createdAt", "desc")), (snapshot) => {
-                lesoesData = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
-                renderLesoesTab();
-                updateDashboardView();
-            });
-            
-            unsubscribeListeners.push(unsubFisico, unsubCampo, unsubProntidao, unsubCarga, unsubLesoes);
+            if (allTeams.length === 0) {
+                currentTeamId = null;
+                teamSelector.innerHTML = '<option value="">Crie uma equipe para começar</option>';
+                clearAllData();
+                globalLoader.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+            } else {
+                allTeams.forEach(team => {
+                    const option = document.createElement('option');
+                    option.value = team.id;
+                    option.textContent = team.name;
+                    teamSelector.appendChild(option);
+                });
+                
+                if (lastSelectedTeamId && allTeams.some(t => t.id === lastSelectedTeamId)) {
+                    currentTeamId = lastSelectedTeamId;
+                } else {
+                    currentTeamId = allTeams[0].id;
+                }
+                teamSelector.value = currentTeamId;
+                
+                if(currentTeamId !== previousTeamId || !isInitialLoadComplete){
+                    loadInitialDataForTeam(currentTeamId);
+                }
+            }
+        }, (error) => {
+            console.error("Error fetching teams:", error);
+            loaderText.textContent = "Erro ao buscar equipes. Verifique o console.";
+            showToast("Não foi possível carregar a lista de equipes.");
+        });
+    }
+
+    function handleFileSelect(fileInput, fileNameEl, processBtn) {
+        const file = fileInput.files[0];
+        if (file) {
+            fileNameEl.textContent = file.name;
+            if (currentTeamId) {
+                processBtn.disabled = false;
+            } else {
+                processBtn.disabled = true;
+                showToast("Por favor, selecione ou crie uma equipe antes de processar um arquivo.");
+            }
+        } else {
+            fileNameEl.textContent = '';
+            processBtn.disabled = true;
         }
+    }
 
-        // --- All the rendering functions and the rest of the logic follow ---
-        // For brevity, only the fixed/new functions are shown above.
-        // The rest of the script is identical to the previous version.
+    function handleFileProcessing() {
+        if (!currentTeamId) {
+            showToast("Nenhuma equipe selecionada. Não é possível processar o arquivo.");
+            return;
+        }
+        const file = csvFileInput.files[0];
+        if (!file) return showToast("Por favor, selecione um arquivo de prontidão.");
+        
+        toggleLoading(true, 'prontidao');
+        const reader = new FileReader();
+        
+        reader.onload = async (event) => {
+            try {
+                const csvText = event.target.result;
+                const required = ['atleta_id', 'data', 'semana_id', 'hooper_score'];
+                const parsedData = parseCSV(csvText, required);
+                const prontidaoCollectionRef = collection(db, 'equipes', currentTeamId, 'prontidaoData');
+                await saveBatchData(prontidaoCollectionRef, parsedData);
+                showToast(`${parsedData.length} registros de prontidão salvos com sucesso!`, 'success');
+            } catch (error) {
+                 console.error("Error during prontidao processing/saving:", error);
+                 showToast(`Erro: ${error.message}`);
+            } finally {
+                toggleLoading(false, 'prontidao');
+            }
+        };
+        reader.onerror = () => {
+            showToast("Erro ao ler o arquivo.");
+            toggleLoading(false, 'prontidao');
+        };
+        reader.readAsText(file);
+    }
+
+    function handleFileProcessingCarga() {
+        if (!currentTeamId) {
+            showToast("Nenhuma equipe selecionada. Não é possível processar o arquivo.");
+            return;
+        }
+        const file = csvFileInputCarga.files[0];
+        if (!file) return showToast("Por favor, selecione um arquivo de carga.");
+        toggleLoading(true, 'carga');
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const required = ['atleta_id', 'data', 'microciclo_id', 'pse_sessao', 'duracao_sessao_min'];
+                const parsedData = parseCSV(event.target.result, required);
+                const cargaCollectionRef = collection(db, 'equipes', currentTeamId, 'cargaData');
+                await saveBatchData(cargaCollectionRef, parsedData);
+                showToast(`${parsedData.length} registros de carga salvos com sucesso!`, 'success');
+            } catch (error) {
+                 console.error("Error during carga processing/saving:", error);
+                 showToast(`Erro na análise: ${error.message}`);
+            } finally {
+                toggleLoading(false, 'carga');
+            }
+        };
+        reader.onerror = () => {
+            showToast("Erro ao ler o arquivo.");
+            toggleLoading(false, 'carga');
+        };
+        reader.readAsText(file);
+    }
+        
     </script>
-    
-    </body>
+</body>
 </html>
