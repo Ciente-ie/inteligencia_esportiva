@@ -1203,7 +1203,7 @@
 
         function getStats(data) {
             const filteredData = data.filter(d => typeof d === 'number' && !isNaN(d));
-            if (filteredData.length === 0) return { mean: 0, stdDev: 0, sum: 0, count: 0 };
+            if (filteredData.length === 0) return { mean: NaN, stdDev: 0, sum: 0, count: 0 };
             const sum = filteredData.reduce((a, b) => a + b, 0);
             const mean = sum / filteredData.length;
             const stdDev = Math.sqrt(filteredData.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / (filteredData.length > 1 ? filteredData.length - 1 : 1));
