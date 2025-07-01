@@ -70,6 +70,9 @@
             background-color: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(4px);
         }
+        #logoModal {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
 
     </style>
 </head>
@@ -123,9 +126,6 @@
                 </button>
                 <button id="tabLesoesBtn" class="tab-btn text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
                     Lesões
-                </button>
-                 <button id="tabConfigBtn" class="tab-btn text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
-                    Configurações
                 </button>
             </div>
         </div>
@@ -281,7 +281,10 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-1 space-y-8">
                     <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino Físico</h3>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold text-gray-800">Cadastrar Treino Físico</h3>
+                            <button id="btnGerenciarLogo" class="btn text-sm bg-gray-200 text-gray-800 font-semibold py-1 px-3 rounded-lg hover:bg-gray-300">Gerenciar Logo</button>
+                        </div>
                         <form id="formTreinoFisico" class="space-y-4">
                             <div>
                                 <label for="equipeIdFisico" class="block text-sm font-medium text-gray-700 mb-1">ID da Equipe</label>
@@ -432,30 +435,7 @@
         </div>
 
         <div id="configContent" class="hidden">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Nova Equipe</h3>
-                    <form id="formNovaEquipe" class="space-y-4">
-                        <div>
-                            <label for="novaEquipeId" class="block text-sm font-medium text-gray-700 mb-1">ID da Equipe (Nome único)</label>
-                            <input type="text" id="novaEquipeId" class="w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
-                        </div>
-                        <div>
-                            <label for="novaEquipeLogoUrl" class="block text-sm font-medium text-gray-700 mb-1">URL do Logo</label>
-                            <input type="url" id="novaEquipeLogoUrl" class="w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="https://example.com/logo.png">
-                        </div>
-                        <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700">Salvar Nova Equipe</button>
-                    </form>
-                </div>
-                 <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Equipes Cadastradas</h3>
-                    <div id="equipesListContainer" class="space-y-4">
-                        <p class="text-gray-500">Nenhuma equipe cadastrada ainda.</p>
-                    </div>
-                 </div>
-            </div>
-        </div>
-
+             </div>
 
     </div>
 
@@ -473,7 +453,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h3 id="modalTitle" class="text-lg leading-6 font-medium text-gray-900 mt-2">Remover Treino</h3>
+          <h3 id="modalTitle" class="text-lg leading-6 font-medium text-gray-900 mt-2"></h3>
           <div class="mt-2 px-7 py-3">
             <p id="modalText" class="text-sm text-gray-500"></p>
           </div>
@@ -484,173 +464,59 @@
         </div>
       </div>
     </div>
-
+    
+    <div id="logoModal" class="fixed inset-0 z-50 items-center justify-center hidden">
+      <div class="fixed inset-0 bg-gray-900 bg-opacity-50" id="logoModalBackdrop"></div>
+      <div class="relative bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Gerenciar Logo para a Equipe: <span id="modalTeamName" class="text-blue-600"></span></h3>
+        <form id="formLogo">
+            <div>
+                <label for="logoUrlInput" class="block text-sm font-medium text-gray-700">URL do Logo</label>
+                <input type="url" id="logoUrlInput" class="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="https://exemplo.com/logo.png" required>
+            </div>
+            <div class="mt-6 flex justify-end gap-x-3">
+                <button type="button" id="cancelLogoBtn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">Cancelar</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Salvar</button>
+            </div>
+        </form>
+      </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs, where, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCSxaH-QFQbhrCttS-J8KmVN1MXmjXqY1s",
-            authDomain: "meu-scout-pro.firebaseapp.com",
-            projectId: "meu-scout-pro",
-            storageBucket: "meu-scout-pro.appspot.com",
-            messagingSenderId: "303977649743",
-            appId: "1:303977649743:web:4e81e55c7180390ec97c3a"
-        };
+        // --- CÓDIGO JAVASCRIPT ---
+        // (O código JS da resposta anterior, com as modificações para o modal de logo e o ajuste visual, deve ser colado aqui.)
+        // Para concisão, apenas as funções novas ou significativamente alteradas são mostradas abaixo.
+        // O restante do JS permanece o mesmo da versão anterior (sem a aba de configurações).
 
-        let db, auth;
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-        } catch (e) {
-            console.error("Firebase initialization failed:", e);
-            showToast("Erro na configuração do Firebase.");
-        }
+        // ... (todo o código JS anterior)
+        
+        // --- Adicione/Altere estas partes no seu JavaScript ---
 
+        // Coleções do Firebase
         const treinosFisicosCollection = collection(db, 'treinosFisicos');
         const treinosCampoCollection = collection(db, 'treinosCampo');
         const prontidaoCollection = collection(db, 'prontidaoData');
         const cargaCollection = collection(db, 'cargaData');
         const lesoesCollection = collection(db, 'lesoes');
-        const equipesCollection = collection(db, 'equipes');
+        const equipesCollection = collection(db, 'equipes'); // Para salvar os logos
 
-        const METRIC_NAMES = {
-            qualidade_sono: 'Qualidade do Sono', niveis_stress: 'Níveis de Stress', fadiga_geral: 'Fadiga Geral', dor_muscular: 'Dor Muscular',
-            hooper_score: 'Pontuação Hooper', salto_horizontal_cm: 'Salto Horizontal', vfc_rmssd: 'VFC (RMSSD)'
-        };
-        const CARGA_PERCENTUAL = { leve: 40, moderada: 70, alta: 90, maxima: 100 };
-        
-        let activeCharts = {};
-        let fullProntidaoData = [], fullCargaData = [], lesoesData = [], treinosFisicos = [], treinosCampo = [];
-        let equipesData = {};
-        let athleteMicrocycleData = {};
-        let currentUser = null;
-        let latestProntidaoData = null, latestCargaData = null;
-        let selectedPlanningWeeks = [getWeekId(new Date())];
-        let isInitialLoadComplete = false;
-        let toastTimeout = null; 
-        let selectedTeam = 'all'; 
+        // Estado Global
+        let equipesData = {}; // Para armazenar os dados dos logos
 
-        const globalLoader = document.getElementById('globalLoader');
-        const loaderText = document.getElementById('loaderText');
-        const mainContent = document.getElementById('mainContent');
-        const authStatus = document.getElementById('authStatus');
-        const teamFilterSelect = document.getElementById('teamFilterSelect'); 
-        const teamLogoContainer = document.getElementById('teamLogoContainer');
-        const teamLogo = document.getElementById('teamLogo');
-        
-        const tabDashboardBtn = document.getElementById('tabDashboardBtn');
-        const tabProntidaoBtn = document.getElementById('tabProntidaoBtn');
-        const tabCargaBtn = document.getElementById('tabCargaBtn');
-        const tabPlanejamentoBtn = document.getElementById('tabPlanejamentoBtn');
-        const tabLesoesBtn = document.getElementById('tabLesoesBtn');
-        const tabConfigBtn = document.getElementById('tabConfigBtn');
-        
-        const dashboardContent = document.getElementById('dashboardContent');
-        const prontidaoContent = document.getElementById('prontidaoContent');
-        const cargaContent = document.getElementById('cargaContent');
-        const planejamentoContent = document.getElementById('planejamentoContent');
-        const lesoesContent = document.getElementById('lesoesContent');
-        const configContent = document.getElementById('configContent');
+        // Elementos do DOM para o Modal
+        const btnGerenciarLogo = document.getElementById('btnGerenciarLogo');
+        const logoModal = document.getElementById('logoModal');
+        const logoModalBackdrop = document.getElementById('logoModalBackdrop');
+        const formLogo = document.getElementById('formLogo');
+        const cancelLogoBtn = document.getElementById('cancelLogoBtn');
+        const modalTeamName = document.getElementById('modalTeamName');
+        const logoUrlInput = document.getElementById('logoUrlInput');
 
-        const toast = document.getElementById('toast');
-        const confirmModal = document.getElementById('confirmModal');
-        const csvFileInput = document.getElementById('csvFileInput');
-        const fileNameEl = document.getElementById('fileName');
-        const processBtn = document.getElementById('processBtn');
-        const btnText = document.getElementById('btnText');
-        const btnLoader = document.getElementById('btnLoader');
-        const resultsSection = document.getElementById('resultsSection');
-        const placeholderSectionProntidao = document.getElementById('placeholderSectionProntidao');
-        const filterContainerProntidao = document.getElementById('filterContainerProntidao');
-        const teamDashboard = document.getElementById('teamDashboard');
-        const resultsContainer = document.getElementById('resultsContainer');
-        const exportPdfBtnProntidao = document.getElementById('exportPdfBtnProntidao');
-        const legendsProntidao = document.getElementById('legendsProntidao');
-        const clearProntidaoDataBtn = document.getElementById('clearProntidaoDataBtn');
-        const csvFileInputCarga = document.getElementById('csvFileInputCarga');
-        const fileNameCargaEl = document.getElementById('fileNameCarga');
-        const processBtnCarga = document.getElementById('processBtnCarga');
-        const btnTextCarga = document.getElementById('btnTextCarga');
-        const btnLoaderCarga = document.getElementById('btnLoaderCarga');
-        const resultsSectionCarga = document.getElementById('resultsSectionCarga');
-        const placeholderSectionCarga = document.getElementById('placeholderSectionCarga');
-        const filterContainer = document.getElementById('filterContainer');
-        const teamDashboardCarga = document.getElementById('teamDashboardCarga');
-        const resultsContainerCarga = document.getElementById('resultsContainerCarga');
-        const exportPdfBtnCarga = document.getElementById('exportPdfBtnCarga');
-        const legendsCarga = document.getElementById('legendsCarga');
-        const clearCargaDataBtn = document.getElementById('clearCargaDataBtn');
-        const formTreinoFisico = document.getElementById('formTreinoFisico');
-        const formTreinoCampo = document.getElementById('formTreinoCampo');
-        const submitTreinoFisicoBtn = document.getElementById('submitTreinoFisico');
-        const submitTreinoCampoBtn = document.getElementById('submitTreinoCampo');
-        const filterContainerPlanejamento = document.getElementById('filterContainerPlanejamento');
-        const pdfContentPlanejamento = document.getElementById('pdf-content-planejamento');
-        const equipeIdFisicoInput = document.getElementById('equipeIdFisico');
-        const equipeIdCampoInput = document.getElementById('equipeIdCampo');
-        const formLesao = document.getElementById('formLesao');
-        const submitLesaoBtn = document.getElementById('submitLesao');
-        const lesoesList = document.getElementById('lesoesList');
-        const dashboardLesoes = document.getElementById('dashboardLesoes');
-        const equipeIdLesaoInput = document.getElementById('equipeIdLesao');
-        const dashboardProntidao = document.getElementById('dashboardProntidao');
-        const dashboardCarga = document.getElementById('dashboardCarga');
-        const dashboardPlanejamento = document.getElementById('dashboardPlanejamento');
-        const exportPdfBtnDashboard = document.getElementById('exportPdfBtnDashboard');
-        const formNovaEquipe = document.getElementById('formNovaEquipe');
-        const equipesListContainer = document.getElementById('equipesListContainer');
-        
-        Chart.register(ChartDataLabels);
-        const readinessZonePlugin = {
-            id: 'readinessZonePlugin',
-            beforeDraw: (chart) => {
-                const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
-                if (chart.config.type !== 'line' || !y || !y.getPixelForValue) return;
-                const greenZone = y.getPixelForValue(-0.5);
-                const yellowZone = y.getPixelForValue(-1.5);
-                ctx.save();
-                ctx.fillStyle = 'rgba(34, 197, 94, 0.1)';
-                ctx.fillRect(left, top, right - left, greenZone - top);
-                ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
-                ctx.fillRect(left, greenZone, right - left, yellowZone - greenZone);
-                ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
-                ctx.fillRect(left, yellowZone, right - left, bottom - yellowZone);
-                ctx.restore();
-            }
-        };
-        Chart.register(readinessZonePlugin);
-        Chart.defaults.set('plugins.datalabels', {
-            color: '#333', font: { weight: 'bold' },
-            formatter: (value, context) => value ? (context.dataset.label.includes('%') ? `${value}%` : Math.round(value * 100) / 100) : null
-        });
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                authStatus.textContent = 'Conectado';
-                authStatus.classList.add('text-green-600', 'font-semibold');
-                authStatus.classList.remove('text-red-600');
-                if (!isInitialLoadComplete) { loadInitialData(); }
-            } else {
-                currentUser = null;
-                authStatus.textContent = 'Offline';
-                authStatus.classList.add('text-red-600', 'font-semibold');
-                authStatus.classList.remove('text-green-600');
-                loaderText.textContent = "Você está desconectado. Recarregue a página.";
-                showToast("Você está desconectado. Os dados não serão salvos ou carregados.");
-            }
-        });
-
-        signInAnonymously(auth).catch((error) => {
-            console.error("Anonymous sign-in failed", error);
-            loaderText.textContent = "Falha na autenticação.";
-            showToast("Falha na autenticação. Os dados não serão salvos.");
-        });
-
+        // Carregamento Inicial
         async function loadInitialData() {
             isInitialLoadComplete = true; 
             loaderText.textContent = 'Carregando dados...';
@@ -661,7 +527,7 @@
                     getDocs(query(treinosFisicosCollection, orderBy("date", "asc"))),
                     getDocs(query(treinosCampoCollection, orderBy("date", "asc"))),
                     getDocs(query(lesoesCollection, orderBy("createdAt", "desc"))),
-                    getDocs(query(equipesCollection)),
+                    getDocs(query(equipesCollection)), // Carrega os dados dos logos
                 ]);
 
                 fullProntidaoData = prontidaoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -669,7 +535,7 @@
                 treinosFisicos = fisicoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 treinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 lesoesData = lesoesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                equipesSnap.forEach(doc => { equipesData[doc.id] = doc.data(); });
+                equipesSnap.forEach(doc => { equipesData[doc.id] = doc.data(); }); // Armazena os logos
                 
                 populateTeamFilter(); 
                 handleTeamChange();
@@ -686,40 +552,52 @@
             }
         }
         
+        // Listeners em tempo real
         function setupLiveListeners() {
-            onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
-                treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderPlanningView(); updateDashboardView();
-            });
-            onSnapshot(query(treinosCampoCollection, orderBy("date", "asc")), (snapshot) => {
-                treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderPlanningView(); updateDashboardView();
-            });
-            onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
-                fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                populateTeamFilter(); populateAthleteDatalist(); renderProntidaoTab(); 
-            });
-            onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
-                fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                populateTeamFilter(); populateAthleteDatalist(); renderCargaTab(); 
-            });
-            onSnapshot(query(lesoesCollection, orderBy("createdAt", "desc")), (snapshot) => {
-                lesoesData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderLesoesTab(); updateDashboardView();
-            });
+            // ... (todos os outros listeners)
             onSnapshot(query(equipesCollection), (snapshot) => {
                 equipesData = {};
                 snapshot.forEach(doc => { equipesData[doc.id] = doc.data(); });
-                populateTeamFilter(); handleTeamChange(); renderConfigTab();
+                handleTeamChange(); // Atualiza o logo se for alterado
             });
         }
-
-        teamFilterSelect.addEventListener('change', (e) => {
-            selectedTeam = e.target.value;
-            handleTeamChange();
-            renderAllTabs();
+        
+        // Gerenciamento do Logo
+        btnGerenciarLogo.addEventListener('click', () => {
+            if (selectedTeam === 'all') {
+                showToast("Por favor, selecione uma equipe para gerenciar o logo.");
+                return;
+            }
+            modalTeamName.textContent = selectedTeam;
+            logoUrlInput.value = equipesData[selectedTeam]?.logoUrl || '';
+            logoModal.classList.remove('hidden');
+            logoModal.classList.add('flex');
         });
 
+        function closeLogoModal() {
+            logoModal.classList.add('hidden');
+            logoModal.classList.remove('flex');
+        }
+
+        logoModalBackdrop.addEventListener('click', closeLogoModal);
+        cancelLogoBtn.addEventListener('click', closeLogoModal);
+
+        formLogo.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newLogoUrl = logoUrlInput.value.trim();
+            if (selectedTeam === 'all') return;
+            
+            try {
+                await setDoc(doc(db, "equipes", selectedTeam), { logoUrl: newLogoUrl });
+                showToast(`Logo da equipe '${selectedTeam}' atualizado!`, 'success');
+                closeLogoModal();
+            } catch (error) {
+                console.error("Erro ao salvar o logo:", error);
+                showToast("Não foi possível salvar o logo.");
+            }
+        });
+
+        // Atualização da função handleTeamChange
         function handleTeamChange() {
             const isTeamSelected = selectedTeam !== 'all';
             
@@ -731,6 +609,7 @@
                 submitTreinoFisicoBtn.disabled = !currentUser;
                 submitTreinoCampoBtn.disabled = !currentUser;
 
+                // Exibe o logo
                 if (equipesData[selectedTeam]?.logoUrl) {
                     teamLogo.src = equipesData[selectedTeam].logoUrl;
                     teamLogoContainer.classList.remove('hidden');
@@ -747,211 +626,8 @@
                 teamLogoContainer.classList.add('hidden');
             }
         }
-
-        tabDashboardBtn.addEventListener('click', () => switchTab('dashboard'));
-        tabProntidaoBtn.addEventListener('click', () => switchTab('prontidao'));
-        tabCargaBtn.addEventListener('click', () => switchTab('carga'));
-        tabPlanejamentoBtn.addEventListener('click', () => switchTab('planejamento'));
-        tabLesoesBtn.addEventListener('click', () => switchTab('lesoes'));
-        tabConfigBtn.addEventListener('click', () => switchTab('config'));
         
-        csvFileInput.addEventListener('change', () => handleFileSelect(csvFileInput, fileNameEl, processBtn));
-        processBtn.addEventListener('click', handleFileProcessing);
-        exportPdfBtnProntidao.addEventListener('click', () => exportToPDF('prontidao'));
-        resultsContainer.addEventListener('click', (e) => toggleDetails(e, 'prontidao'));
-        filterContainerProntidao.addEventListener('change', () => renderProntidaoTab());
-        clearProntidaoDataBtn.addEventListener('click', clearProntidaoData);
-
-        csvFileInputCarga.addEventListener('change', () => handleFileSelect(csvFileInputCarga, fileNameCargaEl, processBtnCarga));
-        processBtnCarga.addEventListener('click', handleFileProcessingCarga);
-        exportPdfBtnCarga.addEventListener('click', () => exportToPDF('carga'));
-        resultsContainerCarga.addEventListener('click', (e) => toggleDetails(e, 'carga'));
-        filterContainer.addEventListener('change', (e) => { if (e.target.classList.contains('microciclo-checkbox')) { renderCargaTab(); } });
-        clearCargaDataBtn.addEventListener('click', clearCargaData);
-        
-        formTreinoFisico.addEventListener('submit', handleFormFisicoSubmit);
-        formTreinoCampo.addEventListener('submit', handleFormCampoSubmit);
-        formLesao.addEventListener('submit', handleFormLesaoSubmit);
-        formNovaEquipe.addEventListener('submit', handleNovaEquipeSubmit);
-        
-        document.getElementById('dataTreinoFisico').addEventListener('change', (e) => {
-            const date = e.target.valueAsDate; if (date) { const utcDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000)); document.getElementById('semanaIdFisico').value = getWeekId(utcDate) || ''; }
-        });
-        document.getElementById('dataTreinoCampo').addEventListener('change', (e) => {
-            const date = e.target.valueAsDate; if (date) { const utcDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000)); document.getElementById('semanaIdCampo').value = getWeekId(utcDate) || ''; }
-        });
-
-        filterContainerPlanejamento.addEventListener('change', (e) => {
-             if (e.target.classList.contains('planning-week-checkbox')) {
-                const selectedCheckboxes = document.querySelectorAll('.planning-week-checkbox:checked');
-                selectedPlanningWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
-                renderPlanningView(); updateDashboardView();
-            }
-        });
-        exportPdfBtnDashboard.addEventListener('click', () => exportToPDF('dashboard'));
-        
-        document.getElementById('dataTreinoFisico').valueAsDate = new Date(); document.getElementById('dataTreinoFisico').dispatchEvent(new Event('change'));
-        document.getElementById('dataTreinoCampo').valueAsDate = new Date(); document.getElementById('dataTreinoCampo').dispatchEvent(new Event('change'));
-
-        function renderAllTabs() {
-            populateAthleteDatalist();
-            renderProntidaoTab();
-            renderCargaTab();
-            renderPlanningView();
-            renderLesoesTab();
-            renderConfigTab();
-            updateDashboardView();
-        }
-
-        function switchTab(tab) {
-            const contents = { dashboard: dashboardContent, prontidao: prontidaoContent, carga: cargaContent, planejamento: planejamentoContent, lesoes: lesoesContent, config: configContent };
-            const buttons = { dashboard: tabDashboardBtn, prontidao: tabProntidaoBtn, carga: tabCargaBtn, planejamento: tabPlanejamentoBtn, lesoes: tabLesoesBtn, config: tabConfigBtn };
-            Object.entries(contents).forEach(([key, el]) => el.classList.toggle('hidden', key !== tab));
-            Object.entries(buttons).forEach(([key, el]) => el.classList.toggle('active', key === tab));
-        }
-
-        // --- ABA DE CONFIGURAÇÕES ---
-        function renderConfigTab() {
-            if (Object.keys(equipesData).length === 0) {
-                equipesListContainer.innerHTML = `<p class="text-gray-500">Nenhuma equipe cadastrada ainda.</p>`;
-                return;
-            }
-
-            equipesListContainer.innerHTML = Object.entries(equipesData).sort(([a], [b]) => a.localeCompare(b)).map(([equipeId, data]) => `
-                <div class="p-4 border rounded-lg">
-                    <div class="flex items-center gap-4 mb-3">
-                        <img src="${data.logoUrl || 'https://via.placeholder.com/64'}" alt="Logo" class="h-16 w-16 object-contain rounded-full bg-gray-100 border">
-                        <h4 class="text-lg font-bold text-gray-800 flex-grow">${equipeId}</h4>
-                    </div>
-                    <form class="update-equipe-form space-y-2" data-id="${equipeId}">
-                        <input type="url" value="${data.logoUrl || ''}" class="w-full p-2 border border-gray-300 rounded-md" placeholder="https://example.com/logo.png">
-                        <button type="submit" class="w-full text-sm bg-green-600 text-white font-semibold py-2 px-3 rounded-lg hover:bg-green-700">Atualizar</button>
-                    </form>
-                </div>
-            `).join('');
-
-            document.querySelectorAll('.update-equipe-form').forEach(form => form.addEventListener('submit', handleUpdateEquipe));
-        }
-        
-        async function handleNovaEquipeSubmit(e) {
-            e.preventDefault();
-            const equipeId = document.getElementById('novaEquipeId').value.trim();
-            const logoUrl = document.getElementById('novaEquipeLogoUrl').value.trim();
-            if (!equipeId) { showToast("O ID da equipe é obrigatório."); return; }
-            
-            try {
-                await setDoc(doc(db, "equipes", equipeId), { logoUrl });
-                showToast(`Equipe '${equipeId}' salva com sucesso!`, 'success');
-                formNovaEquipe.reset();
-            } catch (error) {
-                console.error("Erro ao salvar nova equipe:", error);
-                showToast("Erro ao salvar a equipe.");
-            }
-        }
-
-        async function handleUpdateEquipe(e) {
-            e.preventDefault();
-            const equipeId = e.target.dataset.id;
-            const logoUrl = e.target.querySelector('input[type="url"]').value.trim();
-            try {
-                await setDoc(doc(db, "equipes", equipeId), { logoUrl });
-                showToast(`Equipe '${equipeId}' atualizada!`, 'success');
-            } catch (error) {
-                console.error("Erro ao atualizar equipe:", error);
-                showToast("Erro ao atualizar a equipe.");
-            }
-        }
-        
-        // --- LÓGICAS DE DADOS (PRONTIDÃO, CARGA, ETC.) ---
-        function renderProntidaoTab() {
-            const dataForTeam = selectedTeam === 'all' ? fullProntidaoData : fullProntidaoData.filter(d => d.equipe_id === selectedTeam);
-            if (dataForTeam.length === 0) {
-                placeholderSectionProntidao.classList.remove('hidden');
-                resultsSection.classList.add('hidden');
-                latestProntidaoData = null; filterContainerProntidao.innerHTML = ''; updateDashboardView(); return;
-            }
-            renderFilterProntidao(dataForTeam); 
-            placeholderSectionProntidao.classList.add('hidden'); resultsSection.classList.remove('hidden');
-            
-            const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
-            let selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
-            if (selectedWeeks.length === 0 && document.querySelectorAll('.week-checkbox').length > 0) {
-                 const lastWeekEl = document.querySelector('.week-checkbox:last-of-type');
-                 if(lastWeekEl) { lastWeekEl.checked = true; selectedWeeks = [lastWeekEl.value]; }
-            }
-            selectedWeeks = sortWeeks(selectedWeeks);
-            const filteredDataForWeeks = dataForTeam.filter(d => selectedWeeks.includes(d.semana_id));
-            if (filteredDataForWeeks.length > 0) {
-                displayFilteredProntidaoData(filteredDataForWeeks, selectedWeeks);
-            } else {
-                teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s) nesta equipe.</p>';
-                resultsContainer.innerHTML = ''; latestProntidaoData = null;
-            }
-            updateDashboardView();
-        }
-
-        function analyzeProntidaoData(data, selectedWeeks) {
-            const athletesData = data.reduce((acc, row) => {
-                if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
-                acc[row.atleta_id].push(row);
-                return acc;
-            }, {});
-            let latestDateOverall = null;
-
-            const individualResults = Object.keys(athletesData).map(athleteId => {
-                const entriesInSelection = athletesData[athleteId];
-                if (entriesInSelection.length === 0) return null;
-                const latestEntry = entriesInSelection.sort((a, b) => new Date(`${b.data}T00:00:00`) - new Date(`${a.data}T00:00:00`))[0];
-                const latestDateInSelection = new Date(`${latestEntry.data}T00:00:00`);
-                if (!latestDateOverall || latestDateInSelection > latestDateOverall) { latestDateOverall = latestDateInSelection; }
-                const allHistoricalEntriesForAthlete = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < latestDateInSelection);
-                const result = calculateAthleteReadiness(athleteId, latestEntry, allHistoricalEntriesForAthlete, latestEntry.data);
-                const dailyHistoryData = { hooper: [], salto: [] };
-                entriesInSelection.sort((a, b) => new Date(`${a.data}T00:00:00`) - new Date(`${b.data}T00:00:00`)).forEach(entry => {
-                    if (entry.hooper_score != null) { dailyHistoryData.hooper.push({ date: entry.data, value: entry.hooper_score }); }
-                    if (entry.salto_horizontal_cm != null) { dailyHistoryData.salto.push({ date: entry.data, value: entry.salto_horizontal_cm }); }
-                });
-                if (result) { result.dailyHistory = dailyHistoryData; }
-                return result;
-            }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
-            
-            const uniqueWeeksSorted = sortWeeks([...new Set(data.map(d => d.semana_id))]);
-            const evolutionData = uniqueWeeksSorted.map(weekId => {
-                const dataForThisWeek = data.filter(d => d.semana_id === weekId);
-                const athletesInWeek = [...new Set(dataForThisWeek.map(d => d.atleta_id))];
-                const resultsForThisWeek = athletesInWeek.map(athleteId => {
-                    const entriesInWeek = dataForThisWeek.filter(d => d.atleta_id === athleteId);
-                    if (entriesInWeek.length === 0) return null;
-                    const latestEntryInWeek = entriesInWeek.sort((a,b) => new Date(`${b.data}T00:00:00`) - new Date(`${a.data}T00:00:00`))[0];
-                    const historicalEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < new Date(`${latestEntryInWeek.data}T00:00:00`));
-                    return calculateAthleteReadiness(athleteId, latestEntryInWeek, historicalEntries, latestEntryInWeek.data);
-                }).filter(Boolean);
-                const readyAthletesThisWeek = resultsForThisWeek.filter(r => r.status === 'ready');
-                return {
-                    weekId, averageIndex: getStats(readyAthletesThisWeek.map(r => parseFloat(r.index))).mean,
-                    averageHooper: getStats(readyAthletesThisWeek.map(r => r.hooperScore.latest)).mean,
-                    averageSaltoDiff: getStats(readyAthletesThisWeek.map(r => r.saltoPercentDiff)).mean,
-                };
-            });
-
-            const readyAthletesOverall = individualResults.filter(r => r.status === 'ready');
-            const teamStats = {
-                averageIndex: getStats(readyAthletesOverall.map(r => parseFloat(r.index))).mean,
-                averageHooper: getStats(readyAthletesOverall.map(r => r.hooperScore.latest)).mean,
-                averageSaltoDiff: getStats(readyAthletesOverall.map(r => r.saltoPercentDiff)).mean,
-                zoneCounts: individualResults.reduce((acc, r) => { acc[r.zone || 'collecting'] = (acc[r.zone || 'collecting'] || 0) + 1; return acc; }, { green: 0, yellow: 0, red: 0, collecting: 0 }),
-                evolutionData
-            };
-            
-            let dailyStats = null;
-            if (selectedWeeks.length === 1) {
-                dailyStats = analyzeDailyProntidao(data.filter(d => d.semana_id === selectedWeeks[0]));
-            }
-            
-            const latestDate = latestDateOverall ? latestDateOverall.toISOString().split('T')[0] : null;
-            return { individualResults, teamStats, latestDate, dailyStats };
-        }
-
+        // Ajuste na função de criação de linha da prontidão
         function createProntidaoResultRow(result) {
             if (!result || !result.latestDate) return '';
             if (result.status === 'collecting') return `<div class="flex items-center p-4 border-b"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}</div><div class="w-2/3 text-gray-500 text-sm">${result.message}</div></div>`;
@@ -963,14 +639,16 @@
 
             const hooperScoreValue = result.hooperScore.latest != null ? result.hooperScore.latest.toFixed(1) : '--';
             const hooperClass = getHooperClassification(result.hooperScore.latest);
-            // **AJUSTE VISUAL RECUPERAÇÃO**
+            
+            // AJUSTE APLICADO AQUI
             const saltoDisplay = result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--';
             const saltoClass = result.saltoPercentDiff == null ? 'text-gray-500' : (result.saltoPercentDiff >= 0 ? 'text-green-600' : 'text-red-600');
             
-            const detailsHtml = Object.entries(result.metricsDetail).map(([key, data]) => {
+            // O resto da função continua igual...
+             const detailsHtml = Object.entries(result.metricsDetail).map(([key, data]) => {
                 if (!METRIC_NAMES[key] || data.latest == null) return '';
-                const latestValue = !isNaN(data.latest) ? data.latest.toFixed(1) : 'N/A';
-                const meanValue = !isNaN(data.mean) ? data.mean.toFixed(1) : 'N/A';
+                const latestValue = (data.latest && !isNaN(data.latest)) ? data.latest.toFixed(1) : 'N/A';
+                const meanValue = (data.mean && !isNaN(data.mean)) ? data.mean.toFixed(1) : 'N/A';
                 return `<li class="flex justify-between items-center text-sm py-1 border-b"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${latestValue} <span class="text-xs text-gray-500 font-normal">(Média Hist.: ${meanValue})</span></span></li>`;
             }).join('');
             
@@ -998,155 +676,8 @@
             </div>`;
         }
 
-        function renderPlanningView() {
-            renderPlanningFilter();
+        // --- Cole aqui o restante do seu código JS que não foi alterado ---
 
-            const dataForTeamFisico = selectedTeam === 'all' ? treinosFisicos : treinosFisicos.filter(d => d.equipe_id === selectedTeam);
-            const dataForTeamCampo = selectedTeam === 'all' ? treinosCampo : treinosCampo.filter(d => d.equipe_id === selectedTeam);
-
-            const fisicoSemana = dataForTeamFisico.filter(t => selectedPlanningWeeks.includes(t.semana_id));
-            const campoSemana = dataForTeamCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
-
-            pdfContentPlanejamento.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="space-y-4">
-                         <h3 class="text-2xl font-bold text-gray-900">Treinos Físicos</h3>
-                         <div id="timelineFisico" class="p-2 bg-gray-50 rounded-lg min-h-[10rem]"></div>
-                         <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64"><canvas id="chartCargaFisico"></canvas></div>
-                    </div>
-                    <div class="space-y-4">
-                        <h3 class="text-2xl font-bold text-gray-900">Treinos de Campo</h3>
-                        <div id="timelineCampo" class="p-2 bg-gray-50 rounded-lg min-h-[10rem]"></div>
-                        <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border h-64"><canvas id="chartCargaCampo"></canvas></div>
-                    </div>
-                </div>
-                <div class="text-center mt-8">
-                    <button id="exportPdfBtnPlanejamento" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center mx-auto">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
-                        Exportar Planejamento
-                    </button>
-                </div>
-            `;
-            
-            document.getElementById('exportPdfBtnPlanejamento').addEventListener('click', () => exportToPDF('planejamento'));
-
-            renderTimeline(document.getElementById('timelineFisico'), fisicoSemana, `Nenhum treino físico cadastrado para ${selectedTeam === 'all' ? 'as equipes' : 'esta equipe'} nesta seleção.`);
-            renderTimeline(document.getElementById('timelineCampo'), campoSemana, `Nenhum treino de campo cadastrado para ${selectedTeam === 'all' ? 'as equipes' : 'esta equipe'} nesta seleção.`);
-            renderDailyLoadChart('chartCargaFisico', fisicoSemana);
-            renderDailyLoadChart('chartCargaCampo', campoSemana);
-        }
-
-        async function handleFormFisicoSubmit(e) {
-            e.preventDefault();
-            const equipeId = equipeIdFisicoInput.value;
-            if(!equipeId || equipeId === 'Selecione uma equipe') { showToast("Selecione uma equipe para cadastrar o treino."); return; }
-            
-            const btn = e.target.querySelector('button[type="submit"]');
-            btn.disabled = true;
-
-            const treino = {
-                equipe_id: equipeId, type: 'fisico', date: document.getElementById('dataTreinoFisico').value, semana_id: document.getElementById('semanaIdFisico').value,
-                objPrincipal: document.getElementById('objPrincipalFisico').value, objSecundario: getSelectedOptions(document.getElementById('objSecundarioFisico')),
-                local: document.getElementById('localTreinoFisico').value, carga: document.getElementById('cargaTreinoFisico').value,
-                cargaText: document.getElementById('cargaTreinoFisico').options[document.getElementById('cargaTreinoFisico').selectedIndex].text,
-                createdAt: serverTimestamp()
-            };
-            try {
-                await addDoc(treinosFisicosCollection, treino);
-                showToast('Treino Físico adicionado!', 'success');
-                formTreinoFisico.reset();
-                equipeIdFisicoInput.value = equipeId;
-                document.getElementById('dataTreinoFisico').valueAsDate = new Date(); document.getElementById('dataTreinoFisico').dispatchEvent(new Event('change'));
-            } catch (error) { showToast("Erro ao salvar o treino físico."); } finally { btn.disabled = false; }
-        }
-
-        async function handleFormCampoSubmit(e) {
-            e.preventDefault();
-            const equipeId = equipeIdCampoInput.value;
-            if(!equipeId || equipeId === 'Selecione uma equipe') { showToast("Selecione uma equipe para cadastrar o treino."); return; }
-            
-            const btn = e.target.querySelector('button[type="submit"]');
-            btn.disabled = true;
-            const treino = {
-                equipe_id: equipeId, type: 'campo', date: document.getElementById('dataTreinoCampo').value, semana_id: document.getElementById('semanaIdCampo').value,
-                objPrincipal: document.getElementById('objPrincipalCampo').value, objSecundario: getSelectedOptions(document.getElementById('objSecundarioCampo')),
-                campo: document.getElementById('campoTreinoCampo').value, carga: document.getElementById('cargaTreinoCampo').value,
-                cargaText: document.getElementById('cargaTreinoCampo').options[document.getElementById('cargaTreinoCampo').selectedIndex].text,
-                createdAt: serverTimestamp()
-            };
-            try {
-                await addDoc(treinosCampoCollection, treino);
-                showToast('Treino de Campo adicionado!', 'success');
-                formTreinoCampo.reset();
-                equipeIdCampoInput.value = equipeId;
-                document.getElementById('dataTreinoCampo').valueAsDate = new Date(); document.getElementById('dataTreinoCampo').dispatchEvent(new Event('change'));
-            } catch (error) { showToast("Erro ao salvar o treino de campo."); } finally { btn.disabled = false; }
-        }
-
-        // As demais funções (calculateAthleteReadiness, renderização de gráficos, helpers, etc.) permanecem majoritariamente as mesmas.
-        // A lógica de filtragem por equipe é aplicada antes de chamar essas funções, garantindo que elas operem no conjunto de dados correto.
-        // A função calculateAthleteReadiness foi levemente ajustada para ser mais robusta quando não há dados históricos.
-        
-        // --- FUNÇÕES HELPER E DE RENDERIZAÇÃO RESTANTES ---
-        // (O restante do seu código JS original com as modificações já mostradas nas respostas anteriores)
-        // ... (inclui: calculateAthleteReadiness, renderFilterProntidao, renderTeamDashboard*, createLoadResultRow, etc.)
-        // A função createProntidaoResultRow foi a única outra função significativamente alterada nesta seção para o ajuste visual.
-        // O restante do código JS pode ser colado aqui.
-
-        // Exemplo da função calculateAthleteReadiness ajustada:
-        function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, displayDate) {
-            const getZScore = (key, value) => {
-                let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
-                if (dataPoints.length < 2) { 
-                    const allAthletePoints = fullProntidaoData.filter(d => d.atleta_id === athleteId && d.data !== displayDate && d[key] != null && !isNaN(d[key]) && d[key] > 0).map(e => e[key]);
-                    if (allAthletePoints.length < 2) return 0; // Retorna 0 (neutro) se não houver histórico suficiente em lugar nenhum
-                    dataPoints = allAthletePoints;
-                }
-                if (value == null) return 0;
-                const { mean, stdDev } = getStats(dataPoints);
-                return stdDev === 0 ? 0 : (value - mean) / stdDev;
-            };
-            const cap = (val) => Math.max(-2.5, Math.min(2.5, val));
-            const saltoValue = latestEntry['salto_horizontal_cm'];
-            const vfcValue = latestEntry['vfc_rmssd'];
-            const performanceScores = [
-                (saltoValue != null && saltoValue > 0) ? getZScore('salto_horizontal_cm', saltoValue) : null,
-                (vfcValue != null && vfcValue > 0) ? getZScore('vfc_rmssd', vfcValue) : null
-            ].filter(s => s != null);
-            const performancePillar = performanceScores.length > 0 ? cap(getStats(performanceScores).mean) : 0;
-            let hooperAdjustment = 0;
-            if (latestEntry.hooper_score != null) {
-                if (latestEntry.hooper_score <= 9) hooperAdjustment = 0.25;
-                else if (latestEntry.hooper_score <= 17) hooperAdjustment = -0.25;
-                else hooperAdjustment = -0.50;
-            }
-            const readinessIndex = performancePillar + hooperAdjustment;
-            let zone;
-            if (readinessIndex < -1.5) zone = 'red';
-            else if (readinessIndex < -0.5) zone = 'yellow';
-            else zone = 'green';
-            const metricsDetail = Object.keys(METRIC_NAMES).reduce((acc, key) => {
-                 let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v));
-                 let mean = getStats(dataPoints).mean;
-                 if (dataPoints.length === 0) {
-                     const allOtherEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && d.data !== displayDate).map(e => e[key]).filter(v => v != null && !isNaN(v));
-                     mean = getStats(allOtherEntries).mean;
-                 }
-                acc[key] = { latest: latestEntry[key], mean: mean };
-                return acc;
-            }, {});
-            const saltoMeanHistorical = metricsDetail.salto_horizontal_cm?.mean || 0;
-            const saltoLatest = latestEntry.salto_horizontal_cm;
-            const saltoDiff = (saltoLatest && saltoMeanHistorical > 0) ? ((saltoLatest - saltoMeanHistorical) / saltoMeanHistorical) * 100 : null;
-            return { 
-                athleteId, status: 'ready', index: readinessIndex.toFixed(2), zone, 
-                metricsDetail, hooperScore: { latest: latestEntry.hooper_score }, 
-                saltoPercentDiff: saltoDiff, latestDate: displayDate 
-            };
-        }
-
-        // Cole aqui o restante do seu código JavaScript que não foi explicitamente modificado nesta resposta.
-        // Incluindo helpers como showToast, getStats, etc., e funções de renderização de gráficos.
     </script>
 </body>
 </html>
