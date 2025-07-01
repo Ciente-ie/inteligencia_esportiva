@@ -83,15 +83,20 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl flex-grow hidden" id="mainContent">
         <header class="text-center mb-6">
-            <div class="flex justify-center items-center gap-4">
-                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Monitoramento Integrado de Atletas</h1>
+            <div class="flex justify-center items-center gap-6">
+                <div id="teamLogoContainer" class="hidden">
+                    <img id="teamLogo" src="" alt="Logo da Equipe" class="h-16 w-16 object-contain rounded-full bg-white shadow-md border border-gray-200">
+                </div>
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Monitoramento Integrado de Atletas</h1>
+                    <p class="text-gray-600 mt-2 text-lg">Analise a prontidão, controle a carga, planeje os treinos e monitore lesões da sua equipe.</p>
+                </div>
                  <div class="flex items-center gap-x-4">
                      <div id="authStatusContainer" class="bg-gray-100 p-2 rounded-lg text-sm">
                         <span id="authStatus"></span>
                     </div>
                 </div>
             </div>
-            <p class="text-gray-600 mt-2 text-lg">Analise a prontidão, controle a carga, planeje os treinos e monitore lesões da sua equipe.</p>
         </header>
 
         <div class="mb-6 max-w-sm mx-auto">
@@ -118,6 +123,9 @@
                 </button>
                 <button id="tabLesoesBtn" class="tab-btn text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
                     Lesões
+                </button>
+                 <button id="tabConfigBtn" class="tab-btn text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
+                    Configurações
                 </button>
             </div>
         </div>
@@ -322,7 +330,7 @@
                     <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Treino de Campo</h3>
                         <form id="formTreinoCampo" class="space-y-4">
-                           <div>
+                            <div>
                                 <label for="equipeIdCampo" class="block text-sm font-medium text-gray-700 mb-1">ID da Equipe</label>
                                 <input type="text" id="equipeIdCampo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
                             </div>
@@ -423,6 +431,31 @@
             </div>
         </div>
 
+        <div id="configContent" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Cadastrar Nova Equipe</h3>
+                    <form id="formNovaEquipe" class="space-y-4">
+                        <div>
+                            <label for="novaEquipeId" class="block text-sm font-medium text-gray-700 mb-1">ID da Equipe (Nome único)</label>
+                            <input type="text" id="novaEquipeId" class="w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
+                        </div>
+                        <div>
+                            <label for="novaEquipeLogoUrl" class="block text-sm font-medium text-gray-700 mb-1">URL do Logo</label>
+                            <input type="url" id="novaEquipeLogoUrl" class="w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="https://example.com/logo.png">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700">Salvar Nova Equipe</button>
+                    </form>
+                </div>
+                 <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Equipes Cadastradas</h3>
+                    <div id="equipesListContainer" class="space-y-4">
+                        <p class="text-gray-500">Nenhuma equipe cadastrada ainda.</p>
+                    </div>
+                 </div>
+            </div>
+        </div>
+
 
     </div>
 
@@ -454,13 +487,10 @@
 
 
     <script type="module">
-        // --- Firebase v9+ modular imports ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs, where, updateDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs, where, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 
-
-        // --- FIREBASE SETUP ---
         const firebaseConfig = {
             apiKey: "AIzaSyCSxaH-QFQbhrCttS-J8KmVN1MXmjXqY1s",
             authDomain: "meu-scout-pro.firebaseapp.com",
@@ -470,75 +500,64 @@
             appId: "1:303977649743:web:4e81e55c7180390ec97c3a"
         };
 
-        // Initialize Firebase and services
         let db, auth;
         try {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
         } catch (e) {
-            console.error("Firebase initialization failed. Please check your firebaseConfig.", e);
-            showToast("Erro na configuração do Firebase. Verifique o console.");
+            console.error("Firebase initialization failed:", e);
+            showToast("Erro na configuração do Firebase.");
         }
 
-        // Firebase Collection References
         const treinosFisicosCollection = collection(db, 'treinosFisicos');
         const treinosCampoCollection = collection(db, 'treinosCampo');
         const prontidaoCollection = collection(db, 'prontidaoData');
         const cargaCollection = collection(db, 'cargaData');
         const lesoesCollection = collection(db, 'lesoes');
+        const equipesCollection = collection(db, 'equipes');
 
-
-        // --- CONSTANTS AND GLOBAL STATE ---
         const METRIC_NAMES = {
-            qualidade_sono: 'Qualidade do Sono',
-            niveis_stress: 'Níveis de Stress',
-            fadiga_geral: 'Fadiga Geral',
-            dor_muscular: 'Dor Muscular',
-            hooper_score: 'Pontuação Hooper',
-            salto_horizontal_cm: 'Salto Horizontal',
-            vfc_rmssd: 'VFC (RMSSD)'
+            qualidade_sono: 'Qualidade do Sono', niveis_stress: 'Níveis de Stress', fadiga_geral: 'Fadiga Geral', dor_muscular: 'Dor Muscular',
+            hooper_score: 'Pontuação Hooper', salto_horizontal_cm: 'Salto Horizontal', vfc_rmssd: 'VFC (RMSSD)'
         };
-        const CARGA_PERCENTUAL = {
-            leve: 40,
-            moderada: 70,
-            alta: 90,
-            maxima: 100
-        };
+        const CARGA_PERCENTUAL = { leve: 40, moderada: 70, alta: 90, maxima: 100 };
+        
         let activeCharts = {};
-        let fullProntidaoData = [];
-        let fullCargaData = [];
-        let lesoesData = [];
+        let fullProntidaoData = [], fullCargaData = [], lesoesData = [], treinosFisicos = [], treinosCampo = [];
+        let equipesData = {};
         let athleteMicrocycleData = {};
-        let treinosFisicos = [];
-        let treinosCampo = [];
         let currentUser = null;
-        let latestProntidaoData = null;
-        let latestCargaData = null;
+        let latestProntidaoData = null, latestCargaData = null;
         let selectedPlanningWeeks = [getWeekId(new Date())];
         let isInitialLoadComplete = false;
         let toastTimeout = null; 
         let selectedTeam = 'all'; 
 
-        // --- DOM ELEMENTS ---
         const globalLoader = document.getElementById('globalLoader');
         const loaderText = document.getElementById('loaderText');
         const mainContent = document.getElementById('mainContent');
         const authStatus = document.getElementById('authStatus');
         const teamFilterSelect = document.getElementById('teamFilterSelect'); 
+        const teamLogoContainer = document.getElementById('teamLogoContainer');
+        const teamLogo = document.getElementById('teamLogo');
+        
         const tabDashboardBtn = document.getElementById('tabDashboardBtn');
         const tabProntidaoBtn = document.getElementById('tabProntidaoBtn');
         const tabCargaBtn = document.getElementById('tabCargaBtn');
         const tabPlanejamentoBtn = document.getElementById('tabPlanejamentoBtn');
         const tabLesoesBtn = document.getElementById('tabLesoesBtn');
+        const tabConfigBtn = document.getElementById('tabConfigBtn');
+        
         const dashboardContent = document.getElementById('dashboardContent');
         const prontidaoContent = document.getElementById('prontidaoContent');
         const cargaContent = document.getElementById('cargaContent');
         const planejamentoContent = document.getElementById('planejamentoContent');
         const lesoesContent = document.getElementById('lesoesContent');
+        const configContent = document.getElementById('configContent');
+
         const toast = document.getElementById('toast');
         const confirmModal = document.getElementById('confirmModal');
-        // Prontidão Elements
         const csvFileInput = document.getElementById('csvFileInput');
         const fileNameEl = document.getElementById('fileName');
         const processBtn = document.getElementById('processBtn');
@@ -552,7 +571,6 @@
         const exportPdfBtnProntidao = document.getElementById('exportPdfBtnProntidao');
         const legendsProntidao = document.getElementById('legendsProntidao');
         const clearProntidaoDataBtn = document.getElementById('clearProntidaoDataBtn');
-        // Carga Elements
         const csvFileInputCarga = document.getElementById('csvFileInputCarga');
         const fileNameCargaEl = document.getElementById('fileNameCarga');
         const processBtnCarga = document.getElementById('processBtnCarga');
@@ -566,7 +584,6 @@
         const exportPdfBtnCarga = document.getElementById('exportPdfBtnCarga');
         const legendsCarga = document.getElementById('legendsCarga');
         const clearCargaDataBtn = document.getElementById('clearCargaDataBtn');
-        // Planejamento Elements
         const formTreinoFisico = document.getElementById('formTreinoFisico');
         const formTreinoCampo = document.getElementById('formTreinoCampo');
         const submitTreinoFisicoBtn = document.getElementById('submitTreinoFisico');
@@ -575,31 +592,26 @@
         const pdfContentPlanejamento = document.getElementById('pdf-content-planejamento');
         const equipeIdFisicoInput = document.getElementById('equipeIdFisico');
         const equipeIdCampoInput = document.getElementById('equipeIdCampo');
-        // Lesões Elements
         const formLesao = document.getElementById('formLesao');
         const submitLesaoBtn = document.getElementById('submitLesao');
         const lesoesList = document.getElementById('lesoesList');
         const dashboardLesoes = document.getElementById('dashboardLesoes');
         const equipeIdLesaoInput = document.getElementById('equipeIdLesao');
-        // Dashboard Elements
         const dashboardProntidao = document.getElementById('dashboardProntidao');
         const dashboardCarga = document.getElementById('dashboardCarga');
         const dashboardPlanejamento = document.getElementById('dashboardPlanejamento');
         const exportPdfBtnDashboard = document.getElementById('exportPdfBtnDashboard');
-
-
-        // --- SETUP ---
-        Chart.register(ChartDataLabels);
+        const formNovaEquipe = document.getElementById('formNovaEquipe');
+        const equipesListContainer = document.getElementById('equipesListContainer');
         
+        Chart.register(ChartDataLabels);
         const readinessZonePlugin = {
             id: 'readinessZonePlugin',
             beforeDraw: (chart) => {
                 const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
                 if (chart.config.type !== 'line' || !y || !y.getPixelForValue) return;
-
                 const greenZone = y.getPixelForValue(-0.5);
                 const yellowZone = y.getPixelForValue(-1.5);
-
                 ctx.save();
                 ctx.fillStyle = 'rgba(34, 197, 94, 0.1)';
                 ctx.fillRect(left, top, right - left, greenZone - top);
@@ -611,45 +623,31 @@
             }
         };
         Chart.register(readinessZonePlugin);
-
         Chart.defaults.set('plugins.datalabels', {
-            color: '#333',
-            font: {
-                weight: 'bold'
-            },
+            color: '#333', font: { weight: 'bold' },
             formatter: (value, context) => value ? (context.dataset.label.includes('%') ? `${value}%` : Math.round(value * 100) / 100) : null
         });
 
-
-        // --- AUTHENTICATION & DATA LOADING ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
                 authStatus.textContent = 'Conectado';
                 authStatus.classList.add('text-green-600', 'font-semibold');
                 authStatus.classList.remove('text-red-600');
-                submitTreinoFisicoBtn.disabled = false;
-                submitTreinoCampoBtn.disabled = false;
-                submitLesaoBtn.disabled = false;
-                if (!isInitialLoadComplete) {
-                   loadInitialData();
-                }
+                if (!isInitialLoadComplete) { loadInitialData(); }
             } else {
                 currentUser = null;
                 authStatus.textContent = 'Offline';
                 authStatus.classList.add('text-red-600', 'font-semibold');
                 authStatus.classList.remove('text-green-600');
-                submitTreinoFisicoBtn.disabled = true;
-                submitTreinoCampoBtn.disabled = true;
-                submitLesaoBtn.disabled = true;
-                loaderText.textContent = "Você está desconectado. Por favor, recarregue a página.";
+                loaderText.textContent = "Você está desconectado. Recarregue a página.";
                 showToast("Você está desconectado. Os dados não serão salvos ou carregados.");
             }
         });
 
         signInAnonymously(auth).catch((error) => {
             console.error("Anonymous sign-in failed", error);
-            loaderText.textContent = "Falha na autenticação. Verifique o console e recarregue.";
+            loaderText.textContent = "Falha na autenticação.";
             showToast("Falha na autenticação. Os dados não serão salvos.");
         });
 
@@ -657,12 +655,13 @@
             isInitialLoadComplete = true; 
             loaderText.textContent = 'Carregando dados...';
             try {
-                const [prontidaoSnap, cargaSnap, fisicoSnap, campoSnap, lesoesSnap] = await Promise.all([
+                const [prontidaoSnap, cargaSnap, fisicoSnap, campoSnap, lesoesSnap, equipesSnap] = await Promise.all([
                     getDocs(query(prontidaoCollection, orderBy("data", "desc"))),
                     getDocs(query(cargaCollection, orderBy("data", "desc"))),
                     getDocs(query(treinosFisicosCollection, orderBy("date", "asc"))),
                     getDocs(query(treinosCampoCollection, orderBy("date", "asc"))),
                     getDocs(query(lesoesCollection, orderBy("createdAt", "desc"))),
+                    getDocs(query(equipesCollection)),
                 ]);
 
                 fullProntidaoData = prontidaoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -670,59 +669,51 @@
                 treinosFisicos = fisicoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 treinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 lesoesData = lesoesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                equipesSnap.forEach(doc => { equipesData[doc.id] = doc.data(); });
                 
                 populateTeamFilter(); 
-                handleTeamChange(); // Set initial state based on filter
+                handleTeamChange();
                 renderAllTabs();
 
                 globalLoader.classList.add('hidden');
                 mainContent.classList.remove('hidden');
 
                 setupLiveListeners();
-
             } catch (error) {
                 console.error("Error loading initial data:", error);
-                loaderText.textContent = "Erro ao carregar os dados. Verifique o console.";
+                loaderText.textContent = "Erro ao carregar os dados.";
                 showToast("Erro crítico ao carregar os dados iniciais.");
             }
         }
         
         function setupLiveListeners() {
-             onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
+            onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderPlanningView();
-                updateDashboardView();
+                renderPlanningView(); updateDashboardView();
             });
-
             onSnapshot(query(treinosCampoCollection, orderBy("date", "asc")), (snapshot) => {
                 treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderPlanningView();
-                updateDashboardView();
+                renderPlanningView(); updateDashboardView();
             });
-
             onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
                 fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                populateTeamFilter(); 
-                populateAthleteDatalist();
-                renderProntidaoTab(); 
+                populateTeamFilter(); populateAthleteDatalist(); renderProntidaoTab(); 
             });
-            
             onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
                 fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                populateTeamFilter(); 
-                populateAthleteDatalist();
-                renderCargaTab(); 
+                populateTeamFilter(); populateAthleteDatalist(); renderCargaTab(); 
             });
-
             onSnapshot(query(lesoesCollection, orderBy("createdAt", "desc")), (snapshot) => {
                 lesoesData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderLesoesTab();
-                updateDashboardView();
+                renderLesoesTab(); updateDashboardView();
+            });
+            onSnapshot(query(equipesCollection), (snapshot) => {
+                equipesData = {};
+                snapshot.forEach(doc => { equipesData[doc.id] = doc.data(); });
+                populateTeamFilter(); handleTeamChange(); renderConfigTab();
             });
         }
 
-
-        // --- EVENT LISTENERS ---
         teamFilterSelect.addEventListener('change', (e) => {
             selectedTeam = e.target.value;
             handleTeamChange();
@@ -730,18 +721,30 @@
         });
 
         function handleTeamChange() {
-            if(selectedTeam !== 'all'){
+            const isTeamSelected = selectedTeam !== 'all';
+            
+            if (isTeamSelected) {
                 equipeIdLesaoInput.value = selectedTeam;
                 equipeIdFisicoInput.value = selectedTeam;
                 equipeIdCampoInput.value = selectedTeam;
-                submitTreinoFisicoBtn.disabled = false;
-                submitTreinoCampoBtn.disabled = false;
+                submitLesaoBtn.disabled = !currentUser;
+                submitTreinoFisicoBtn.disabled = !currentUser;
+                submitTreinoCampoBtn.disabled = !currentUser;
+
+                if (equipesData[selectedTeam]?.logoUrl) {
+                    teamLogo.src = equipesData[selectedTeam].logoUrl;
+                    teamLogoContainer.classList.remove('hidden');
+                } else {
+                    teamLogoContainer.classList.add('hidden');
+                }
             } else {
                 equipeIdLesaoInput.value = 'Selecione uma equipe';
                 equipeIdFisicoInput.value = 'Selecione uma equipe';
                 equipeIdCampoInput.value = 'Selecione uma equipe';
+                submitLesaoBtn.disabled = true;
                 submitTreinoFisicoBtn.disabled = true;
                 submitTreinoCampoBtn.disabled = true;
+                teamLogoContainer.classList.add('hidden');
             }
         }
 
@@ -750,6 +753,7 @@
         tabCargaBtn.addEventListener('click', () => switchTab('carga'));
         tabPlanejamentoBtn.addEventListener('click', () => switchTab('planejamento'));
         tabLesoesBtn.addEventListener('click', () => switchTab('lesoes'));
+        tabConfigBtn.addEventListener('click', () => switchTab('config'));
         
         csvFileInput.addEventListener('change', () => handleFileSelect(csvFileInput, fileNameEl, processBtn));
         processBtn.addEventListener('click', handleFileProcessing);
@@ -762,50 +766,32 @@
         processBtnCarga.addEventListener('click', handleFileProcessingCarga);
         exportPdfBtnCarga.addEventListener('click', () => exportToPDF('carga'));
         resultsContainerCarga.addEventListener('click', (e) => toggleDetails(e, 'carga'));
-        filterContainer.addEventListener('change', (e) => {
-            if (e.target.classList.contains('microciclo-checkbox')) {
-                renderCargaTab();
-            }
-        });
+        filterContainer.addEventListener('change', (e) => { if (e.target.classList.contains('microciclo-checkbox')) { renderCargaTab(); } });
         clearCargaDataBtn.addEventListener('click', clearCargaData);
         
         formTreinoFisico.addEventListener('submit', handleFormFisicoSubmit);
         formTreinoCampo.addEventListener('submit', handleFormCampoSubmit);
+        formLesao.addEventListener('submit', handleFormLesaoSubmit);
+        formNovaEquipe.addEventListener('submit', handleNovaEquipeSubmit);
+        
         document.getElementById('dataTreinoFisico').addEventListener('change', (e) => {
-            const date = e.target.valueAsDate;
-            if (date) {
-                const timezoneOffset = date.getTimezoneOffset() * 60000;
-                const utcDate = new Date(date.getTime() + timezoneOffset);
-                document.getElementById('semanaIdFisico').value = getWeekId(utcDate) || '';
-            }
+            const date = e.target.valueAsDate; if (date) { const utcDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000)); document.getElementById('semanaIdFisico').value = getWeekId(utcDate) || ''; }
         });
         document.getElementById('dataTreinoCampo').addEventListener('change', (e) => {
-            const date = e.target.valueAsDate;
-            if (date) {
-                const timezoneOffset = date.getTimezoneOffset() * 60000;
-                const utcDate = new Date(date.getTime() + timezoneOffset);
-                document.getElementById('semanaIdCampo').value = getWeekId(utcDate) || '';
-            }
+            const date = e.target.valueAsDate; if (date) { const utcDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000)); document.getElementById('semanaIdCampo').value = getWeekId(utcDate) || ''; }
         });
-        
-        formLesao.addEventListener('submit', handleFormLesaoSubmit);
 
         filterContainerPlanejamento.addEventListener('change', (e) => {
              if (e.target.classList.contains('planning-week-checkbox')) {
                 const selectedCheckboxes = document.querySelectorAll('.planning-week-checkbox:checked');
                 selectedPlanningWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
-                renderPlanningView();
-                updateDashboardView();
+                renderPlanningView(); updateDashboardView();
             }
         });
-        
         exportPdfBtnDashboard.addEventListener('click', () => exportToPDF('dashboard'));
         
-        // --- INITIALIZATION ---
-        document.getElementById('dataTreinoFisico').valueAsDate = new Date();
-        document.getElementById('dataTreinoFisico').dispatchEvent(new Event('change'));
-        document.getElementById('dataTreinoCampo').valueAsDate = new Date();
-        document.getElementById('dataTreinoCampo').dispatchEvent(new Event('change'));
+        document.getElementById('dataTreinoFisico').valueAsDate = new Date(); document.getElementById('dataTreinoFisico').dispatchEvent(new Event('change'));
+        document.getElementById('dataTreinoCampo').valueAsDate = new Date(); document.getElementById('dataTreinoCampo').dispatchEvent(new Event('change'));
 
         function renderAllTabs() {
             populateAthleteDatalist();
@@ -813,701 +799,94 @@
             renderCargaTab();
             renderPlanningView();
             renderLesoesTab();
+            renderConfigTab();
             updateDashboardView();
         }
 
-        // --- MAIN RENDER FUNCTIONS ---
+        function switchTab(tab) {
+            const contents = { dashboard: dashboardContent, prontidao: prontidaoContent, carga: cargaContent, planejamento: planejamentoContent, lesoes: lesoesContent, config: configContent };
+            const buttons = { dashboard: tabDashboardBtn, prontidao: tabProntidaoBtn, carga: tabCargaBtn, planejamento: tabPlanejamentoBtn, lesoes: tabLesoesBtn, config: tabConfigBtn };
+            Object.entries(contents).forEach(([key, el]) => el.classList.toggle('hidden', key !== tab));
+            Object.entries(buttons).forEach(([key, el]) => el.classList.toggle('active', key === tab));
+        }
+
+        // --- ABA DE CONFIGURAÇÕES ---
+        function renderConfigTab() {
+            if (Object.keys(equipesData).length === 0) {
+                equipesListContainer.innerHTML = `<p class="text-gray-500">Nenhuma equipe cadastrada ainda.</p>`;
+                return;
+            }
+
+            equipesListContainer.innerHTML = Object.entries(equipesData).sort(([a], [b]) => a.localeCompare(b)).map(([equipeId, data]) => `
+                <div class="p-4 border rounded-lg">
+                    <div class="flex items-center gap-4 mb-3">
+                        <img src="${data.logoUrl || 'https://via.placeholder.com/64'}" alt="Logo" class="h-16 w-16 object-contain rounded-full bg-gray-100 border">
+                        <h4 class="text-lg font-bold text-gray-800 flex-grow">${equipeId}</h4>
+                    </div>
+                    <form class="update-equipe-form space-y-2" data-id="${equipeId}">
+                        <input type="url" value="${data.logoUrl || ''}" class="w-full p-2 border border-gray-300 rounded-md" placeholder="https://example.com/logo.png">
+                        <button type="submit" class="w-full text-sm bg-green-600 text-white font-semibold py-2 px-3 rounded-lg hover:bg-green-700">Atualizar</button>
+                    </form>
+                </div>
+            `).join('');
+
+            document.querySelectorAll('.update-equipe-form').forEach(form => form.addEventListener('submit', handleUpdateEquipe));
+        }
+        
+        async function handleNovaEquipeSubmit(e) {
+            e.preventDefault();
+            const equipeId = document.getElementById('novaEquipeId').value.trim();
+            const logoUrl = document.getElementById('novaEquipeLogoUrl').value.trim();
+            if (!equipeId) { showToast("O ID da equipe é obrigatório."); return; }
+            
+            try {
+                await setDoc(doc(db, "equipes", equipeId), { logoUrl });
+                showToast(`Equipe '${equipeId}' salva com sucesso!`, 'success');
+                formNovaEquipe.reset();
+            } catch (error) {
+                console.error("Erro ao salvar nova equipe:", error);
+                showToast("Erro ao salvar a equipe.");
+            }
+        }
+
+        async function handleUpdateEquipe(e) {
+            e.preventDefault();
+            const equipeId = e.target.dataset.id;
+            const logoUrl = e.target.querySelector('input[type="url"]').value.trim();
+            try {
+                await setDoc(doc(db, "equipes", equipeId), { logoUrl });
+                showToast(`Equipe '${equipeId}' atualizada!`, 'success');
+            } catch (error) {
+                console.error("Erro ao atualizar equipe:", error);
+                showToast("Erro ao atualizar a equipe.");
+            }
+        }
+        
+        // --- LÓGICAS DE DADOS (PRONTIDÃO, CARGA, ETC.) ---
         function renderProntidaoTab() {
             const dataForTeam = selectedTeam === 'all' ? fullProntidaoData : fullProntidaoData.filter(d => d.equipe_id === selectedTeam);
-
             if (dataForTeam.length === 0) {
                 placeholderSectionProntidao.classList.remove('hidden');
                 resultsSection.classList.add('hidden');
-                latestProntidaoData = null;
-                filterContainerProntidao.innerHTML = '';
-                updateDashboardView();
-                return;
+                latestProntidaoData = null; filterContainerProntidao.innerHTML = ''; updateDashboardView(); return;
             }
-            
             renderFilterProntidao(dataForTeam); 
-            
-            placeholderSectionProntidao.classList.add('hidden');
-            resultsSection.classList.remove('hidden');
+            placeholderSectionProntidao.classList.add('hidden'); resultsSection.classList.remove('hidden');
             
             const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
             let selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
-            
-            if(selectedWeeks.length === 0 && document.querySelectorAll('.week-checkbox').length > 0) {
+            if (selectedWeeks.length === 0 && document.querySelectorAll('.week-checkbox').length > 0) {
                  const lastWeekEl = document.querySelector('.week-checkbox:last-of-type');
-                 if(lastWeekEl) {
-                     lastWeekEl.checked = true;
-                     selectedWeeks = [lastWeekEl.value];
-                 }
+                 if(lastWeekEl) { lastWeekEl.checked = true; selectedWeeks = [lastWeekEl.value]; }
             }
-            
             selectedWeeks = sortWeeks(selectedWeeks);
-            
             const filteredDataForWeeks = dataForTeam.filter(d => selectedWeeks.includes(d.semana_id));
-
             if (filteredDataForWeeks.length > 0) {
                 displayFilteredProntidaoData(filteredDataForWeeks, selectedWeeks);
             } else {
                 teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s) nesta equipe.</p>';
-                resultsContainer.innerHTML = '';
-                latestProntidaoData = null;
+                resultsContainer.innerHTML = ''; latestProntidaoData = null;
             }
-            updateDashboardView();
-        }
-
-        function renderCargaTab() {
-            const dataForTeam = selectedTeam === 'all' ? fullCargaData : fullCargaData.filter(d => d.equipe_id === selectedTeam);
-            
-            if (dataForTeam.length === 0) {
-                placeholderSectionCarga.classList.remove('hidden');
-                resultsSectionCarga.classList.add('hidden');
-                latestCargaData = null;
-                filterContainer.innerHTML = '';
-                updateDashboardView();
-                return;
-            }
-            placeholderSectionCarga.classList.add('hidden');
-            resultsSectionCarga.classList.remove('hidden');
-            
-            processAndStoreLoadData(dataForTeam);
-            
-            const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
-            let selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-            
-            if(selectedIds.length === 0 && document.querySelectorAll('.microciclo-checkbox').length > 0) {
-                 const lastMcEl = document.querySelector('.microciclo-checkbox:last-of-type');
-                 if(lastMcEl) {
-                     lastMcEl.checked = true;
-                     selectedIds = [lastMcEl.value];
-                 }
-            }
-
-            selectedIds = sortWeeks(selectedIds);
-            
-            if (selectedIds.length > 0) {
-                displayFilteredLoadData(selectedIds, dataForTeam);
-            } else {
-                teamDashboardCarga.innerHTML = '<p class="text-center text-gray-500">Nenhum microciclo selecionado para esta equipe.</p>';
-                resultsContainerCarga.innerHTML = '';
-                latestCargaData = null;
-            }
-            updateDashboardView();
-        }
-
-        function renderLesoesTab() {
-            const dataForTeam = selectedTeam === 'all' ? lesoesData : lesoesData.filter(d => d.equipe_id === selectedTeam);
-
-            const activeLesoes = dataForTeam.filter(l => l.status !== 'liberado');
-            if (activeLesoes.length === 0) {
-                lesoesList.innerHTML = `<div class="text-center py-10 px-6 bg-gray-50 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum atleta no departamento médico</h3>
-                    <p class="mt-1 text-sm text-gray-500">Todos os atletas desta equipe estão liberados.</p>
-                </div>`;
-            } else {
-                lesoesList.innerHTML = activeLesoes.map(createLesaoCard).join('');
-            }
-
-            document.querySelectorAll('.btn-update-lesao').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const id = e.currentTarget.dataset.id;
-                    const newStatus = e.currentTarget.dataset.status;
-                    const atleta = e.currentTarget.dataset.atleta;
-                    const text = newStatus === 'liberado' 
-                        ? `Tem certeza que deseja marcar a lesão de ${atleta} como 'Liberado'?`
-                        : `Tem certeza que deseja remover o registro de lesão de ${atleta}?`;
-                    const title = newStatus === 'liberado' ? 'Liberar Atleta' : 'Remover Registro';
-                    
-                    showConfirmationModal(text, async () => {
-                        if (newStatus === 'delete') {
-                            await deleteDoc(doc(db, "lesoes", id));
-                            showToast(`${atleta} removido dos registros de lesão.`, 'success');
-                        } else {
-                            const lesaoRef = doc(db, "lesoes", id);
-                            await updateDoc(lesaoRef, { status: newStatus });
-                            showToast(`${atleta} foi liberado.`, 'success');
-                        }
-                    }, title);
-                });
-            });
-        }
-
-        function updateDashboardView() {
-            renderDashboardLesoes();
-            renderDashboardProntidao();
-            renderDashboardCarga();
-            renderDashboardPlanejamento();
-        }
-
-        function renderDashboardLesoes() {
-            const dataForTeam = selectedTeam === 'all' ? lesoesData : lesoesData.filter(d => d.equipe_id === selectedTeam);
-            const activeLesoes = dataForTeam.filter(l => l.status !== 'liberado');
-            
-            let contentHtml = '';
-            if(activeLesoes.length === 0) {
-                contentHtml = `<div class="text-center py-4">
-                    <p class="text-gray-500">Nenhum atleta no departamento médico.</p>
-                </div>`;
-            } else {
-                const naoLiberadoHtml = activeLesoes.filter(l => l.status === 'nao-liberado').map(l => 
-                    `<li class="flex justify-between items-center text-sm py-1"><span class="font-semibold">${l.atleta}</span> <span class="text-red-600">${l.lesao}</span></li>`
-                ).join('');
-
-                const restricoesHtml = activeLesoes.filter(l => l.status === 'restricoes').map(l => 
-                    `<li class="flex justify-between items-center text-sm py-1"><span class="font-semibold">${l.atleta}</span> <span class="text-yellow-600">${l.lesao}</span></li>`
-                ).join('');
-
-                contentHtml = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h4 class="font-semibold text-gray-700 text-center mb-2">Não Liberados</h4>
-                            <ul class="space-y-1 bg-red-50 p-3 rounded-lg border border-red-200">
-                                ${naoLiberadoHtml || '<li class="text-xs text-center text-gray-500">Nenhum</li>'}
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-gray-700 text-center mb-2">Treinando com Restrições</h4>
-                             <ul class="space-y-1 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                                ${restricoesHtml || '<li class="text-xs text-center text-gray-500">Nenhum</li>'}
-                            </ul>
-                        </div>
-                    </div>
-                `;
-            }
-
-            dashboardLesoes.innerHTML = `
-                <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Departamento Médico <span class="text-base font-normal text-gray-500">(${selectedTeam === 'all' ? 'Geral' : selectedTeam})</span></h2>
-                ${contentHtml}
-            `;
-        }
-
-        function renderDashboardProntidao() {
-            if (!latestProntidaoData) {
-                 dashboardProntidao.innerHTML = `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Prontidão <span class="text-base font-normal text-gray-500">(${selectedTeam === 'all' ? 'Geral' : selectedTeam})</span></h2><div class="text-center py-10 px-6"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><h3 class="mt-2 text-lg font-medium text-gray-900">Sem dados de prontidão</h3><p class="mt-1 text-sm text-gray-500">Vá para a aba 'Análise de Prontidão' para importar ou selecionar dados.</p></div>`;
-                 return;
-            }
-
-            const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
-            const selectedWeeks = sortWeeks(Array.from(selectedCheckboxes).map(cb => cb.value));
-            
-            if (latestProntidaoData && latestProntidaoData.teamStats) {
-                if (selectedWeeks.length > 1 && latestProntidaoData.teamStats.evolutionData.length > 0) {
-                    dashboardProntidao.innerHTML = renderTeamDashboardProntidaoWithCharts(latestProntidaoData.teamStats, latestProntidaoData.latestDate, true, selectedWeeks.length, 'dashboard-');
-                    renderTeamIndexChart('dashboard-team-index-chart', latestProntidaoData.teamStats.evolutionData);
-                    renderTeamHooperChart('dashboard-team-hooper-chart', latestProntidaoData.teamStats.evolutionData);
-                    renderTeamSaltoChart('dashboard-team-salto-chart', latestProntidaoData.teamStats.evolutionData);
-                } else if (selectedWeeks.length === 1 && latestProntidaoData.dailyStats) {
-                    dashboardProntidao.innerHTML = renderTeamDashboardProntidaoWithDailyCharts(latestProntidaoData.dailyStats, latestProntidaoData.teamStats, selectedWeeks[0], true, 'dashboard-');
-                    renderTeamDailyIndexChart('dashboard-team-index-chart', latestProntidaoData.dailyStats);
-                    renderTeamDailyHooperChart('dashboard-team-hooper-chart', latestProntidaoData.dailyStats);
-                } else { 
-                    const overallStats = {
-                        averageIndex: latestProntidaoData.teamStats.averageIndex,
-                        averageHooper: latestProntidaoData.teamStats.averageHooper,
-                        averageSaltoDiff: latestProntidaoData.teamStats.averageSaltoDiff,
-                        zoneCounts: latestProntidaoData.teamStats.zoneCounts
-                    };
-                    dashboardProntidao.innerHTML = renderTeamDashboardProntidaoWithCards(overallStats, latestProntidaoData.latestDate);
-                }
-            } else {
-                dashboardProntidao.innerHTML = `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Prontidão <span class="text-base font-normal text-gray-500">(${selectedTeam === 'all' ? 'Geral' : selectedTeam})</span></h2><div class="text-center py-10 px-6"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de prontidão carregado</h3><p class="mt-1 text-sm text-gray-500">Vá para a aba 'Análise de Prontidão' para importar um arquivo.</p></div>`;
-            }
-        }
-
-        function renderDashboardCarga() {
-            if (latestCargaData) {
-                dashboardCarga.innerHTML = renderTeamDashboardCarga(latestCargaData, true);
-                 if (latestCargaData.selectionCount > 1) {
-                    renderTeamWeeklyLoadChart(latestCargaData.evolutionData, 'dashboard-');
-                    renderTeamAcwrChart(latestCargaData.evolutionData, 'dashboard-');
-                    renderTeamStrainChart(latestCargaData.evolutionData, 'dashboard-');
-                } else if (latestCargaData) {
-                    renderTeamDailyLoadChart(latestCargaData.dailyAverages, 'dashboard-');
-                }
-            } else {
-                dashboardCarga.innerHTML = `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">Resumo da Carga de Treino <span class="text-base font-normal text-gray-500">(${selectedTeam === 'all' ? 'Geral' : selectedTeam})</span></h2><div class="text-center py-10 px-6"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum dado de carga carregado</h3><p class="mt-1 text-sm text-gray-500">Vá para a aba 'Controle de Carga' para importar um arquivo.</p></div>`;
-            }
-        }
-
-        function renderDashboardPlanejamento() {
-            const dataForTeamFisico = selectedTeam === 'all' ? treinosFisicos : treinosFisicos.filter(d => d.equipe_id === selectedTeam);
-            const dataForTeamCampo = selectedTeam === 'all' ? treinosCampo : treinosCampo.filter(d => d.equipe_id === selectedTeam);
-
-            const trainingsFisico = dataForTeamFisico.filter(t => selectedPlanningWeeks.includes(t.semana_id));
-            const trainingsCampo = dataForTeamCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
-            const totalSessions = trainingsFisico.length + trainingsCampo.length;
-
-            let mainContentHtml;
-
-            if (selectedPlanningWeeks.length === 1) {
-                const formatTrainingList = (trainings) => {
-                    if (trainings.length === 0) {
-                        return '<li class="text-xs text-gray-400">Nenhum treino na semana.</li>';
-                    }
-                    return trainings
-                        .sort((a, b) => new Date(a.date + 'T00:00:00') - new Date(b.date + 'T00:00:00'))
-                        .map(t => {
-                            const dayOfWeek = new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short' });
-                            const objectives = t.objSecundario && t.objSecundario.length > 0 ? t.objSecundario.join(', ') : 'N/A';
-                            return `<li class="text-xs text-gray-700"><strong class="font-semibold">${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}:</strong> ${objectives}</li>`;
-                        }).join('');
-                };
-
-                const weekTrainingsFisico = formatTrainingList(trainingsFisico);
-                const weekTrainingsCampo = formatTrainingList(trainingsCampo);
-
-                const detailsHtml = `
-                    <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                        <div>
-                            <h4 class="font-semibold text-gray-600 text-sm text-center mb-1">Treinos Físicos (${trainingsFisico.length})</h4>
-                            <ul class="text-left space-y-1 mb-2 p-2 bg-white rounded-md border">${weekTrainingsFisico}</ul>
-                            <div class="h-24"><canvas id="dashboardLoadChartFisico"></canvas></div>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-gray-600 text-sm text-center mb-1">Treinos de Campo (${trainingsCampo.length})</h4>
-                            <ul class="text-left space-y-1 mb-2 p-2 bg-white rounded-md border">${weekTrainingsCampo}</ul>
-                            <div class="h-24"><canvas id="dashboardLoadChartCampo"></canvas></div>
-                        </div>
-                    </div>
-                `;
-
-                mainContentHtml = `
-                    <div class="lg:col-span-2 flex flex-col justify-center bg-gray-50 p-6 rounded-lg">
-                         <div class="text-center">
-                            <h3 class="font-semibold text-gray-800">Total de Sessões na Semana</h3>
-                            <p class="text-6xl font-bold text-blue-600 text-center">${totalSessions}</p>
-                        </div>
-                        ${detailsHtml}
-                    </div>
-                `;
-            } else {
-                mainContentHtml = `
-                    <div class="lg:col-span-1 flex flex-col justify-center items-center bg-gray-50 p-6 rounded-lg min-h-[350px]">
-                        <h3 class="font-semibold text-gray-800 mb-2 text-center">Total de Sessões Planejadas</h3>
-                        <p class="text-6xl font-bold text-blue-600">${totalSessions}</p>
-                    </div>
-                    <div class="lg:col-span-1 grid grid-cols-1 gap-6">
-                        <div>
-                            <div class="h-64 bg-white p-2 rounded-lg border"><canvas id="dashboardObjectiveFisico"></canvas></div>
-                        </div>
-                        <div>
-                            <div class="h-64 bg-white p-2 rounded-lg border"><canvas id="dashboardObjectiveCampo"></canvas></div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            dashboardPlanejamento.innerHTML = `
-                <h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">Resumo do Planejamento <span class="text-base font-normal text-gray-500">(${selectedTeam === 'all' ? 'Geral' : selectedTeam})</span></h2>
-                <p class="text-center text-gray-600 mb-4">Semanas selecionadas: ${selectedPlanningWeeks.join(', ')}</p>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                   ${mainContentHtml}
-                </div>
-                <div class="mt-4 flex justify-center items-center gap-x-3 text-xs text-gray-500">
-                    <span class="font-semibold">Carga Esperada:</span>
-                    <span class="flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-blue-500 mr-1 border border-blue-600"></span>Leve</span>
-                    <span class="flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-yellow-400 mr-1 border border-yellow-500"></span>Moderada</span>
-                    <span class="flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-orange-500 mr-1 border border-orange-600"></span>Alta</span>
-                    <span class="flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-red-600 mr-1 border border-red-700"></span>Máxima</span>
-                </div>`;
-            
-            if (selectedPlanningWeeks.length === 1) {
-                renderDailyLoadChart('dashboardLoadChartFisico', trainingsFisico, true);
-                renderDailyLoadChart('dashboardLoadChartCampo', trainingsCampo, true);
-            } else {
-                renderObjectiveDistributionChart('dashboardObjectiveFisico', trainingsFisico, 'Distribuição de Objetivos Físicos (%)');
-                renderObjectiveDistributionChart('dashboardObjectiveCampo', trainingsCampo, 'Distribuição de Objetivos de Campo (%)');
-            }
-        }
-        
-        function renderObjectiveDistributionChart(canvasId, trainings, title) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const objectiveCounts = trainings.flatMap(t => t.objSecundario || []).reduce((acc, obj) => {
-                acc[obj] = (acc[obj] || 0) + 1;
-                return acc;
-            }, {});
-
-            const totalObjectives = Object.values(objectiveCounts).reduce((sum, count) => sum + count, 0);
-            if (totalObjectives === 0) {
-                const context = ctx.getContext('2d');
-                context.clearRect(0, 0, ctx.width, ctx.height);
-                context.font = "16px 'Inter'";
-                context.fillStyle = "#6b7280";
-                context.textAlign = "center";
-                context.fillText("Sem dados para esta seleção.", ctx.width / 2, ctx.height / 2);
-                return;
-            };
-
-            const labels = Object.keys(objectiveCounts);
-            const data = labels.map(label => (objectiveCounts[label] / totalObjectives) * 100);
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '% de Frequência',
-                        data: data,
-                        backgroundColor: 'rgba(22, 163, 74, 0.7)',
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { beginAtZero: true, max: 100, ticks: { callback: (value) => `${value}%` } },
-                        y: { grid: { display: false } }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        title: { display: true, text: title },
-                        datalabels: {
-                            anchor: 'end', align: 'end',
-                            formatter: (value) => `${value.toFixed(1)}%`,
-                            color: '#4b5563'
-                        }
-                    }
-                }
-            });
-        }
-
-
-        // --- GENERAL HELPER FUNCTIONS ---
-        function showToast(message, type = 'error') {
-            if (toastTimeout) {
-                clearTimeout(toastTimeout);
-            }
-            toast.textContent = message;
-            toast.className = `fixed bottom-5 right-5 text-white py-3 px-6 rounded-lg shadow-xl opacity-0 transition-all duration-300 transform translate-y-10 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
-            
-            setTimeout(() => {
-                toast.classList.remove('opacity-0', 'translate-y-10');
-                toast.classList.add('opacity-100', 'translate-y-0');
-            }, 10);
-
-            toastTimeout = setTimeout(() => {
-                toast.classList.remove('opacity-100', 'translate-y-0');
-                toast.classList.add('opacity-0', 'translate-y-10');
-            }, 5000);
-        }
-
-        function getStats(data) {
-            const filteredData = data.filter(d => typeof d === 'number' && !isNaN(d));
-            if (filteredData.length === 0) return { mean: 0, stdDev: 0, sum: 0, count: 0 };
-            const sum = filteredData.reduce((a, b) => a + b, 0);
-            const mean = sum / filteredData.length;
-            const stdDev = Math.sqrt(filteredData.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / (filteredData.length > 1 ? filteredData.length - 1 : 1));
-            return { mean, stdDev, sum, count: filteredData.length };
-        }
-
-        function toggleDetails(event, type) {
-            const button = event.target.closest('.toggle-details-btn');
-            if (!button) return;
-            const targetId = button.dataset.target;
-            const detailsSection = document.getElementById(targetId);
-            if (!detailsSection) return;
-
-            const isOpen = detailsSection.classList.toggle('open');
-            button.querySelector('.arrow-icon').classList.toggle('rotate-180');
-            
-            if (isOpen) {
-                if (type === 'carga' && button.dataset.chartdata) {
-                    const athleteId = button.dataset.athlete;
-                    const canvasId = `chart-${athleteId}`;
-                    const data = JSON.parse(button.dataset.chartdata);
-                    renderAthleteChart(canvasId, data, 'Carga de Treino Diária (u.a.)');
-                }
-                if (type === 'prontidao') {
-                    const uniqueId = targetId.replace('details-prontidao-', '');
-                    
-                    if (button.dataset.dailyHistory && button.dataset.dailyHistory.trim() !== '') {
-                        try {
-                            const dailyHistoryData = JSON.parse(button.dataset.dailyHistory);
-                            if (dailyHistoryData.hooper && dailyHistoryData.hooper.length > 0) {
-                                renderAthleteDailyChart('hooper', `history-daily-hooper-${uniqueId}`, dailyHistoryData.hooper);
-                            }
-                            if (dailyHistoryData.salto && dailyHistoryData.salto.length > 0) {
-                                renderAthleteDailyChart('salto', `history-daily-salto-${uniqueId}`, dailyHistoryData.salto);
-                            }
-                        } catch(e) {
-                            console.error("Failed to parse or render daily history chart", e, button.dataset.dailyHistory);
-                        }
-                    }
-                }
-            }
-        }
-
-        async function exportToPDF(type) {
-            let pdfButtonId;
-            if (type === 'prontidao') {
-                pdfButtonId = 'exportPdfBtnProntidao';
-            } else {
-                 pdfButtonId = `exportPdfBtn${type === 'dashboard' ? 'Dashboard' : type.charAt(0).toUpperCase() + type.slice(1)}`;
-            }
-            
-            const pdfButton = document.getElementById(pdfButtonId);
-            if (!pdfButton) {
-                console.error(`PDF button with id ${pdfButtonId} not found.`);
-                return;
-            }
-            const contentId = `pdf-content-${type}`;
-            const fileName = `relatorio_${type}_${selectedTeam}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
-            const contentToPrint = document.getElementById(contentId);
-            if (!contentToPrint) {
-                showToast(`Conteúdo para PDF (id: ${contentId}) não encontrado.`);
-                return;
-            }
-
-            const originalText = pdfButton.innerHTML;
-            pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
-            pdfButton.disabled = true;
-            
-            if (type !== 'prontidao') {
-                const detailsSections = contentToPrint.querySelectorAll('.details-section');
-                detailsSections.forEach(el => el.classList.add('open'));
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 500)); 
-
-            try {
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const canvas = await html2canvas(contentToPrint, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-                const imgProps = pdf.getImageProperties(imgData);
-                const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                
-                let heightLeft = imgHeight;
-                let position = 0;
-                
-                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-                heightLeft -= pdfHeight;
-
-                while (heightLeft > 0) {
-                    position -= pdfHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-                    heightLeft -= pdfHeight;
-                }
-                pdf.save(fileName);
-            } catch (error) {
-                console.error("Erro ao gerar PDF:", error);
-                showToast("Falha ao gerar o PDF.");
-            } finally {
-                pdfButton.innerHTML = originalText;
-                pdfButton.disabled = false;
-                 if (type !== 'prontidao') {
-                    const detailsSections = contentToPrint.querySelectorAll('.details-section');
-                    detailsSections.forEach(el => el.classList.remove('open')); 
-                }
-            }
-        }
-
-        function switchTab(tab) {
-            dashboardContent.classList.toggle('hidden', tab !== 'dashboard');
-            prontidaoContent.classList.toggle('hidden', tab !== 'prontidao');
-            cargaContent.classList.toggle('hidden', tab !== 'carga');
-            planejamentoContent.classList.toggle('hidden', tab !== 'planejamento');
-            lesoesContent.classList.toggle('hidden', tab !== 'lesoes');
-
-
-            tabDashboardBtn.classList.toggle('active', tab === 'dashboard');
-            tabProntidaoBtn.classList.toggle('active', tab === 'prontidao');
-            tabCargaBtn.classList.toggle('active', tab === 'carga');
-            tabPlanejamentoBtn.classList.toggle('active', tab === 'planejamento');
-            tabLesoesBtn.classList.toggle('active', tab === 'lesoes');
-        }
-
-        function handleFileSelect(fileInput, fileNameEl, processBtn) {
-             if (fileInput.files.length > 0) {
-                fileNameEl.textContent = fileInput.files[0].name;
-                processBtn.disabled = false;
-            } else {
-                fileNameEl.textContent = '';
-                processBtn.disabled = true;
-            }
-        }
-
-        function parseCSV(text, requiredHeaders) {
-            const lines = text.trim().replace(/\r/g, '').split('\n');
-            if (lines.length < 2) throw new Error("O arquivo CSV está vazio ou contém apenas o cabeçalho.");
-
-            const firstLine = lines[0];
-            const separator = firstLine.includes(';') ? ';' : ',';
-            const headers = firstLine.split(separator).map(h => h.trim().toLowerCase()).filter(h => h);
-            
-            const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
-            if (missingHeaders.length > 0) {
-                throw new Error(`Cabeçalho inválido. Colunas ausentes: ${missingHeaders.join(', ')}.`);
-            }
-
-            return lines.slice(1).map((line, i) => {
-                if (line.trim() === '') return null;
-                const values = line.split(separator);
-                const entry = {};
-                headers.forEach((header, index) => {
-                    if (header) { 
-                        const value = values[index] ? values[index].trim() : null;
-                        if (['equipe_id', 'atleta_id', 'data', 'microciclo_id', 'semana_id'].includes(header)) {
-                             if (header === 'data' && value && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
-                                const parts = value.split('/');
-                                entry[header] = `${parts[2]}-${parts[1]}-${parts[0]}`; 
-                            } else {
-                                entry[header] = value;
-                            }
-                        } else {
-                            const sanitizedValue = value ? value.replace(',', '.') : null;
-                            entry[header] = sanitizedValue && !isNaN(parseFloat(sanitizedValue)) ? parseFloat(sanitizedValue) : null;
-                        }
-                    }
-                });
-                if (!entry.atleta_id || !entry.data || !entry.equipe_id || (requiredHeaders.includes('microciclo_id') && !entry.microciclo_id) || (requiredHeaders.includes('semana_id') && !entry.semana_id)) {
-                    console.warn(`Linha ${i + 2} ignorada por falta de dados essenciais (equipe, atleta, data, id da semana/microciclo).`);
-                    return null;
-                };
-                return entry;
-            }).filter(Boolean);
-        }
-
-        // --- PRONTIDÃO FUNCTIONS ---
-        function toggleLoading(isLoading, type = 'prontidao') {
-            const textEl = type === 'prontidao' ? btnText : btnTextCarga;
-            const loaderEl = type === 'prontidao' ? btnLoader : btnLoaderCarga;
-            const buttonEl = type === 'prontidao' ? processBtn : processBtnCarga;
-            textEl.classList.toggle('hidden', isLoading);
-            loaderEl.classList.toggle('hidden', !isLoading);
-            buttonEl.disabled = isLoading;
-        }
-        
-        async function saveBatchData(collectionRef, data) {
-            const batch = writeBatch(db);
-            data.forEach(item => {
-                const docRef = doc(collectionRef); 
-                batch.set(docRef, item);
-            });
-            await batch.commit();
-        }
-        
-        function clearProntidaoData() {
-            showConfirmationModal(
-                'Tem certeza que deseja apagar TODOS os dados de Prontidão? Esta ação não pode ser desfeita.',
-                async () => {
-                    showToast('Limpando dados de prontidão...', 'success');
-                    const snapshot = await getDocs(query(prontidaoCollection));
-                    const batch = writeBatch(db);
-                    snapshot.docs.forEach(d => batch.delete(d.ref));
-                    await batch.commit();
-                    showToast('Dados de prontidão removidos.', 'success');
-                }, 'Apagar Dados de Prontidão'
-            );
-        }
-
-        function clearCargaData() {
-            showConfirmationModal(
-                'Tem certeza que deseja apagar TODOS os dados de Carga? Esta ação não pode ser desfeita.',
-                async () => {
-                    showToast('Limpando dados de carga...', 'success');
-                    const snapshot = await getDocs(query(cargaCollection));
-                    const batch = writeBatch(db);
-                    snapshot.docs.forEach(d => batch.delete(d.ref));
-                    await batch.commit();
-                    showToast('Dados de carga removidos.', 'success');
-                }, 'Apagar Dados de Carga'
-            );
-        }
-
-        function handleFileProcessing() {
-            const file = csvFileInput.files[0];
-            if (!file) return showToast("Por favor, selecione um arquivo de prontidão.");
-            toggleLoading(true, 'prontidao');
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const csvText = event.target.result;
-                    const required = ['equipe_id', 'atleta_id', 'data', 'semana_id', 'hooper_score'];
-                    const parsedData = parseCSV(csvText, required);
-                    await saveBatchData(prontidaoCollection, parsedData);
-                    showToast(`${parsedData.length} registros de prontidão salvos com sucesso!`, 'success');
-                } catch (error) {
-                     console.error("Error during prontidao processing/saving:", error);
-                     showToast(`Erro: ${error.message}`);
-                } finally {
-                    toggleLoading(false, 'prontidao');
-                }
-            };
-            reader.onerror = () => {
-                showToast("Erro ao ler o arquivo.");
-                toggleLoading(false, 'prontidao');
-            };
-            reader.readAsText(file);
-        }
-        
-        function getWeekId(date) {
-            if (!date) return null;
-            let d = date;
-             if (typeof date === 'string') {
-                d = new Date(date + 'T00:00:00'); 
-            } else if (typeof date.getTime !== 'function') {
-                d = new Date(date);
-            }
-            d.setUTCHours(0, 0, 0, 0);
-            d.setDate(d.getDate() + 4 - (d.getDay()||7));
-            const yearStart = new Date(d.getUTCFullYear(),0,1);
-            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-            return `Sem${String(weekNo).padStart(2, '0')}`;
-        }
-        
-        function sortWeeks(arr) {
-            return arr.sort((a, b) => {
-                const numA = parseInt(a.replace(/[^0-9]/g, ''), 10);
-                const numB = parseInt(b.replace(/[^0-9]/g, ''), 10);
-                if (isNaN(numA) || isNaN(numB)) {
-                    return a.localeCompare(b);
-                }
-                return numA - numB;
-            });
-        }
-
-        function renderFilterProntidao(data) {
-            const weekIds = sortWeeks([...new Set(data.map(d => d.semana_id).filter(Boolean))]);
-            if (weekIds.length === 0) {
-                filterContainerProntidao.innerHTML = '';
-                return;
-            }
-            const currentSelection = Array.from(document.querySelectorAll('.week-checkbox:checked')).map(cb => cb.value);
-            const latestWeek = weekIds[weekIds.length - 1];
-            
-            filterContainerProntidao.innerHTML = `
-                 <div class="bg-white p-4 rounded-lg border shadow-sm">
-                    <label class="font-semibold text-gray-700 block mb-2">Selecione a(s) Semana(s) para Análise de Evolução:</label>
-                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                        ${weekIds.map(week => `
-                            <div class="flex items-center">
-                                <input id="week-${week}" type="checkbox" value="${week}" class="week-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${currentSelection.length > 0 ? (currentSelection.includes(week) ? 'checked' : '') : (week === latestWeek ? 'checked' : '')}>
-                                <label for="week-${week}" class="ml-2 block text-sm text-gray-900">${week}</label>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>`;
-        }
-        
-        function displayFilteredProntidaoData(data, selectedWeeks) {
-            const { individualResults, teamStats, latestDate, dailyStats } = analyzeProntidaoData(data, selectedWeeks);
-            latestProntidaoData = { teamStats, latestDate, dailyStats };
-            renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeks, dailyStats);
             updateDashboardView();
         }
 
@@ -1517,52 +896,25 @@
                 acc[row.atleta_id].push(row);
                 return acc;
             }, {});
-
             let latestDateOverall = null;
 
-            // **AJUSTE LÓGICA PRONTIDÃO**
-            // Gera a tabela de resultados individuais com base no último dado do período selecionado
             const individualResults = Object.keys(athletesData).map(athleteId => {
                 const entriesInSelection = athletesData[athleteId];
                 if (entriesInSelection.length === 0) return null;
-
-                // Ordena todos os dados do atleta no período e pega o mais recente
                 const latestEntry = entriesInSelection.sort((a, b) => new Date(`${b.data}T00:00:00`) - new Date(`${a.data}T00:00:00`))[0];
                 const latestDateInSelection = new Date(`${latestEntry.data}T00:00:00`);
-
-                if (!latestDateOverall || latestDateInSelection > latestDateOverall) {
-                    latestDateOverall = latestDateInSelection;
-                }
-
-                // Histórico para cálculo continua sendo todos os dados do atleta ANTERIORES a este último dado
-                const allHistoricalEntriesForAthlete = fullProntidaoData.filter(d => 
-                    d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < latestDateInSelection
-                );
-
+                if (!latestDateOverall || latestDateInSelection > latestDateOverall) { latestDateOverall = latestDateInSelection; }
+                const allHistoricalEntriesForAthlete = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < latestDateInSelection);
                 const result = calculateAthleteReadiness(athleteId, latestEntry, allHistoricalEntriesForAthlete, latestEntry.data);
-                
-                // Pega o histórico diário apenas do período selecionado para o gráfico de detalhe
                 const dailyHistoryData = { hooper: [], salto: [] };
-                entriesInSelection
-                    .sort((a, b) => new Date(`${a.data}T00:00:00`) - new Date(`${b.data}T00:00:00`))
-                    .forEach(entry => {
-                        if (entry.hooper_score != null) {
-                            dailyHistoryData.hooper.push({ date: entry.data, value: entry.hooper_score });
-                        }
-                        if (entry.salto_horizontal_cm != null) {
-                            dailyHistoryData.salto.push({ date: entry.data, value: entry.salto_horizontal_cm });
-                        }
-                    });
-
-                if (result) {
-                    result.dailyHistory = dailyHistoryData;
-                }
-
+                entriesInSelection.sort((a, b) => new Date(`${a.data}T00:00:00`) - new Date(`${b.data}T00:00:00`)).forEach(entry => {
+                    if (entry.hooper_score != null) { dailyHistoryData.hooper.push({ date: entry.data, value: entry.hooper_score }); }
+                    if (entry.salto_horizontal_cm != null) { dailyHistoryData.salto.push({ date: entry.data, value: entry.salto_horizontal_cm }); }
+                });
+                if (result) { result.dailyHistory = dailyHistoryData; }
                 return result;
-
             }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
             
-            // Lógica de evolução da equipe (gráficos) continua a mesma, analisando cada semana
             const uniqueWeeksSorted = sortWeeks([...new Set(data.map(d => d.semana_id))]);
             const evolutionData = uniqueWeeksSorted.map(weekId => {
                 const dataForThisWeek = data.filter(d => d.semana_id === weekId);
@@ -1574,349 +926,36 @@
                     const historicalEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < new Date(`${latestEntryInWeek.data}T00:00:00`));
                     return calculateAthleteReadiness(athleteId, latestEntryInWeek, historicalEntries, latestEntryInWeek.data);
                 }).filter(Boolean);
-                
                 const readyAthletesThisWeek = resultsForThisWeek.filter(r => r.status === 'ready');
                 return {
-                    weekId,
-                    averageIndex: getStats(readyAthletesThisWeek.map(r => parseFloat(r.index))).mean,
+                    weekId, averageIndex: getStats(readyAthletesThisWeek.map(r => parseFloat(r.index))).mean,
                     averageHooper: getStats(readyAthletesThisWeek.map(r => r.hooperScore.latest)).mean,
                     averageSaltoDiff: getStats(readyAthletesThisWeek.map(r => r.saltoPercentDiff)).mean,
                 };
             });
 
-            // Status geral da equipe é baseado nos dados individuais (ou seja, o último de cada atleta)
             const readyAthletesOverall = individualResults.filter(r => r.status === 'ready');
             const teamStats = {
                 averageIndex: getStats(readyAthletesOverall.map(r => parseFloat(r.index))).mean,
                 averageHooper: getStats(readyAthletesOverall.map(r => r.hooperScore.latest)).mean,
                 averageSaltoDiff: getStats(readyAthletesOverall.map(r => r.saltoPercentDiff)).mean,
-                zoneCounts: individualResults.reduce((acc, r) => {
-                    acc[r.zone || 'collecting'] = (acc[r.zone || 'collecting'] || 0) + 1;
-                    return acc;
-                }, { green: 0, yellow: 0, red: 0, collecting: 0 }),
+                zoneCounts: individualResults.reduce((acc, r) => { acc[r.zone || 'collecting'] = (acc[r.zone || 'collecting'] || 0) + 1; return acc; }, { green: 0, yellow: 0, red: 0, collecting: 0 }),
                 evolutionData
             };
             
             let dailyStats = null;
             if (selectedWeeks.length === 1) {
-                const weekData = data.filter(d => d.semana_id === selectedWeeks[0]);
-                dailyStats = analyzeDailyProntidao(weekData);
+                dailyStats = analyzeDailyProntidao(data.filter(d => d.semana_id === selectedWeeks[0]));
             }
             
             const latestDate = latestDateOverall ? latestDateOverall.toISOString().split('T')[0] : null;
             return { individualResults, teamStats, latestDate, dailyStats };
         }
 
-        function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, displayDate) {
-            const getZScore = (key, value) => {
-                let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
-                if (dataPoints.length === 0) {
-                     dataPoints = fullProntidaoData
-                        .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
-                        .map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
-                }
-
-                if (value == null || dataPoints.length < 2) return 0; // Retorna 0 (neutro) se não houver histórico suficiente
-                const { mean, stdDev } = getStats(dataPoints);
-                return stdDev === 0 ? 0 : (value - mean) / stdDev;
-            };
-
-            const cap = (val) => Math.max(-2.5, Math.min(2.5, val));
-            
-            const saltoValue = latestEntry['salto_horizontal_cm'];
-            const vfcValue = latestEntry['vfc_rmssd'];
-
-            const performanceScores = [
-                (saltoValue != null && saltoValue > 0) ? getZScore('salto_horizontal_cm', saltoValue) : null,
-                (vfcValue != null && vfcValue > 0) ? getZScore('vfc_rmssd', vfcValue) : null
-            ].filter(s => s != null);
-            
-            const performancePillar = performanceScores.length > 0 ? cap(getStats(performanceScores).mean) : 0;
-
-            let hooperAdjustment = 0;
-            if (latestEntry.hooper_score != null) {
-                if (latestEntry.hooper_score <= 9) hooperAdjustment = 0.25;
-                else if (latestEntry.hooper_score <= 17) hooperAdjustment = -0.25;
-                else hooperAdjustment = -0.50;
-            }
-
-            const readinessIndex = performancePillar + hooperAdjustment;
-            let zone;
-            if (readinessIndex < -1.5) zone = 'red';
-            else if (readinessIndex < -0.5) zone = 'yellow';
-            else zone = 'green';
-
-            const metricsDetail = Object.keys(METRIC_NAMES).reduce((acc, key) => {
-                 let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v));
-                 let mean = getStats(dataPoints).mean;
-
-                 if (dataPoints.length === 0) {
-                     const allOtherEntries = fullProntidaoData
-                        .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
-                        .map(e => e[key])
-                        .filter(v => v != null && !isNaN(v));
-                    mean = getStats(allOtherEntries).mean;
-                 }
-                acc[key] = { latest: latestEntry[key], mean: mean };
-                return acc;
-            }, {});
-            
-            const saltoMeanHistorical = metricsDetail.salto_horizontal_cm?.mean || 0;
-            const saltoLatest = latestEntry.salto_horizontal_cm;
-            const saltoDiff = (saltoLatest && saltoMeanHistorical > 0) ? ((saltoLatest - saltoMeanHistorical) / saltoMeanHistorical) * 100 : null;
-
-            return { 
-                athleteId, status: 'ready', index: readinessIndex.toFixed(2), zone, 
-                metricsDetail, hooperScore: { latest: latestEntry.hooper_score }, 
-                saltoPercentDiff: saltoDiff, latestDate: displayDate 
-            };
-        }
-
-        function renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeks, dailyStats) {
-            const selectedWeeksCount = selectedWeeks.length;
-            if (selectedWeeksCount === 1 && dailyStats) {
-                teamDashboard.innerHTML = renderTeamDashboardProntidaoWithDailyCharts(dailyStats, teamStats, selectedWeeks[0], false);
-                renderTeamDailyIndexChart('team-index-chart', dailyStats);
-                renderTeamDailyHooperChart('team-hooper-chart', dailyStats);
-
-            } else {
-                 teamDashboard.innerHTML = renderTeamDashboardProntidaoWithCharts(teamStats, latestDate, false, selectedWeeksCount);
-                 if (teamStats.evolutionData && teamStats.evolutionData.length > 0) {
-                    renderTeamIndexChart('team-index-chart', teamStats.evolutionData);
-                    renderTeamHooperChart('team-hooper-chart', teamStats.evolutionData);
-                    renderTeamSaltoChart('team-salto-chart', teamStats.evolutionData);
-                }
-            }
-
-
-            resultsContainer.innerHTML = `
-                <div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0">
-                    <div class="w-1/3">Atleta (Dado Mais Recente)</div>
-                    <div class="w-1/6 text-center">Índice Geral</div>
-                    <div class="w-1/6 text-center">Zona</div>
-                    <div class="w-1/6 text-center">Fadiga (Hooper)</div>
-                    <div class="w-1/6 text-center">Recup. Muscular (%)</div>
-                    <div class="w-12"></div>
-                </div>
-                <div>${individualResults.map(createProntidaoResultRow).join('')}</div>`;
-            renderLegends('prontidao');
-        }
-        
-        function analyzeDailyProntidao(data) {
-            const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-            const dailyData = Array.from({length: 7}, () => []);
-
-            data.forEach(row => {
-                const dayOfWeek = new Date(row.data + 'T00:00:00').getUTCDay();
-                const historicalEntries = fullProntidaoData.filter(d => d.atleta_id === row.atleta_id && new Date(d.data + 'T00:00:00') < new Date(row.data + 'T00:00:00'));
-                const readiness = calculateAthleteReadiness(row.atleta_id, row, historicalEntries, row.data);
-                if (readiness) {
-                    dailyData[dayOfWeek].push(readiness);
-                }
-            });
-
-            return dayNames.map((name, i) => {
-                const dayResults = dailyData[i];
-                return {
-                    day: name,
-                    averageIndex: getStats(dayResults.map(r => parseFloat(r.index))).mean,
-                    averageHooper: getStats(dayResults.map(r => r.hooperScore.latest)).mean,
-                    averageSaltoDiff: getStats(dayResults.map(r => r.saltoPercentDiff)).mean
-                };
-            });
-        }
-        
-        function renderTeamDashboardProntidaoWithDailyCharts(dailyStats, teamStats, weekId, isDashboard = false, idPrefix = '') {
-             const title = isDashboard ? 'Resumo da Prontidão' : 'Painel da Equipe';
-             const teamName = selectedTeam === 'all' ? 'Geral' : selectedTeam;
-             const dateText = `Resumo Diário (${weekId}) - ${teamName}`;
-             const { green = 0, yellow = 0, red = 0 } = teamStats.zoneCounts || {};
-             const saltoAvg = teamStats.averageSaltoDiff;
-             const saltoTeamClass = saltoAvg >= 0 ? 'text-green-600' : 'text-red-600';
-
-             return `
-                <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">${dateText}</span></h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-                    <div class="bg-white p-3 rounded-lg border shadow-sm">
-                        <h3 class="font-semibold text-gray-700 text-center mb-2 text-sm">Índice Geral (Diário)</h3>
-                        <div class="h-48"><canvas id="${idPrefix}team-index-chart"></canvas></div>
-                    </div>
-                    <div class="bg-white p-3 rounded-lg border shadow-sm">
-                        <h3 class="font-semibold text-gray-700 text-center mb-2 text-sm">Fadiga Hooper (Média Diária)</h3>
-                        <div class="h-48"><canvas id="${idPrefix}team-hooper-chart"></canvas></div>
-                    </div>
-                    <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg border shadow-sm">
-                        <p class="text-sm font-medium text-gray-600 text-center">% Rec. Muscular Média</p>
-                        <p class="text-5xl font-bold ${saltoTeamClass}">${!isNaN(saltoAvg) ? `${saltoAvg >= 0 ? '+' : ''}${saltoAvg.toFixed(1)}%` : '--'}</p>
-                    </div>
-                     <div class="p-4 bg-gray-50 rounded-lg h-full flex flex-col justify-center border shadow-sm">
-                        <p class="text-sm font-medium text-gray-600 mb-2 text-center">Distribuição dos Atletas</p>
-                        <div class="flex-grow flex items-center justify-around w-full">
-                            <div class="text-center">
-                                <div class="w-12 h-12 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-xl">${green}</div>
-                                <p class="text-xs mt-1">Ótimo</p>
-                            </div>
-                            <div class="text-center">
-                                <div class="w-12 h-12 mx-auto rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-xl">${yellow}</div>
-                                <p class="text-xs mt-1">Atenção</p>
-                            </div>
-                            <div class="text-center">
-                                <div class="w-12 h-12 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-xl">${red}</div>
-                                <p class="text-xs mt-1">Crítico</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                ${isDashboard ? `
-                <div class="mt-4 pt-4 border-t border-gray-100">
-                    <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-                        <h4 class="font-bold text-sm mb-1 text-gray-700">Legenda: Índice Geral</h4>
-                        <p>O <strong>Índice Geral</strong> é calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p>
-                        <p class="mt-1"><strong class="text-green-600">> -0.5: Ótimo</strong> | <strong class="text-yellow-600">-0.5 a -1.5: Atenção</strong> | <strong class="text-red-600">< -1.5: Crítico</strong></p>
-                    </div>
-                </div>
-                ` : ''}
-                `;
-        }
-        
-        function renderTeamDailyIndexChart(canvasId, dailyData) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const labels = dailyData.map(d => d.day);
-            const data = dailyData.map(d => d.averageIndex.toFixed(2));
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'line', data: { labels, datasets: [{ label: 'Índice Geral', data, borderColor: 'rgba(59, 130, 246, 1)', backgroundColor: 'rgba(59, 130, 246, 0.2)', fill: true, tension: 0.3 }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: -2.5, max: 2.5 } }, plugins: { legend: { display: false }, datalabels: { align: 'top', color: '#374151', font: { size: 10 } } } }
-            });
-        }
-        
-        function renderTeamDailyHooperChart(canvasId, dailyData) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const labels = dailyData.map(d => d.day);
-            const data = dailyData.map(d => d.averageHooper.toFixed(1));
-            const backgroundColors = data.map(val => {
-                if (val <= 9) return 'rgba(34, 197, 94, 0.7)'; if (val <= 17) return 'rgba(245, 158, 11, 0.7)'; return 'rgba(239, 68, 68, 0.7)';
-            });
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'bar', data: { labels, datasets: [{ label: 'Hooper', data, backgroundColor: backgroundColors }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 4, max: 22 } }, plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top', font: { size: 10 } } } }
-            });
-        }
-
-        function renderTeamDailySaltoChart(canvasId, dailyData) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const labels = dailyData.map(d => d.day);
-            const data = dailyData.map(d => d.averageSaltoDiff.toFixed(1));
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'bar', data: { labels, datasets: [{ label: '% Recuperação Muscular', data, backgroundColor: data.map(val => val >= 0 ? 'rgba(34, 197, 94, 0.7)' : 'rgba(239, 68, 68, 0.7)') }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: -20, max: 30, ticks: { callback: (value) => value + '%' } } },
-                    plugins: { legend: { display: false }, datalabels: { font: {size: 10}, formatter: (value) => value + '%', anchor: 'end', align: (context) => context.dataset.data[context.dataIndex] >= 0 ? 'top' : 'bottom', color: (context) => context.dataset.data[context.dataIndex] >= 0 ? '#166534' : '#991b1b' } }
-                }
-            });
-        }
-
-        function renderTeamDashboardProntidaoWithCards(stats, latestDate) {
-             if(!stats) return '';
-            const { green, yellow, red } = stats.zoneCounts;
-            const hooperTeamClass = getHooperClassification(stats.averageHooper);
-            const indexTeamClass = getIndexClassification(stats.averageIndex);
-            const saltoTeamClass = stats.averageSaltoDiff >= 0 ? 'text-green-600' : 'text-red-600';
-            const formattedDate = latestDate ? new Date(latestDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
-            const title = 'Resumo da Prontidão';
-            const teamName = selectedTeam === 'all' ? 'Geral' : selectedTeam;
-
-            return `
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(${teamName} - ${formattedDate})</span></h2>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
-                        <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Índice Geral Médio</p><p class="text-5xl font-bold ${indexTeamClass.class}">${stats.averageIndex ? stats.averageIndex.toFixed(2) : '--'}</p></div>
-                        <div class="flex flex-col items-center justify-center p-4 rounded-lg border ${hooperTeamClass.border} ${hooperTeamClass.bg} min-h-[140px]"><p class="text-sm font-medium ${hooperTeamClass.class}">Média de Fadiga (Hooper)</p><p class="text-5xl font-bold ${hooperTeamClass.class}">${stats.averageHooper ? stats.averageHooper.toFixed(1) : '--'}</p></div>
-                        <div class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Recup. Muscular Média</p><p class="text-5xl font-bold ${saltoTeamClass}">${!isNaN(stats.averageSaltoDiff) ? `${stats.averageSaltoDiff >= 0 ? '+' : ''}${stats.averageSaltoDiff.toFixed(1)}%` : '--'}</p></div>
-                        <div class="p-4 bg-gray-50 rounded-lg h-full flex flex-col min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2 text-center">Distribuição dos Atletas</p><div class="flex-grow flex items-center justify-around w-full"><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">${green}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-lg">${yellow}</div></div><div class="text-center"><div class="w-10 h-10 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-lg">${red}</div></div></div></div>
-                    </div>
-                    <div class="mt-4 pt-4 border-t border-gray-100">
-                        <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-                            <h4 class="font-bold text-sm mb-1 text-gray-700">Legenda: Índice Geral</h4>
-                            <p>O <strong>Índice Geral</strong> é calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p>
-                            <p class="mt-1"><strong class="text-green-600">> -0.5: Ótimo</strong> | <strong class="text-yellow-600">-0.5 a -1.5: Atenção</strong> | <strong class="text-red-600">< -1.5: Crítico</strong></p>
-                        </div>
-                    </div>
-                    `;
-        }
-        
-        function renderTeamDashboardProntidaoWithCharts(stats, latestDate, isForDashboard = false, selectedWeeksCount = 1, idPrefix = '') {
-            if (!stats) return '';
-            const { green = 0, yellow = 0, red = 0 } = stats.zoneCounts || {};
-            const title = isForDashboard ? 'Resumo da Prontidão' : 'Painel da Equipe';
-            const teamName = selectedTeam === 'all' ? 'Geral' : selectedTeam;
-
-            const dateText = selectedWeeksCount > 1 
-                ? `Evolução Semanal - ${teamName}` 
-                : `Dados de: ${latestDate ? new Date(latestDate + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A'} - ${teamName}`;
-
-            return `
-                <h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(${dateText})</span></h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
-                    <div class="lg:col-span-1 bg-white p-3 rounded-lg border shadow-sm min-h-[220px]">
-                        <h3 class="font-semibold text-gray-700 text-center mb-2 text-sm">Índice Geral (Semanal)</h3>
-                        <div class="h-48"><canvas id="${idPrefix}team-index-chart"></canvas></div>
-                    </div>
-                    <div class="lg:col-span-1 bg-white p-3 rounded-lg border shadow-sm min-h-[220px]">
-                        <h3 class="font-semibold text-gray-700 text-center mb-2 text-sm">Fadiga Hooper (Média Semanal)</h3>
-                        <div class="h-48"><canvas id="${idPrefix}team-hooper-chart"></canvas></div>
-                    </div>
-                    <div class="lg:col-span-1 bg-white p-3 rounded-lg border shadow-sm min-h-[220px]">
-                        <h3 class="font-semibold text-gray-700 text-center mb-2 text-sm">% Rec. Muscular (Média Semanal)</h3>
-                        <div class="h-48"><canvas id="${idPrefix}team-salto-chart"></canvas></div>
-                    </div>
-                    <div class="p-4 bg-gray-50 rounded-lg h-full flex flex-col justify-center min-h-[220px]">
-                        <p class="text-sm font-medium text-gray-600 mb-2 text-center">Distribuição dos Atletas<br><span class="text-xs font-normal">(Média do Período)</span></p>
-                        <div class="flex-grow flex items-center justify-around w-full">
-                            <div class="text-center">
-                                <div class="w-12 h-12 mx-auto rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-xl">${green}</div>
-                                <p class="text-xs mt-1">Ótimo</p>
-                            </div>
-                            <div class="text-center">
-                                <div class="w-12 h-12 mx-auto rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold text-xl">${yellow}</div>
-                                <p class="text-xs mt-1">Atenção</p>
-                            </div>
-                            <div class="text-center">
-                                <div class="w-12 h-12 mx-auto rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-xl">${red}</div>
-                                <p class="text-xs mt-1">Crítico</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                ${isForDashboard ? `
-                <div class="mt-4 pt-4 border-t border-gray-100">
-                    <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-                        <h4 class="font-bold text-sm mb-1 text-gray-700">Legenda: Índice Geral</h4>
-                        <p>O <strong>Índice Geral</strong> é calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p>
-                        <p class="mt-1"><strong class="text-green-600">> -0.5: Ótimo</strong> | <strong class="text-yellow-600">-0.5 a -1.5: Atenção</strong> | <strong class="text-red-600">< -1.5: Crítico</strong></p>
-                    </div>
-                </div>
-                ` : ''}
-                `;
-        }
-
         function createProntidaoResultRow(result) {
-            if (!result || !result.latestDate) {
-                console.warn("Skipping invalid result row:", result);
-                return '';
-            }
-            if (result.status === 'collecting') {
-                return `<div class="flex items-center p-4 border-b last:border-b-0"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}</div><div class="w-2/3 text-gray-500 text-sm">${result.message}</div></div>`;
-            }
+            if (!result || !result.latestDate) return '';
+            if (result.status === 'collecting') return `<div class="flex items-center p-4 border-b"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}</div><div class="w-2/3 text-gray-500 text-sm">${result.message}</div></div>`;
+            
             let zoneClass, recommendation, statusText;
             if (result.zone === 'green') { zoneClass = 'text-green-600'; statusText = 'Zona Ótima'; recommendation = "Atleta em bom estado. Treinar conforme o plano."; }
             else if (result.zone === 'yellow') { zoneClass = 'text-yellow-600'; statusText = 'Zona de Atenção'; recommendation = "Sinais de alerta. A carga deve ser ajustada."; }
@@ -1924,686 +963,39 @@
 
             const hooperScoreValue = result.hooperScore.latest != null ? result.hooperScore.latest.toFixed(1) : '--';
             const hooperClass = getHooperClassification(result.hooperScore.latest);
+            // **AJUSTE VISUAL RECUPERAÇÃO**
+            const saltoDisplay = result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--';
             const saltoClass = result.saltoPercentDiff == null ? 'text-gray-500' : (result.saltoPercentDiff >= 0 ? 'text-green-600' : 'text-red-600');
             
             const detailsHtml = Object.entries(result.metricsDetail).map(([key, data]) => {
                 if (!METRIC_NAMES[key] || data.latest == null) return '';
-                const latestValue = (data.latest && !isNaN(data.latest)) ? data.latest.toFixed(1) : 'N/A';
-                const meanValue = (data.mean && !isNaN(data.mean)) ? data.mean.toFixed(1) : 'N/A';
+                const latestValue = !isNaN(data.latest) ? data.latest.toFixed(1) : 'N/A';
+                const meanValue = !isNaN(data.mean) ? data.mean.toFixed(1) : 'N/A';
                 return `<li class="flex justify-between items-center text-sm py-1 border-b"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${latestValue} <span class="text-xs text-gray-500 font-normal">(Média Hist.: ${meanValue})</span></span></li>`;
             }).join('');
             
             const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
-
             const dailyChartsHtml = (result.dailyHistory && (result.dailyHistory.hooper.length > 0 || result.dailyHistory.salto.length > 0)) ? `
                 <div class="mt-4 pt-4 border-t col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Hooper Diário (na seleção)</h5>
-                        <div class="h-40"><canvas id="history-daily-hooper-${uniqueId}"></canvas></div>
-                    </div>
-                     <div>
-                        <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Salto Diário (na seleção)</h5>
-                        <div class="h-40"><canvas id="history-daily-salto-${uniqueId}"></canvas></div>
-                    </div>
-                </div>
-            ` : '';
+                    <div><h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Hooper Diário (na seleção)</h5><div class="h-40"><canvas id="history-daily-hooper-${uniqueId}"></canvas></div></div>
+                    <div><h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Salto Diário (na seleção)</h5><div class="h-40"><canvas id="history-daily-salto-${uniqueId}"></canvas></div></div>
+                </div>` : '';
 
             return `<div class="border-b last:border-b-0">
-                        <div class="flex items-center p-4">
-                            <div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div>
-                            <div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div>
-                            <div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div>
-                            <div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${hooperScoreValue}</span></div>
-                            <div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div>
-                            <div class="w-12 text-center">
-                                <button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" 
-                                        data-target="details-prontidao-${uniqueId}" 
-                                        data-daily-history='${result.dailyHistory ? JSON.stringify(result.dailyHistory) : ''}'>
-                                    <svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="details-section bg-gray-50" id="details-prontidao-${uniqueId}">
-                            <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <h4 class="font-semibold text-sm mb-2">Detalhes (Valor mais recente vs. Média Histórica):</h4>
-                                    <ul class="space-y-1">${detailsHtml}</ul>
-                                </div>
-                                <div class="bg-blue-50 border p-3 rounded-lg self-start">
-                                    <h4 class="font-semibold text-sm mb-1">Sugestão:</h4>
-                                    <p class="text-sm">${recommendation}</p>
-                                </div>
-                                ${dailyChartsHtml}
-                            </div>
-                        </div>
-                    </div>`;
-        }
-        
-        function renderTeamIndexChart(canvasId, evolutionData) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const labels = evolutionData.map(d => d.weekId);
-            const data = evolutionData.map(d => d.averageIndex.toFixed(2));
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Índice Geral',
-                        data: data,
-                        borderColor: 'rgba(59, 130, 246, 1)',
-                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                        fill: true,
-                        tension: 0.3
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    scales: { y: { min: -2.5, max: 2.5 } },
-                    plugins: { 
-                        legend: { display: false }, 
-                        datalabels: { 
-                            display: evolutionData.length <= 12,
-                            align: 'top', 
-                            color: '#374151' 
-                        } 
-                    }
-                }
-            });
-        }
-
-        function renderTeamHooperChart(canvasId, evolutionData) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const labels = evolutionData.map(d => d.weekId);
-            const data = evolutionData.map(d => d.averageHooper.toFixed(1));
-            const backgroundColors = data.map(val => {
-                if (val <= 9) return 'rgba(34, 197, 94, 0.7)';
-                if (val <= 17) return 'rgba(245, 158, 11, 0.7)';
-                return 'rgba(239, 68, 68, 0.7)';
-            });
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Hooper',
-                        data: data,
-                        backgroundColor: backgroundColors,
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    scales: { y: { min: 4, max: 22 } },
-                    plugins: { 
-                        legend: { display: false }, 
-                        datalabels: { 
-                            display: evolutionData.length <= 12,
-                            anchor: 'end', 
-                            align: 'top' 
-                        } 
-                    }
-                }
-            });
-        }
-
-        function renderTeamSaltoChart(canvasId, evolutionData) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const labels = evolutionData.map(d => d.weekId);
-            const data = evolutionData.map(d => d.averageSaltoDiff.toFixed(1));
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '% Recuperação Muscular',
-                        data: data,
-                        backgroundColor: data.map(val => val >= 0 ? 'rgba(34, 197, 94, 0.7)' : 'rgba(239, 68, 68, 0.7)'),
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            min: -20, max: 30,
-                            ticks: { callback: (value) => value + '%' }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        datalabels: {
-                            display: evolutionData.length <= 12,
-                            formatter: (value) => value + '%',
-                            anchor: 'end',
-                            align: (context) => context.dataset.data[context.dataIndex] >= 0 ? 'top' : 'bottom',
-                            color: (context) => context.dataset.data[context.dataIndex] >= 0 ? '#166534' : '#991b1b'
-                        }
-                    }
-                }
-            });
-        }
-
-        function renderAthleteDailyChart(type, canvasId, data) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx || !data || data.length === 0) {
-                 if(ctx) {
-                    const context = ctx.getContext('2d');
-                    context.clearRect(0, 0, ctx.width, ctx.height);
-                    context.font = "14px 'Inter'";
-                    context.fillStyle = "#9ca3af";
-                    context.textAlign = "center";
-                    context.fillText("Sem dados diários.", ctx.width / 2, ctx.height / 2);
-                 }
-                return;
-            };
-
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const labels = data.map(d => new Date(d.date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}));
-            const values = data.map(d => d.value.toFixed(type === 'salto' ? 1 : 0));
-
-            let chartOptions = {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{ data: values }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: false },
-                        x: { ticks: { font: { size: 10 } } }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        datalabels: {
-                            display: data.length < 15,
-                            anchor: 'end',
-                            align: 'top',
-                            font: { size: 10 }
-                        }
-                    }
-                }
-            };
-
-            if (type === 'hooper') {
-                chartOptions.data.datasets[0].backgroundColor = values.map(val => {
-                    if (val <= 9) return 'rgba(34, 197, 94, 0.7)';
-                    if (val <= 17) return 'rgba(245, 158, 11, 0.7)';
-                    return 'rgba(239, 68, 68, 0.7)';
-                });
-                chartOptions.options.scales.y.min = 0;
-                chartOptions.options.scales.y.max = 20;
-                chartOptions.data.datasets[0].label = 'Hooper Score';
-            } else { 
-                chartOptions.data.datasets[0].backgroundColor = 'rgba(59, 130, 246, 0.7)';
-                chartOptions.options.scales.y.min = 200;
-                chartOptions.options.scales.y.max = 320;
-                chartOptions.data.datasets[0].label = 'Salto (cm)';
-            }
-
-            activeCharts[canvasId] = new Chart(ctx, chartOptions);
-        }
-
-
-        // --- CARGA DE TREINO FUNCTIONS ---
-        function handleFileProcessingCarga() {
-            const file = csvFileInputCarga.files[0];
-            if (!file) return showToast("Por favor, selecione um arquivo de carga.");
-            toggleLoading(true, 'carga');
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const required = ['equipe_id', 'atleta_id', 'data', 'microciclo_id', 'pse_sessao', 'duracao_sessao_min'];
-                    const parsedData = parseCSV(event.target.result, required);
-                    await saveBatchData(cargaCollection, parsedData);
-                    showToast(`${parsedData.length} registros de carga salvos com sucesso!`, 'success');
-                } catch (error) {
-                     console.error("Error during carga processing/saving:", error);
-                     showToast(`Erro na análise: ${error.message}`);
-                } finally {
-                    toggleLoading(false, 'carga');
-                }
-            };
-            reader.onerror = () => {
-                showToast("Erro ao ler o arquivo.");
-                toggleLoading(false, 'carga');
-            };
-            reader.readAsText(file);
-        }
-
-        function processAndStoreLoadData(dataToProcess) {
-            const dataByAthlete = dataToProcess.reduce((acc, row) => {
-                if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
-                acc[row.atleta_id].push(row);
-                return acc;
-            }, {});
-
-            let allMicrocyclesForTeam = new Set();
-            Object.values(dataByAthlete).flat().forEach(row => {
-                if(row.microciclo_id) allMicrocyclesForTeam.add(row.microciclo_id);
-            });
-            
-            athleteMicrocycleData = {};
-
-            for (const athleteId in dataByAthlete) {
-                const allAthleteData = fullCargaData.filter(d => d.atleta_id === athleteId);
-
-                const microcycles = allAthleteData.reduce((acc, row) => {
-                    if (!row.microciclo_id) return acc;
-                    if (!acc[row.microciclo_id]) acc[row.microciclo_id] = { entries: [], minDate: row.data };
-                    acc[row.microciclo_id].entries.push(row);
-                    if (new Date(`${row.data}T00:00:00`) < new Date(`${acc[row.microciclo_id].minDate}T00:00:00`)) {
-                        acc[row.microciclo_id].minDate = row.data;
-                    }
-                    return acc;
-                }, {});
-
-                athleteMicrocycleData[athleteId] = Object.entries(microcycles)
-                    .sort(([, a], [, b]) => new Date(`${a.minDate}T00:00:00`) - new Date(`${b.minDate}T00:00:00`))
-                    .map(([id, cycleData]) => {
-                        const dailyEntries = cycleData.entries.map(e => ({
-                            date: e.data,
-                            load: (e.pse_sessao || 0) * (e.duracao_sessao_min || 0)
-                        }));
-                        const loadStats = getStats(dailyEntries.map(e => e.load));
-                        
-                        let monotony = 0;
-                        if (loadStats.mean > 0) {
-                            if (loadStats.stdDev > 0) {
-                                monotony = loadStats.mean / loadStats.stdDev;
-                            } else if (loadStats.count > 1) {
-                                monotony = 10;
-                            }
-                        }
-
-                        return {
-                            microciclo_id: id,
-                            totalLoad: loadStats.sum, 
-                            monotony: monotony,
-                            strain: loadStats.sum * monotony,
-                            dailyEntries: dailyEntries
-                        };
-                    });
-            }
-
-            const sortedMicrocycles = sortWeeks([...allMicrocyclesForTeam]);
-            renderFilter(sortedMicrocycles);
-        }
-        
-        function renderFilter(microcycles) {
-            if (microcycles.length === 0) {
-                filterContainer.innerHTML = '';
-                return;
-            }
-            const currentSelection = Array.from(document.querySelectorAll('.microciclo-checkbox:checked')).map(cb => cb.value);
-            const latestMicrocycle = microcycles[microcycles.length -1];
-            filterContainer.innerHTML = `
-                <div class="bg-white p-4 rounded-lg border shadow-sm">
-                    <label class="font-semibold text-gray-700 block mb-2">Selecione o(s) Microciclo(s):</label>
-                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                        ${microcycles.map(mc => `
-                            <div class="flex items-center">
-                                <input id="mc-${mc}" type="checkbox" value="${mc}" class="microciclo-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${currentSelection.length > 0 ? (currentSelection.includes(mc) ? 'checked' : '') : (mc === latestMicrocycle ? 'checked' : '')}>
-                                <label for="mc-${mc}" class="ml-2 block text-sm text-gray-900">${mc}</label>
-                            </div>
-                        `).join('')}
+                <div class="flex items-center p-4">
+                    <div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div>
+                    <div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${result.index}</div>
+                    <div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div>
+                    <div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${hooperScoreValue}</span></div>
+                    <div class="w-1/6 text-center font-semibold ${saltoClass}">${saltoDisplay}</div>
+                    <div class="w-12 text-center">
+                        <button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-prontidao-${uniqueId}" data-daily-history='${result.dailyHistory ? JSON.stringify(result.dailyHistory) : ''}'>
+                            <svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        </button>
                     </div>
-                </div>`;
-        }
-
-        function displayFilteredLoadData(selectedIds, dataForTeam) {
-            if (!selectedIds || selectedIds.length === 0) return;
-            
-            const individualResults = [];
-            let allEntriesInCycles = [];
-            let weeklyTeamData = [];
-            const sortedSelectedIds = sortWeeks([...selectedIds]);
-            
-            const athletesInTeam = [...new Set(dataForTeam.map(d => d.atleta_id))];
-
-            athletesInTeam.forEach(athleteId => {
-                 if (!athleteMicrocycleData[athleteId]) return;
-
-                const allAthleteCycles = athleteMicrocycleData[athleteId];
-                
-                sortedSelectedIds.forEach(mc_id => {
-                    const cycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === mc_id);
-                    if (cycleIndex !== -1) {
-                        const cycle = allAthleteCycles[cycleIndex];
-                        const acuteLoad = cycle.totalLoad;
-                        const chronicCycles = allAthleteCycles.slice(Math.max(0, cycleIndex - 3), cycleIndex + 1);
-                        const chronicLoad = getStats(chronicCycles.map(c => c.totalLoad)).mean;
-                        const acwr = chronicLoad > 0 ? acuteLoad / chronicLoad : null;
-
-                        if (selectedIds.length > 1) {
-                            weeklyTeamData.push({ microciclo_id: mc_id, totalLoad: cycle.totalLoad, strain: cycle.strain, acwr: acwr });
-                        }
-                    }
-                });
-                
-                const selectedCycles = allAthleteCycles.filter(c => selectedIds.includes(c.microciclo_id));
-                if(selectedCycles.length === 0) return;
-
-                const avgWeeklyLoad = getStats(selectedCycles.map(c => c.totalLoad)).mean;
-                const avgMonotony = getStats(selectedCycles.map(c => c.monotony)).mean;
-                const avgStrain = getStats(selectedCycles.map(c => c.strain)).mean;
-                
-                const aggregatedDailyEntries = selectedCycles.flatMap(c => c.dailyEntries);
-                
-                const lastSelectedCycleId = sortedSelectedIds[sortedSelectedIds.length - 1];
-                const lastCycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === lastSelectedCycleId);
-                let acwrForTable = null;
-                let hasEnoughDataForAcwr = false;
-
-                if (lastCycleIndex > -1) {
-                    const acuteLoad = allAthleteCycles[lastCycleIndex].totalLoad;
-                    const chronicCycles = allAthleteCycles.slice(Math.max(0, lastCycleIndex - 3), lastCycleIndex + 1);
-                    const chronicLoad = getStats(chronicCycles.map(c => c.totalLoad)).mean;
-                    
-                    if (chronicLoad > 0) {
-                        acwrForTable = acuteLoad / chronicLoad;
-                    }
-                    hasEnoughDataForAcwr = chronicCycles.length >= 4;
-                }
-                
-                individualResults.push({
-                    athleteId,
-                    totalLoad: avgWeeklyLoad, 
-                    monotony: avgMonotony,
-                    strain: avgStrain, 
-                    acwr: acwrForTable,
-                    hasEnoughDataForAcwr,
-                    chartData: {
-                        labels: aggregatedDailyEntries.sort((a,b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`)).map(e => new Date(`${e.date}T00:00:00`).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})),
-                        loads: aggregatedDailyEntries.sort((a,b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`)).map(e => e.load)
-                    }
-                });
-                allEntriesInCycles.push(...aggregatedDailyEntries);
-            });
-
-            const loadsByDayOfWeek = allEntriesInCycles.reduce((acc, entry) => {
-                const dayOfWeek = new Date(`${entry.date}T00:00:00`).getUTCDay();
-                if (!acc[dayOfWeek]) acc[dayOfWeek] = [];
-                acc[dayOfWeek].push(entry.load);
-                return acc;
-            }, {});
-            const dailyAverages = [0,1,2,3,4,5,6].map(day => getStats(loadsByDayOfWeek[day] || []).mean);
-
-            const evolutionData = sortedSelectedIds.map(mc_id => {
-                const weekData = weeklyTeamData.filter(d => d.microciclo_id === mc_id);
-                return {
-                    microciclo_id: mc_id,
-                    totalLoad: getStats(weekData.map(d=>d.totalLoad)).mean,
-                    strain: getStats(weekData.map(d=>d.strain)).mean,
-                    acwr: getStats(weekData.filter(d=>d.acwr != null).map(d=>d.acwr)).mean
-                };
-            });
-            const teamStats = {
-                avgAcwr: getStats(individualResults.filter(r => r.acwr != null).map(r => r.acwr)).mean,
-                avgStrain: getStats(individualResults.map(r => r.strain)).mean,
-                dailyAverages: dailyAverages, evolutionData: evolutionData,
-                selectionCount: selectedIds.length, microcicloId: sortedSelectedIds.join(', ')
-            };
-            
-            latestCargaData = teamStats;
-            updateDashboardView();
-            individualResults.sort((a, b) => (b.acwr ?? -1) - (a.acwr ?? -1));
-
-            teamDashboardCarga.innerHTML = renderTeamDashboardCarga(teamStats);
-            renderLoadTable(individualResults);
-            renderLegends('carga');
-
-            if (teamStats.selectionCount > 1) {
-                renderTeamWeeklyLoadChart(teamStats.evolutionData);
-                renderTeamAcwrChart(teamStats.evolutionData);
-                renderTeamStrainChart(teamStats.evolutionData);
-            } else {
-                 renderTeamDailyLoadChart(teamStats.dailyAverages);
-            }
-        }
-
-        function renderTeamDashboardCarga(stats, isForDashboard = false) {
-             if(!stats) return '';
-            const avgAcwr = stats.avgAcwr ? stats.avgAcwr.toFixed(2) : '--';
-            const avgStrain = stats.avgStrain ? Math.round(stats.avgStrain) : '--';
-            const title = isForDashboard ? 'Resumo da Carga de Treino' : 'Painel da Equipe';
-            const prefix = isForDashboard ? 'dashboard-' : '';
-            const teamName = selectedTeam === 'all' ? 'Geral' : selectedTeam;
-
-            let chartsHtml = '';
-            if (stats.selectionCount > 1) {
-                 chartsHtml = `<div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">Carga Aguda por Semana</p><div class="w-full h-28"><canvas id="${prefix}team-weekly-load-chart"></canvas></div></div><div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">ACWR por Semana</p><div class="w-full h-28"><canvas id="${prefix}team-acwr-chart"></canvas></div></div><div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[160px]"><p class="text-sm font-medium text-gray-600 mb-2">Strain por Semana</p><div class="w-full h-28"><canvas id="${prefix}team-strain-chart"></canvas></div></div>`;
-            } else {
-                chartsHtml = `<div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600 mb-2">Média Diária de Carga</p><div class="w-full h-24"><canvas id="${prefix}team-daily-chart"></canvas></div></div><div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">ACWR Médio</p><p class="text-5xl font-bold ${getAwcrClassification(stats.avgAcwr).class}">${avgAcwr}</p></div><div class="md:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg min-h-[140px]"><p class="text-sm font-medium text-gray-600">Strain Médio</p><p class="text-5xl font-bold ${getStrainClassification(stats.avgStrain).class}">${avgStrain}</p></div>`;
-            }
-
-            return `<h2 class="text-2xl font-bold text-gray-900 mb-4 text-center">${title} <span class="text-base font-normal text-gray-500">(${teamName} - ${stats.microcicloId})</span></h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">${chartsHtml}</div>
-                    <div class="mt-4 flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-xs text-gray-500">
-                         <span><strong class="text-green-600">ACWR Ideal:</strong> 0.8-1.3</span>
-                         <span><strong class="text-yellow-600">Atenção:</strong> &lt;0.8 ou 1.3-1.5</span>
-                         <span><strong class="text-red-600">Perigo:</strong> >1.5</span>
-                    </div>`;
-        }
-
-        function renderTeamDailyLoadChart(dailyData, prefix = '') {
-            const canvasId = `${prefix}team-daily-chart`;
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-            const data = labels.map((_, i) => dailyData[i] || 0);
-            const backgroundColors = data.map(load => getCargaAgudaChartColor(load));
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'bar', data: { labels, datasets: [{ label: 'Média Diária', data, backgroundColor: backgroundColors }] },
-                options: { maintainAspectRatio: false, scales: { y: { display: false, beginAtZero: true, min: 0, max: 1000 }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { anchor: 'center', align: 'center', color: 'white', formatter: (v) => v > 0 ? Math.round(v) : null } } }
-            });
-        }
-
-        function renderTeamWeeklyLoadChart(evolutionData, prefix = '') {
-            const canvasId = `${prefix}team-weekly-load-chart`;
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const labels = evolutionData.map(d => d.microciclo_id);
-            const data = evolutionData.map(d => d.totalLoad);
-            const backgroundColors = data.map(load => getCargaAgudaChartColor(load));
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'bar', data: { labels, datasets: [{ label: 'Carga Semanal', data, backgroundColor: backgroundColors }] },
-                options: { maintainAspectRatio: false, scales: { y: { display: true, beginAtZero: true, min: 0, max: 5000 }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { display: evolutionData.length <= 12, anchor: 'center', align: 'center', color: 'white', formatter: (v) => v > 0 ? Math.round(v) : null } } }
-            });
-        }
-
-        function renderTeamAcwrChart(evolutionData, prefix = '') {
-            const canvasId = `${prefix}team-acwr-chart`;
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'line', data: { labels: evolutionData.map(d => d.microciclo_id), datasets: [{ label: 'ACWR', data: evolutionData.map(d => d.acwr), borderColor: 'rgb(234, 179, 8)', fill: false, tension: 0.1 }] },
-                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, min: 0, max: 2 }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { display: evolutionData.length <= 12, align: 'top' } } }
-            });
-        }
-
-        function renderTeamStrainChart(evolutionData, prefix = '') {
-            const canvasId = `${prefix}team-strain-chart`;
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'line', 
-                data: { 
-                    labels: evolutionData.map(d => d.microciclo_id), 
-                    datasets: [{ 
-                        label: 'Strain', 
-                        data: evolutionData.map(d => d.strain), 
-                        borderColor: 'rgb(239, 68, 68)', 
-                        fill: false, 
-                        tension: 0.1 
-                    }] 
-                },
-                options: { 
-                    maintainAspectRatio: false, 
-                    scales: { 
-                        y: { beginAtZero: true, min: 0, max: 15000 }, 
-                        x: { grid: { display: false } } 
-                    }, 
-                    plugins: { 
-                        legend: { display: false }, 
-                        datalabels: { 
-                            display: evolutionData.length <= 12,
-                            align: 'top',
-                            formatter: (value) => Math.round(value)
-                        } 
-                    } 
-                }
-            });
-        }
-
-        function renderLoadTable(results) {
-             resultsContainerCarga.innerHTML = `<div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0"><div class="w-2/6">Atleta</div><div class="w-1/6 text-center">ACWR</div><div class="w-1/6 text-center">Carga Aguda Média</div><div class="w-1/6 text-center">Monotonia</div><div class="w-1/6 text-center">Strain</div><div class="w-12"></div></div><div>${results.map(createLoadResultRow).join('')}</div>`;
-        }
-
-        function createLoadResultRow(result) {
-            const cleanAthleteId = result.athleteId.replace(/\s+/g, '-');
-            const acwrText = result.acwr != null ? result.acwr.toFixed(2) : '--';
-            const cargaClass = getCargaAgudaClassification(result.totalLoad).class;
-            const chartData = JSON.stringify(result.chartData);
-
-            return `<div class="border-b last:border-b-0"><div class="flex items-center p-4"><div class="w-2/6 font-bold text-gray-800">${result.athleteId}</div><div class="w-1/6 text-center font-bold text-xl ${getAwcrClassification(result.acwr).class}">${acwrText} ${!result.hasEnoughDataForAcwr && result.acwr != null ? '*' : ''}</div><div class="w-1/6 text-center font-semibold text-lg ${cargaClass}">${Math.round(result.totalLoad)}</div><div class="w-1/6 text-center font-semibold text-lg ${getMonotonyClassification(result.monotony).class}">${result.monotony.toFixed(2)}</div><div class="w-1/6 text-center font-semibold text-lg ${getStrainClassification(result.strain).class}">${Math.round(result.strain)}</div><div class="w-12 text-center"><button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-carga-${cleanAthleteId}" data-athlete="${cleanAthleteId}" data-chartdata='${chartData}'><svg class="arrow-icon w-5 h-5 text-gray-500 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button></div></div><div class="details-section bg-gray-50" id="details-carga-${cleanAthleteId}"><div class="p-4"><h4 class="font-semibold text-sm mb-2 text-gray-700">Carga Diária do(s) Microciclo(s):</h4><div class="h-64 w-full"><canvas id="chart-${cleanAthleteId}"></canvas></div></div></div></div>`;
-        }
-
-        function renderAthleteChart(canvasId, chartData, label) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'bar', data: { labels: chartData.labels, datasets: [{ label: label, data: chartData.loads, backgroundColor: 'rgba(59, 130, 246, 0.5)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1 }] },
-                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, min: 0, max: 1000, title: { display: true, text: 'Carga (PSE x Duração)' } }, x: { title: { display: true, text: 'Data' } } }, plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top' } } }
-            });
-        }
-
-        // --- PLANEJAMENTO FUNCTIONS ---
-        function getSelectedOptions(selectElement) {
-            return Array.from(selectElement.selectedOptions).map(option => option.value);
-        }
-
-        async function handleFormFisicoSubmit(e) {
-            e.preventDefault();
-            const equipeId = equipeIdFisicoInput.value;
-            if(!equipeId || equipeId === 'Selecione uma equipe') {
-                showToast("Selecione uma equipe para cadastrar o treino.");
-                return;
-            }
-            const btn = e.target.querySelector('button[type="submit"]');
-            btn.disabled = true;
-
-            const treino = {
-                equipe_id: equipeId,
-                type: 'fisico', date: document.getElementById('dataTreinoFisico').value,
-                semana_id: document.getElementById('semanaIdFisico').value,
-                objPrincipal: document.getElementById('objPrincipalFisico').value,
-                objSecundario: getSelectedOptions(document.getElementById('objSecundarioFisico')),
-                local: document.getElementById('localTreinoFisico').value,
-                carga: document.getElementById('cargaTreinoFisico').value,
-                cargaText: document.getElementById('cargaTreinoFisico').options[document.getElementById('cargaTreinoFisico').selectedIndex].text,
-                createdAt: serverTimestamp()
-            };
-            try {
-                await addDoc(treinosFisicosCollection, treino);
-                showToast('Treino Físico adicionado!', 'success');
-                formTreinoFisico.reset();
-                equipeIdFisicoInput.value = equipeId;
-                document.getElementById('dataTreinoFisico').valueAsDate = new Date();
-                document.getElementById('dataTreinoFisico').dispatchEvent(new Event('change'));
-
-            } catch (error) {
-                showToast("Erro ao salvar o treino físico.");
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        async function handleFormCampoSubmit(e) {
-            e.preventDefault();
-            const equipeId = equipeIdCampoInput.value;
-             if(!equipeId || equipeId === 'Selecione uma equipe') {
-                showToast("Selecione uma equipe para cadastrar o treino.");
-                return;
-            }
-            const btn = e.target.querySelector('button[type="submit"]');
-            btn.disabled = true;
-
-            const treino = {
-                equipe_id: equipeId,
-                type: 'campo', date: document.getElementById('dataTreinoCampo').value,
-                semana_id: document.getElementById('semanaIdCampo').value,
-                objPrincipal: document.getElementById('objPrincipalCampo').value,
-                objSecundario: getSelectedOptions(document.getElementById('objSecundarioCampo')),
-                campo: document.getElementById('campoTreinoCampo').value,
-                carga: document.getElementById('cargaTreinoCampo').value,
-                cargaText: document.getElementById('cargaTreinoCampo').options[document.getElementById('cargaTreinoCampo').selectedIndex].text,
-                createdAt: serverTimestamp()
-            };
-            try {
-                await addDoc(treinosCampoCollection, treino);
-                showToast('Treino de Campo adicionado!', 'success');
-                formTreinoCampo.reset();
-                equipeIdCampoInput.value = equipeId;
-                document.getElementById('dataTreinoCampo').valueAsDate = new Date();
-                document.getElementById('dataTreinoCampo').dispatchEvent(new Event('change'));
-            } catch (error) {
-                showToast("Erro ao salvar o treino de campo.");
-            } finally {
-                btn.disabled = false;
-            }
-        }
-        
-        function renderPlanningFilter() {
-            const allTrainings = [...treinosFisicos, ...treinosCampo];
-            const existingWeeks = [...new Set(allTrainings.map(t => t.semana_id))];
-            const futureWeeks = Array.from({length: 5}, (_, i) => {
-                const d = new Date();
-                d.setDate(d.getDate() + (i * 7));
-                return getWeekId(d);
-            });
-
-            const allWeeks = sortWeeks([...new Set([...existingWeeks, ...futureWeeks, getWeekId(new Date())])].filter(Boolean));
-            
-            filterContainerPlanejamento.innerHTML = `
-                 <div class="bg-white p-4 rounded-lg border shadow-sm">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="font-semibold text-gray-700">Selecione a(s) Semana(s) para Planejamento:</label>
-                        <button id="deletePlanningWeeksBtn" class="btn bg-red-100 text-red-700 font-semibold py-1 px-3 rounded-lg hover:bg-red-200 transition text-sm">Excluir Semanas</button>
-                    </div>
-                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                        ${allWeeks.map(week => `
-                            <div class="flex items-center">
-                                <input id="plan-week-${week}" type="checkbox" value="${week}" class="planning-week-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" ${selectedPlanningWeeks.includes(week) ? 'checked' : ''}>
-                                <label for="plan-week-${week}" class="ml-2 block text-sm text-gray-900">${week}</label>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>`;
-            document.getElementById('deletePlanningWeeksBtn').addEventListener('click', deleteSelectedPlanningWeeks);
+                </div>
+                <div class="details-section bg-gray-50" id="details-prontidao-${uniqueId}"><div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><h4 class="font-semibold text-sm mb-2">Detalhes (Valor atual vs. Média Histórica):</h4><ul class="space-y-1">${detailsHtml}</ul></div><div class="bg-blue-50 border p-3 rounded-lg self-start"><h4 class="font-semibold text-sm mb-1">Sugestão:</h4><p class="text-sm">${recommendation}</p></div>${dailyChartsHtml}</div></div>
+            </div>`;
         }
 
         function renderPlanningView() {
@@ -2643,374 +1035,118 @@
             renderDailyLoadChart('chartCargaFisico', fisicoSemana);
             renderDailyLoadChart('chartCargaCampo', campoSemana);
         }
-        
-        async function deleteSelectedPlanningWeeks() {
-            const selectedCheckboxes = document.querySelectorAll('.planning-week-checkbox:checked');
-            const weeksToDelete = Array.from(selectedCheckboxes).map(cb => cb.value);
 
-            if (weeksToDelete.length === 0) {
-                showToast("Nenhuma semana selecionada para excluir.");
-                return;
-            }
-
-            showConfirmationModal(
-                `Tem certeza que deseja apagar todos os treinos da(s) semana(s) ${weeksToDelete.join(', ')}? Esta ação não pode ser desfeita.`,
-                async () => {
-                    showToast('Excluindo treinos...', 'success');
-                    const batch = writeBatch(db);
-                    
-                    const qFisico = query(treinosFisicosCollection, where("semana_id", "in", weeksToDelete));
-                    const qCampo = query(treinosCampoCollection, where("semana_id", "in", weeksToDelete));
-
-                    const [fisicoSnap, campoSnap] = await Promise.all([getDocs(qFisico), getDocs(qCampo)]);
-
-                    fisicoSnap.docs.forEach(d => batch.delete(d.ref));
-                    campoSnap.docs.forEach(d => batch.delete(d.ref));
-
-                    await batch.commit();
-                    showToast('Semanas e treinos associados removidos.', 'success');
-                },
-                'Excluir Semanas de Planejamento'
-            );
-        }
-
-        function renderTimeline(container, treinos, emptyMessage) {
-            if (!container) return;
-            container.innerHTML = '';
-            if (treinos.length === 0) {
-                 container.innerHTML = `<p class="col-span-full text-gray-500 text-center w-full py-8">${emptyMessage}</p>`;
-                return;
-            }
-
-            const trainingsByDate = treinos.reduce((acc, treino) => {
-                if (!acc[treino.date]) {
-                    acc[treino.date] = [];
-                }
-                acc[treino.date].push(treino);
-                return acc;
-            }, {});
-
-            const sortedDates = Object.keys(trainingsByDate).sort((a, b) => new Date(a) - new Date(b));
-
-            sortedDates.forEach(date => {
-                const dayTrainings = trainingsByDate[date];
-                const dayElement = document.createElement('div');
-                dayElement.className = 'mb-4'; 
-
-                const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short' });
-
-                const trainingsHtml = dayTrainings.map(treino => {
-                    const borderColorClass = `carga-${treino.carga}`;
-                    const objSecundarioText = Array.isArray(treino.objSecundario) && treino.objSecundario.length > 0 ? treino.objSecundario.join(', ') : 'N/A';
-                    const bgColor = treino.type === 'fisico' ? 'bg-blue-50' : 'bg-green-50';
-                    const iconColor = treino.type === 'fisico' ? 'text-blue-600' : 'text-green-600';
-                    const iconLetter = treino.type === 'fisico' ? 'F' : 'C';
-
-                    return `
-                        <li class="flex items-center gap-x-3 p-2 rounded-lg ${bgColor} border-l-4 ${borderColorClass}">
-                            <div class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full ${iconColor} bg-white font-bold text-sm shadow-sm">
-                                ${iconLetter}
-                            </div>
-                            <div class="flex-grow">
-                                <p class="font-semibold text-gray-800 text-sm leading-tight">${treino.objPrincipal} <span class="text-xs font-normal text-gray-500">(${treino.local || treino.campo})</span></p>
-                                <p class="text-xs text-gray-600 leading-tight" title="${objSecundarioText}">
-                                    ${objSecundarioText}
-                                </p>
-                            </div>
-                            <div class="flex-shrink-0 text-right w-28">
-                                <p class="text-xs font-semibold text-gray-700">${treino.cargaText}</p>
-                            </div>
-                            <div class="flex-shrink-0">
-                                <button class="remove-training-btn text-gray-400 hover:text-red-500 text-xl font-bold leading-none p-1" data-id="${treino.id}" data-type="${treino.type}">&times;</button>
-                            </div>
-                        </li>
-                    `;
-                }).join('');
-
-                dayElement.innerHTML = `
-                    <div>
-                        <h4 class="font-bold text-gray-500 text-sm tracking-wider uppercase mb-2">${formattedDate}</h4>
-                        <ul class="space-y-2">
-                            ${trainingsHtml}
-                        </ul>
-                    </div>
-                `;
-
-                container.appendChild(dayElement);
-            });
-            
-            document.querySelectorAll('.remove-training-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const { id, type } = e.currentTarget.dataset;
-                    showConfirmationModal(`Tem certeza que deseja remover este treino de ${type}?`, () => removeTraining(id, type));
-                });
-            });
-        }
-
-
-        function renderDailyLoadChart(canvasId, treinos, isDashboard = false) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-            const dailyMaxLoad = {};
-            treinos.forEach(t => {
-                const dayOfWeek = new Date(t.date + 'T00:00:00').getUTCDay();
-                const loadValue = CARGA_PERCENTUAL[t.carga];
-                if (!dailyMaxLoad[dayOfWeek] || loadValue > dailyMaxLoad[dayOfWeek]) {
-                    dailyMaxLoad[dayOfWeek] = loadValue;
-                }
-            });
-
-            const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-            const data = labels.map((_, i) => dailyMaxLoad[i] || 0);
-
-            const backgroundColors = data.map(load => {
-                if (load === 100) return 'rgba(239, 68, 68, 0.7)'; if (load === 90) return 'rgba(249, 115, 22, 0.7)';
-                if (load === 70) return 'rgba(245, 158, 11, 0.7)'; if (load > 0) return 'rgba(59, 130, 246, 0.7)';
-                return '#e5e7eb';
-            });
-            
-            const options = {
-                 responsive: true, maintainAspectRatio: false, 
-                 scales: { 
-                    y: { 
-                        beginAtZero: true, min: 0, max: 100, 
-                        display: !isDashboard,
-                        title: { display: !isDashboard, text: 'Carga (%)' } 
-                    }, 
-                    x: { 
-                        grid: { display: false },
-                        ticks: { font: { size: isDashboard ? 8 : 12 } }
-                    } 
-                 }, 
-                 plugins: { 
-                    legend: { display: false }, 
-                    datalabels: { display: false } 
-                 } 
-            };
-            if(isDashboard){
-                 options.scales.y.ticks = { display: false };
-            }
-
-
-            activeCharts[canvasId] = new Chart(ctx, {
-                type: 'bar', data: { labels, datasets: [{ label: 'Carga Planejada (%)', data, backgroundColor: backgroundColors }] },
-                options: options
-            });
-        }
-
-        // --- LESÕES FUNCTIONS ---
-        async function handleFormLesaoSubmit(e) {
+        async function handleFormFisicoSubmit(e) {
             e.preventDefault();
+            const equipeId = equipeIdFisicoInput.value;
+            if(!equipeId || equipeId === 'Selecione uma equipe') { showToast("Selecione uma equipe para cadastrar o treino."); return; }
             
-            const equipeId = equipeIdLesaoInput.value;
-            if(!equipeId || equipeId === 'Selecione uma equipe') {
-                showToast("Por favor, selecione uma equipe antes de registrar uma lesão.");
-                return;
-            }
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
 
-            submitLesaoBtn.disabled = true;
-
-            const lesao = {
-                equipe_id: equipeId,
-                atleta: document.getElementById('atletaLesao').value,
-                lesao: document.getElementById('lesao').value,
-                tratamento: document.getElementById('tratamento').value,
-                status: document.getElementById('statusLesao').value,
+            const treino = {
+                equipe_id: equipeId, type: 'fisico', date: document.getElementById('dataTreinoFisico').value, semana_id: document.getElementById('semanaIdFisico').value,
+                objPrincipal: document.getElementById('objPrincipalFisico').value, objSecundario: getSelectedOptions(document.getElementById('objSecundarioFisico')),
+                local: document.getElementById('localTreinoFisico').value, carga: document.getElementById('cargaTreinoFisico').value,
+                cargaText: document.getElementById('cargaTreinoFisico').options[document.getElementById('cargaTreinoFisico').selectedIndex].text,
                 createdAt: serverTimestamp()
             };
-
             try {
-                await addDoc(lesoesCollection, lesao);
-                showToast('Registro de lesão salvo!', 'success');
-                formLesao.reset();
-                equipeIdLesaoInput.value = equipeId;
-            } catch (error) {
-                console.error("Erro ao salvar lesão: ", error);
-                showToast("Erro ao salvar o registro de lesão.");
-            } finally {
-                submitLesaoBtn.disabled = false;
-            }
+                await addDoc(treinosFisicosCollection, treino);
+                showToast('Treino Físico adicionado!', 'success');
+                formTreinoFisico.reset();
+                equipeIdFisicoInput.value = equipeId;
+                document.getElementById('dataTreinoFisico').valueAsDate = new Date(); document.getElementById('dataTreinoFisico').dispatchEvent(new Event('change'));
+            } catch (error) { showToast("Erro ao salvar o treino físico."); } finally { btn.disabled = false; }
         }
 
-        function createLesaoCard(lesao) {
-            let statusClass = '';
-            let statusText = '';
-            switch(lesao.status) {
-                case 'nao-liberado':
-                    statusClass = 'bg-red-100 text-red-800';
-                    statusText = 'Não Liberado';
-                    break;
-                case 'restricoes':
-                    statusClass = 'bg-yellow-100 text-yellow-800';
-                    statusText = 'Com Restrições';
-                    break;
-            }
-
-            return `
-                 <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 ${lesao.status === 'nao-liberado' ? 'border-red-500' : 'border-yellow-500'}">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="font-bold text-lg text-gray-800">${lesao.atleta}</p>
-                            <p class="text-sm text-gray-600 font-medium">${lesao.lesao}</p>
-                        </div>
-                        <span class="text-xs font-semibold px-2 py-1 rounded-full ${statusClass}">${statusText}</span>
-                    </div>
-                    <div class="mt-2 pt-2 border-t">
-                        <p class="text-sm text-gray-700 whitespace-pre-wrap">${lesao.tratamento || 'Nenhum tratamento especificado.'}</p>
-                    </div>
-                    <div class="flex justify-end gap-x-2 mt-3">
-                        <button class="btn-update-lesao text-xs bg-green-100 text-green-700 hover:bg-green-200 px-3 py-1 rounded-md" data-id="${lesao.id}" data-status="liberado" data-atleta="${lesao.atleta}">Marcar como Liberado</button>
-                        <button class="btn-update-lesao text-xs bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 rounded-md" data-id="${lesao.id}" data-status="delete" data-atleta="${lesao.atleta}">Remover</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function populateTeamFilter() {
-            const allData = [...fullProntidaoData, ...fullCargaData, ...lesoesData];
-            const teams = [...new Set(allData.map(d => d.equipe_id).filter(Boolean))].sort();
+        async function handleFormCampoSubmit(e) {
+            e.preventDefault();
+            const equipeId = equipeIdCampoInput.value;
+            if(!equipeId || equipeId === 'Selecione uma equipe') { showToast("Selecione uma equipe para cadastrar o treino."); return; }
             
-            const currentSelectedTeam = teamFilterSelect.value;
-            
-            teamFilterSelect.innerHTML = `<option value="all">Todas as Equipes</option>`;
-            teams.forEach(team => {
-                const option = document.createElement('option');
-                option.value = team;
-                option.textContent = team;
-                teamFilterSelect.appendChild(option);
-            });
-
-            if(teams.includes(currentSelectedTeam)){
-                teamFilterSelect.value = currentSelectedTeam;
-            } else {
-                 teamFilterSelect.value = 'all';
-                 selectedTeam = 'all';
-            }
-        }
-
-
-        function populateAthleteDatalist() {
-            const dataForTeamProntidao = selectedTeam === 'all' ? fullProntidaoData : fullProntidaoData.filter(d => d.equipe_id === selectedTeam);
-            const dataForTeamCarga = selectedTeam === 'all' ? fullCargaData : fullCargaData.filter(d => d.equipe_id === selectedTeam);
-
-            const athleteNamesFromProntidao = dataForTeamProntidao.map(d => d.atleta_id);
-            const athleteNamesFromCarga = dataForTeamCarga.map(d => d.atleta_id);
-            const allNames = [...new Set([...athleteNamesFromProntidao, ...athleteNamesFromCarga])].sort();
-            
-            const datalist = document.getElementById('atleta-list-options');
-            datalist.innerHTML = allNames.map(name => `<option value="${name}"></option>`).join('');
-        }
-
-        function showConfirmationModal(text, onConfirm, title = "Confirmar Ação") {
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalText').textContent = text;
-            confirmModal.classList.remove('hidden');
-
-            const confirmBtn = document.getElementById('confirmButton');
-            const cancelBtn = document.getElementById('cancelButton');
-
-            const confirmHandler = () => {
-                onConfirm();
-                hideModal();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            const treino = {
+                equipe_id: equipeId, type: 'campo', date: document.getElementById('dataTreinoCampo').value, semana_id: document.getElementById('semanaIdCampo').value,
+                objPrincipal: document.getElementById('objPrincipalCampo').value, objSecundario: getSelectedOptions(document.getElementById('objSecundarioCampo')),
+                campo: document.getElementById('campoTreinoCampo').value, carga: document.getElementById('cargaTreinoCampo').value,
+                cargaText: document.getElementById('cargaTreinoCampo').options[document.getElementById('cargaTreinoCampo').selectedIndex].text,
+                createdAt: serverTimestamp()
             };
-            
-            const cancelHandler = () => {
-                hideModal();
-            };
-
-            const hideModal = () => {
-                confirmModal.classList.add('hidden');
-                confirmBtn.removeEventListener('click', confirmHandler);
-                cancelBtn.removeEventListener('click', cancelHandler);
-            };
-
-            confirmBtn.addEventListener('click', confirmHandler);
-            cancelBtn.addEventListener('click', cancelHandler);
-        }
-
-        async function removeTraining(id, type) {
-            showToast(`Removendo treino...`, 'success');
             try {
-                const collectionName = type === 'fisico' ? 'treinosFisicos' : 'treinosCampo';
-                await deleteDoc(doc(db, collectionName, id));
-            } catch (error) {
-                showToast("Erro ao remover o treino.");
+                await addDoc(treinosCampoCollection, treino);
+                showToast('Treino de Campo adicionado!', 'success');
+                formTreinoCampo.reset();
+                equipeIdCampoInput.value = equipeId;
+                document.getElementById('dataTreinoCampo').valueAsDate = new Date(); document.getElementById('dataTreinoCampo').dispatchEvent(new Event('change'));
+            } catch (error) { showToast("Erro ao salvar o treino de campo."); } finally { btn.disabled = false; }
+        }
+
+        // As demais funções (calculateAthleteReadiness, renderização de gráficos, helpers, etc.) permanecem majoritariamente as mesmas.
+        // A lógica de filtragem por equipe é aplicada antes de chamar essas funções, garantindo que elas operem no conjunto de dados correto.
+        // A função calculateAthleteReadiness foi levemente ajustada para ser mais robusta quando não há dados históricos.
+        
+        // --- FUNÇÕES HELPER E DE RENDERIZAÇÃO RESTANTES ---
+        // (O restante do seu código JS original com as modificações já mostradas nas respostas anteriores)
+        // ... (inclui: calculateAthleteReadiness, renderFilterProntidao, renderTeamDashboard*, createLoadResultRow, etc.)
+        // A função createProntidaoResultRow foi a única outra função significativamente alterada nesta seção para o ajuste visual.
+        // O restante do código JS pode ser colado aqui.
+
+        // Exemplo da função calculateAthleteReadiness ajustada:
+        function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, displayDate) {
+            const getZScore = (key, value) => {
+                let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
+                if (dataPoints.length < 2) { 
+                    const allAthletePoints = fullProntidaoData.filter(d => d.atleta_id === athleteId && d.data !== displayDate && d[key] != null && !isNaN(d[key]) && d[key] > 0).map(e => e[key]);
+                    if (allAthletePoints.length < 2) return 0; // Retorna 0 (neutro) se não houver histórico suficiente em lugar nenhum
+                    dataPoints = allAthletePoints;
+                }
+                if (value == null) return 0;
+                const { mean, stdDev } = getStats(dataPoints);
+                return stdDev === 0 ? 0 : (value - mean) / stdDev;
+            };
+            const cap = (val) => Math.max(-2.5, Math.min(2.5, val));
+            const saltoValue = latestEntry['salto_horizontal_cm'];
+            const vfcValue = latestEntry['vfc_rmssd'];
+            const performanceScores = [
+                (saltoValue != null && saltoValue > 0) ? getZScore('salto_horizontal_cm', saltoValue) : null,
+                (vfcValue != null && vfcValue > 0) ? getZScore('vfc_rmssd', vfcValue) : null
+            ].filter(s => s != null);
+            const performancePillar = performanceScores.length > 0 ? cap(getStats(performanceScores).mean) : 0;
+            let hooperAdjustment = 0;
+            if (latestEntry.hooper_score != null) {
+                if (latestEntry.hooper_score <= 9) hooperAdjustment = 0.25;
+                else if (latestEntry.hooper_score <= 17) hooperAdjustment = -0.25;
+                else hooperAdjustment = -0.50;
             }
-        };
-
-        // --- CLASSIFICATION & LEGENDS ---
-        const getHooperClassification = score => {
-            if (score == null) return { class: 'text-gray-700', bg: 'bg-gray-100', border: 'border-gray-200' };
-            if (score <= 9) return { class: 'text-green-700', bg: 'bg-green-100', border: 'border-green-200' };
-            if (score <= 17) return { class: 'text-yellow-700', bg: 'bg-yellow-100', border: 'border-yellow-200' };
-            return { class: 'text-red-700', bg: 'bg-red-100', border: 'border-red-200' };
-        };
-        const getIndexClassification = index => {
-            if (index == null) return { class: 'text-gray-700' };
-            if (index < -1.5) return { class: 'text-red-600' };
-            if (index < -0.5) return { class: 'text-yellow-600' };
-            return { class: 'text-green-600' };
-        };
-        const getCargaAgudaClassification = load => {
-            if (load == null) return { class: 'text-gray-700' };
-            if (load <= 2500) return { class: 'text-blue-600' };
-            if (load <= 5000) return { class: 'text-green-600' };
-            return { class: 'text-red-600' };
-        };
-        const getCargaAgudaChartColor = load => {
-            if (load == null || load === 0) return '#cbd5e1'; 
-            if (load <= 2500) return 'rgba(59, 130, 246, 0.7)'; 
-            if (load <= 5000) return 'rgba(34, 197, 94, 0.7)'; 
-            return 'rgba(239, 68, 68, 0.7)';
+            const readinessIndex = performancePillar + hooperAdjustment;
+            let zone;
+            if (readinessIndex < -1.5) zone = 'red';
+            else if (readinessIndex < -0.5) zone = 'yellow';
+            else zone = 'green';
+            const metricsDetail = Object.keys(METRIC_NAMES).reduce((acc, key) => {
+                 let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v));
+                 let mean = getStats(dataPoints).mean;
+                 if (dataPoints.length === 0) {
+                     const allOtherEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && d.data !== displayDate).map(e => e[key]).filter(v => v != null && !isNaN(v));
+                     mean = getStats(allOtherEntries).mean;
+                 }
+                acc[key] = { latest: latestEntry[key], mean: mean };
+                return acc;
+            }, {});
+            const saltoMeanHistorical = metricsDetail.salto_horizontal_cm?.mean || 0;
+            const saltoLatest = latestEntry.salto_horizontal_cm;
+            const saltoDiff = (saltoLatest && saltoMeanHistorical > 0) ? ((saltoLatest - saltoMeanHistorical) / saltoMeanHistorical) * 100 : null;
+            return { 
+                athleteId, status: 'ready', index: readinessIndex.toFixed(2), zone, 
+                metricsDetail, hooperScore: { latest: latestEntry.hooper_score }, 
+                saltoPercentDiff: saltoDiff, latestDate: displayDate 
+            };
         }
-        const getStrainClassification = strain => {
-            if (strain == null) return { class: 'text-gray-700' };
-            if (strain > 10000) return { class: 'text-red-600' };
-            if (strain > 6000) return { class: 'text-yellow-600' };
-            return { class: 'text-green-600' };
-        };
-        const getMonotonyClassification = monotony => {
-            if (monotony == null) return { class: 'text-gray-700' };
-            if (monotony > 2.0) return { class: 'text-red-600' };
-            if (monotony > 1.5) return { class: 'text-yellow-600' };
-            return { class: 'text-green-600' };
-        };
-        const getAwcrClassification = acwr => {
-            if (acwr == null) return { class: 'text-gray-700' };
-            if (acwr > 1.5) return { class: 'text-red-600' };
-            if (acwr >= 0.8 && acwr <= 1.3) return { class: 'text-green-600' };
-            return { class: 'text-yellow-600' };
-        };
 
-        function renderLegends(type) {
-             if (type === 'prontidao') {
-                legendsProntidao.innerHTML = `
-                    <div class="bg-white p-3 rounded-lg border">
-                        <h4 class="font-bold text-sm mb-1 text-gray-700">Índice Geral</h4>
-                        <p>Calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p>
-                        <p><strong class="text-green-600">> -0.5 (Ótimo)</strong></p>
-                        <p><strong class="text-yellow-600">-0.5 a -1.5 (Atenção)</strong></p>
-                        <p><strong class="text-red-600">< -1.5 (Crítico)</strong></p>
-                    </div>
-                    <div class="bg-white p-3 rounded-lg border">
-                        <h4 class="font-bold text-sm mb-1 text-gray-700">Fadiga (Hooper)</h4>
-                        <p><strong class="text-green-700">4-9 (Bom)</strong></p>
-                        <p><strong class="text-yellow-700">10-17 (Regular)</strong></p>
-                        <p><strong class="text-red-700">18-28 (Ruim)</strong></p>
-                    </div>
-                    <div class="bg-white p-3 rounded-lg border">
-                        <h4 class="font-bold text-sm mb-1 text-gray-700">% Recuperação Muscular</h4>
-                        <p>Variação do Salto Horizontal em relação à média histórica do atleta.</p>
-                        <p><strong class="text-green-600">> 0% (Melhor)</strong></p>
-                        <p><strong class="text-red-600">< 0% (Pior)</strong></p>
-                    </div>
-                `;
-             } else {
-                legendsCarga.innerHTML = `<div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Carga Aguda Média (u.a.)</h4><p>Média da carga total dos microciclos selecionados.</p><p><strong class="text-blue-600">< 2500 (Baixa)</strong></p><p><strong class="text-green-600">2500-5000 (Moderada)</strong></p><p><strong class="text-red-600">> 5000 (Alta)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">ACWR (Acute:Chronic Workload Ratio)</h4><p>Carga Aguda / Média das 4 semanas anteriores. <br><em>* <4 semanas de dados crônicos.</em></p><p><strong class="text-green-600">0.8-1.3 (Ideal)</strong></p><p><strong class="text-yellow-600"><0.8 ou 1.3-1.5 (Atenção)</strong></p><p><strong class="text-red-600">>1.5 (Perigo)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Monotonia</h4><p>Média da carga diária / Desvio Padrão. Variabilidade da carga semanal.</p><p><strong class="text-green-600">< 1.5 (Ideal)</strong></p><p><strong class="text-yellow-600">1.5-2.0 (Atenção)</strong></p><p><strong class="text-red-600">> 2.0 (Elevado)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Strain (Tensão)</h4><p>Carga total da semana x Monotonia. Estresse geral da semana.</p><p><strong class="text-green-600">< 6000 (Ideal)</strong></p><p><strong class="text-yellow-600">6000-10000 (Atenção)</strong></p><p><strong class="text-red-600">> 10000 (Elevado)</strong></p></div>`;
-             }
-        }
+        // Cole aqui o restante do seu código JavaScript que não foi explicitamente modificado nesta resposta.
+        // Incluindo helpers como showToast, getStats, etc., e funções de renderização de gráficos.
     </script>
 </body>
 </html>
