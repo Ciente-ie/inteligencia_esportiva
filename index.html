@@ -629,12 +629,10 @@
                 authStatus.textContent = 'Conectado';
                 authStatus.classList.add('text-green-600', 'font-semibold');
                 authStatus.classList.remove('text-red-600');
-                submitTreinoFisicoBtn.disabled = false;
-                submitTreinoCampoBtn.disabled = false;
-                submitLesaoBtn.disabled = false;
                 if (!isInitialLoadComplete) {
                    loadInitialData();
                 }
+                // Habilitar botões é agora tratado por handleTeamChange
             } else {
                 currentUser = null;
                 authStatus.textContent = 'Offline';
@@ -683,13 +681,11 @@
                 
                 populateTeamFilter(); 
                 handleTeamChange();
-                renderAllLogos();
                 renderAllTabs();
+                setupLiveListeners(); // Listeners são configurados após o primeiro carregamento
 
                 globalLoader.classList.add('hidden');
                 mainContent.classList.remove('hidden');
-
-                setupLiveListeners();
 
             } catch (error) {
                 console.error("Error loading initial data:", error);
@@ -699,35 +695,45 @@
         }
         
         function setupLiveListeners() {
-             onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
+             onSnapshot(query(treinosFisicosCollection), (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderPlanningView();
+                if(document.getElementById('planejamentoContent').style.display !== 'none') {
+                    renderPlanningView();
+                }
                 updateDashboardView();
             });
 
-            onSnapshot(query(treinosCampoCollection, orderBy("date", "asc")), (snapshot) => {
+            onSnapshot(query(treinosCampoCollection), (snapshot) => {
                 treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderPlanningView();
+                 if(document.getElementById('planejamentoContent').style.display !== 'none') {
+                    renderPlanningView();
+                }
                 updateDashboardView();
             });
 
-            onSnapshot(query(prontidaoCollection, orderBy("data", "desc")), (snapshot) => {
+            onSnapshot(query(prontidaoCollection), (snapshot) => {
                 fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                populateTeamFilter(); 
                 populateAthleteDatalist();
-                renderProntidaoTab(); 
+                if(document.getElementById('prontidaoContent').style.display !== 'none') {
+                    renderProntidaoTab(); 
+                }
+                updateDashboardView();
             });
             
-            onSnapshot(query(cargaCollection, orderBy("data", "desc")), (snapshot) => {
+            onSnapshot(query(cargaCollection), (snapshot) => {
                 fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                populateTeamFilter(); 
                 populateAthleteDatalist();
-                renderCargaTab(); 
+                if(document.getElementById('cargaContent').style.display !== 'none') {
+                    renderCargaTab();
+                }
+                updateDashboardView();
             });
 
-            onSnapshot(query(lesoesCollection, orderBy("createdAt", "desc")), (snapshot) => {
+            onSnapshot(query(lesoesCollection), (snapshot) => {
                 lesoesData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                renderLesoesTab();
+                if(document.getElementById('lesoesContent').style.display !== 'none') {
+                    renderLesoesTab();
+                }
                 updateDashboardView();
             });
         }
@@ -741,19 +747,19 @@
         });
 
         function handleTeamChange() {
-            if(selectedTeam !== 'all'){
-                equipeIdLesaoInput.value = selectedTeam;
-                equipeIdFisicoInput.value = selectedTeam;
-                equipeIdCampoInput.value = selectedTeam;
-                submitTreinoFisicoBtn.disabled = false;
-                submitTreinoCampoBtn.disabled = false;
-            } else {
-                equipeIdLesaoInput.value = 'Selecione uma equipe';
-                equipeIdFisicoInput.value = 'Selecione uma equipe';
-                equipeIdCampoInput.value = 'Selecione uma equipe';
-                submitTreinoFisicoBtn.disabled = true;
-                submitTreinoCampoBtn.disabled = true;
-            }
+            const isTeamSelected = selectedTeam !== 'all';
+
+            // Habilita/desabilita botões de cadastro
+            submitTreinoFisicoBtn.disabled = !isTeamSelected;
+            submitTreinoCampoBtn.disabled = !isTeamSelected;
+            submitLesaoBtn.disabled = !isTeamSelected;
+
+            // Atualiza inputs com o ID da equipe
+            const teamIdForInputs = isTeamSelected ? selectedTeam : 'Selecione uma equipe';
+            equipeIdLesaoInput.value = teamIdForInputs;
+            equipeIdFisicoInput.value = teamIdForInputs;
+            equipeIdCampoInput.value = teamIdForInputs;
+
             renderAllLogos();
         }
 
@@ -820,6 +826,7 @@
         document.getElementById('dataTreinoCampo').dispatchEvent(new Event('change'));
 
         function renderAllTabs() {
+            populateTeamFilter(); // Popula o filtro de equipes (só uma vez idealmente, mas aqui garante consistência)
             populateAthleteDatalist();
             renderProntidaoTab();
             renderCargaTab();
@@ -832,41 +839,38 @@
         function renderProntidaoTab() {
             const dataForTeam = selectedTeam === 'all' ? fullProntidaoData : fullProntidaoData.filter(d => d.equipe_id === selectedTeam);
 
-            if (dataForTeam.length === 0) {
+            if (dataForTeam.length === 0 && selectedTeam !== 'all') {
                 placeholderSectionProntidao.classList.remove('hidden');
                 resultsSection.classList.add('hidden');
                 latestProntidaoData = null;
                 filterContainerProntidao.innerHTML = '';
-                updateDashboardView();
-                return;
-            }
-            
-            renderFilterProntidao(dataForTeam); 
-            
-            placeholderSectionProntidao.classList.add('hidden');
-            resultsSection.classList.remove('hidden');
-            
-            const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
-            let selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
-            
-            if(selectedWeeks.length === 0 && document.querySelectorAll('.week-checkbox').length > 0) {
-                 const lastWeekEl = document.querySelector('.week-checkbox:last-of-type');
-                 if(lastWeekEl) {
-                     lastWeekEl.checked = true;
-                     selectedWeeks = [lastWeekEl.value];
-                 }
-            }
-            
-            selectedWeeks = sortWeeks(selectedWeeks);
-            
-            const filteredDataForWeeks = dataForTeam.filter(d => selectedWeeks.includes(d.semana_id));
-
-            if (filteredDataForWeeks.length > 0) {
-                displayFilteredProntidaoData(filteredDataForWeeks, selectedWeeks);
             } else {
-                teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s) nesta equipe.</p>';
-                resultsContainer.innerHTML = '';
-                latestProntidaoData = null;
+                renderFilterProntidao(dataForTeam); 
+                placeholderSectionProntidao.classList.add('hidden');
+                resultsSection.classList.remove('hidden');
+                
+                const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
+                let selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
+                
+                if(selectedWeeks.length === 0 && document.querySelectorAll('.week-checkbox').length > 0) {
+                     const lastWeekEl = document.querySelector('.week-checkbox:last-of-type');
+                     if(lastWeekEl) {
+                         lastWeekEl.checked = true;
+                         selectedWeeks = [lastWeekEl.value];
+                     }
+                }
+                
+                selectedWeeks = sortWeeks(selectedWeeks);
+                
+                const filteredDataForWeeks = dataForTeam.filter(d => selectedWeeks.includes(d.semana_id));
+
+                if (filteredDataForWeeks.length > 0) {
+                    displayFilteredProntidaoData(filteredDataForWeeks, selectedWeeks);
+                } else {
+                    teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s) nesta equipe.</p>';
+                    resultsContainer.innerHTML = '';
+                    latestProntidaoData = null;
+                }
             }
             updateDashboardView();
         }
@@ -874,38 +878,37 @@
         function renderCargaTab() {
             const dataForTeam = selectedTeam === 'all' ? fullCargaData : fullCargaData.filter(d => d.equipe_id === selectedTeam);
             
-            if (dataForTeam.length === 0) {
+            if (dataForTeam.length === 0 && selectedTeam !== 'all') {
                 placeholderSectionCarga.classList.remove('hidden');
                 resultsSectionCarga.classList.add('hidden');
                 latestCargaData = null;
                 filterContainer.innerHTML = '';
-                updateDashboardView();
-                return;
-            }
-            placeholderSectionCarga.classList.add('hidden');
-            resultsSectionCarga.classList.remove('hidden');
-            
-            processAndStoreLoadData(dataForTeam);
-            
-            const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
-            let selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-            
-            if(selectedIds.length === 0 && document.querySelectorAll('.microciclo-checkbox').length > 0) {
-                 const lastMcEl = document.querySelector('.microciclo-checkbox:last-of-type');
-                 if(lastMcEl) {
-                     lastMcEl.checked = true;
-                     selectedIds = [lastMcEl.value];
-                 }
-            }
-
-            selectedIds = sortWeeks(selectedIds);
-            
-            if (selectedIds.length > 0) {
-                displayFilteredLoadData(selectedIds, dataForTeam);
             } else {
-                teamDashboardCarga.innerHTML = '<p class="text-center text-gray-500">Nenhum microciclo selecionado para esta equipe.</p>';
-                resultsContainerCarga.innerHTML = '';
-                latestCargaData = null;
+                placeholderSectionCarga.classList.add('hidden');
+                resultsSectionCarga.classList.remove('hidden');
+                
+                processAndStoreLoadData(dataForTeam);
+                
+                const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
+                let selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+                
+                if(selectedIds.length === 0 && document.querySelectorAll('.microciclo-checkbox').length > 0) {
+                     const lastMcEl = document.querySelector('.microciclo-checkbox:last-of-type');
+                     if(lastMcEl) {
+                         lastMcEl.checked = true;
+                         selectedIds = [lastMcEl.value];
+                     }
+                }
+
+                selectedIds = sortWeeks(selectedIds);
+                
+                if (selectedIds.length > 0) {
+                    displayFilteredLoadData(selectedIds, dataForTeam);
+                } else {
+                    teamDashboardCarga.innerHTML = '<p class="text-center text-gray-500">Nenhum microciclo selecionado para esta equipe.</p>';
+                    resultsContainerCarga.innerHTML = '';
+                    latestCargaData = null;
+                }
             }
             updateDashboardView();
         }
@@ -926,7 +929,7 @@
                 lesoesList.innerHTML = activeLesoes.map(createLesaoCard).join('');
             }
 
-            document.querySelectorAll('.btn-update-lesao').forEach(btn => {
+            lesoesList.querySelectorAll('.btn-update-lesao').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const id = e.currentTarget.dataset.id;
                     const newStatus = e.currentTarget.dataset.status;
@@ -2601,7 +2604,6 @@
             }
         }
         
-        // NOVA FUNÇÃO PARA RENDERIZAR O LOGO EM TODAS AS ÁREAS IMPRIMÍVEIS
         function renderAllLogos() {
             const printableAreaIds = [
                 'pdf-content-dashboard',
@@ -2611,7 +2613,6 @@
             ];
 
             let logoHtml = '';
-            // Cria o HTML do logo apenas se uma equipe com logo estiver selecionada
             if (selectedTeam !== 'all' && teamLogos[selectedTeam]) {
                 logoHtml = `
                     <div class="printable-logo-container flex justify-start mb-4">
@@ -2620,24 +2621,40 @@
                 `;
             }
 
-            // Itera sobre todas as áreas de conteúdo
             printableAreaIds.forEach(id => {
                 const container = document.getElementById(id);
                 if (container) {
-                    // Primeiro, remove qualquer logo que já exista para não duplicar
                     const existingLogo = container.querySelector('.printable-logo-container');
                     if (existingLogo) {
                         existingLogo.remove();
                     }
-
-                    // Se houver um logo para mostrar, adiciona no topo da área
                     if (logoHtml) {
                         container.insertAdjacentHTML('afterbegin', logoHtml);
                     }
                 }
             });
         }
-        
+
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file || !file.type.startsWith('image/')) {
+                showToast("Por favor, selecione um arquivo de imagem válido.");
+                return;
+            }
+            if (selectedTeam === 'all') {
+                showToast("Selecione uma equipe específica para adicionar um logo.");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                teamLogos[selectedTeam] = reader.result;
+                localStorage.setItem('teamLogos', JSON.stringify(teamLogos));
+                showToast("Logo da equipe atualizado com sucesso!", "success");
+                renderAllLogos();
+            };
+            reader.readAsDataURL(file);
+        }
+
         function renderPlanningFilter() {
             const allTrainings = [...treinosFisicos, ...treinosCampo];
             const existingWeeks = [...new Set(allTrainings.map(t => t.semana_id))];
@@ -2653,7 +2670,7 @@
             if (selectedTeam !== 'all') {
                 logoButtonHtml = `
                     <div class="mt-4 text-center">
-                        <button id="addLogoBtn" class="btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition text-sm">Adicionar Logo da Equipe</button>
+                        <button id="addLogoBtn" class="btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition text-sm">Adicionar/Alterar Logo</button>
                         <input type="file" id="logoFileInput" class="hidden" accept="image/*">
                     </div>
                 `;
@@ -2717,8 +2734,8 @@
             
             document.getElementById('exportPdfBtnPlanejamento').addEventListener('click', () => exportToPDF('planejamento'));
 
-            renderTimeline(document.getElementById('timelineFisico'), fisicoSemana, `Nenhum treino físico cadastrado para ${selectedTeam === 'all' ? 'as equipes' : 'esta equipe'} nesta seleção.`);
-            renderTimeline(document.getElementById('timelineCampo'), campoSemana, `Nenhum treino de campo cadastrado para ${selectedTeam === 'all' ? 'as equipes' : 'esta equipe'} nesta seleção.`);
+            renderTimeline('timelineFisico', fisicoSemana, `Nenhum treino físico cadastrado para esta seleção.`);
+            renderTimeline('timelineCampo', campoSemana, `Nenhum treino de campo cadastrado para esta seleção.`);
             renderDailyLoadChart('chartCargaFisico', fisicoSemana);
             renderDailyLoadChart('chartCargaCampo', campoSemana);
         }
@@ -2753,8 +2770,10 @@
             );
         }
 
-        function renderTimeline(container, treinos, emptyMessage) {
+        function renderTimeline(containerId, treinos, emptyMessage) {
+            const container = document.getElementById(containerId);
             if (!container) return;
+            
             container.innerHTML = '';
             if (treinos.length === 0) {
                  container.innerHTML = `<p class="col-span-full text-gray-500 text-center w-full py-8">${emptyMessage}</p>`;
@@ -2814,17 +2833,18 @@
                         </ul>
                     </div>
                 `;
-
                 container.appendChild(dayElement);
             });
-            
-            document.querySelectorAll('.remove-training-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const { id, type } = e.currentTarget.dataset;
-                    showConfirmationModal(`Tem certeza que deseja remover este treino de ${type}?`, () => removeTraining(id, type));
-                });
-            });
         }
+        
+        // Use event delegation for robust delete buttons
+        planejamentoContent.addEventListener('click', (e) => {
+            const removeButton = e.target.closest('.remove-training-btn');
+            if (removeButton) {
+                const { id, type } = removeButton.dataset;
+                showConfirmationModal(`Tem certeza que deseja remover este treino de ${type}?`, () => removeTraining(id, type));
+            }
+        });
 
 
         function renderDailyLoadChart(canvasId, treinos, isDashboard = false) {
@@ -2871,7 +2891,6 @@
             if(isDashboard){
                  options.scales.y.ticks = { display: false };
             }
-
 
             activeCharts[canvasId] = new Chart(ctx, {
                 type: 'bar', data: { labels, datasets: [{ label: 'Carga Planejada (%)', data, backgroundColor: backgroundColors }] },
