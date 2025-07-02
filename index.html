@@ -518,7 +518,8 @@
         let selectedPlanningWeeks = [getWeekId(new Date())];
         let isInitialLoadComplete = false;
         let toastTimeout = null; 
-        let selectedTeam = 'all'; 
+        let selectedTeam = 'all';
+        let teamLogos = {};  
 
         // --- DOM ELEMENTS ---
         const globalLoader = document.getElementById('globalLoader');
@@ -657,6 +658,15 @@
             isInitialLoadComplete = true; 
             loaderText.textContent = 'Carregando dados...';
             try {
+                const savedLogos = localStorage.getItem('teamLogos');
+                if (savedLogos) {
+                    teamLogos = JSON.parse(savedLogos);
+                }
+            } catch (e) {
+                console.error("Erro ao carregar logos do localStorage", e);
+                teamLogos = {};
+            }
+            try {
                 const [prontidaoSnap, cargaSnap, fisicoSnap, campoSnap, lesoesSnap] = await Promise.all([
                     getDocs(query(prontidaoCollection, orderBy("data", "desc"))),
                     getDocs(query(cargaCollection, orderBy("data", "desc"))),
@@ -687,6 +697,28 @@
             }
         }
         
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file || !file.type.startsWith('image/')) {
+                showToast("Por favor, selecione um arquivo de imagem válido.");
+                return;
+            }
+
+            if (selectedTeam === 'all') {
+                showToast("Selecione uma equipe específica para adicionar um logo.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                teamLogos[selectedTeam] = reader.result; // Salva a imagem como DataURL
+                localStorage.setItem('teamLogos', JSON.stringify(teamLogos)); // Salva no navegador
+                showToast("Logo da equipe atualizado com sucesso!", "success");
+                renderPlanningView(); // Re-renderiza a tela para mostrar o novo logo
+            };
+            reader.readAsDataURL(file);
+        }
+
         function setupLiveListeners() {
              onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -2611,6 +2643,17 @@
 
             const allWeeks = sortWeeks([...new Set([...existingWeeks, ...futureWeeks, getWeekId(new Date())])].filter(Boolean));
             
+            // Lógica para o botão de logo
+            let logoButtonHtml = '';
+            if (selectedTeam !== 'all') {
+                logoButtonHtml = `
+                    <div class="mt-4 text-center">
+                        <button id="addLogoBtn" class="btn bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition text-sm">Adicionar Logo da Equipe</button>
+                        <input type="file" id="logoFileInput" class="hidden" accept="image/*">
+                    </div>
+                `;
+            }
+
             filterContainerPlanejamento.innerHTML = `
                  <div class="bg-white p-4 rounded-lg border shadow-sm">
                     <div class="flex justify-between items-center mb-2">
@@ -2625,8 +2668,17 @@
                             </div>
                         `).join('')}
                     </div>
+                    ${logoButtonHtml}
                 </div>`;
+
+            // Adiciona os event listeners após o HTML ser inserido
             document.getElementById('deletePlanningWeeksBtn').addEventListener('click', deleteSelectedPlanningWeeks);
+            if (selectedTeam !== 'all') {
+                document.getElementById('addLogoBtn').addEventListener('click', () => {
+                    document.getElementById('logoFileInput').click();
+                });
+                document.getElementById('logoFileInput').addEventListener('change', handleLogoUpload);
+            }
         }
 
         function renderPlanningView() {
@@ -2638,7 +2690,18 @@
             const fisicoSemana = dataForTeamFisico.filter(t => selectedPlanningWeeks.includes(t.semana_id));
             const campoSemana = dataForTeamCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
 
+            // Lógica para exibir o logo
+            let logoHtml = '';
+            if (selectedTeam !== 'all' && teamLogos[selectedTeam]) {
+                logoHtml = `
+                    <div class="flex justify-center mb-4 p-2">
+                        <img src="${teamLogos[selectedTeam]}" alt="Logo da Equipe" class="max-h-24 object-contain">
+                    </div>
+                `;
+            }
+
             pdfContentPlanejamento.innerHTML = `
+                ${logoHtml}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="space-y-4">
                          <h3 class="text-2xl font-bold text-gray-900">Treinos Físicos</h3>
