@@ -519,7 +519,7 @@
         let isInitialLoadComplete = false;
         let toastTimeout = null; 
         let selectedTeam = 'all';
-        let teamLogos = {};  
+        let teamLogos = {};
 
         // --- DOM ELEMENTS ---
         const globalLoader = document.getElementById('globalLoader');
@@ -682,7 +682,8 @@
                 lesoesData = lesoesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                 
                 populateTeamFilter(); 
-                handleTeamChange(); // Set initial state based on filter
+                handleTeamChange();
+                renderAllLogos();
                 renderAllTabs();
 
                 globalLoader.classList.add('hidden');
@@ -697,28 +698,6 @@
             }
         }
         
-        function handleLogoUpload(event) {
-            const file = event.target.files[0];
-            if (!file || !file.type.startsWith('image/')) {
-                showToast("Por favor, selecione um arquivo de imagem válido.");
-                return;
-            }
-
-            if (selectedTeam === 'all') {
-                showToast("Selecione uma equipe específica para adicionar um logo.");
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = () => {
-                teamLogos[selectedTeam] = reader.result; // Salva a imagem como DataURL
-                localStorage.setItem('teamLogos', JSON.stringify(teamLogos)); // Salva no navegador
-                showToast("Logo da equipe atualizado com sucesso!", "success");
-                renderPlanningView(); // Re-renderiza a tela para mostrar o novo logo
-            };
-            reader.readAsDataURL(file);
-        }
-
         function setupLiveListeners() {
              onSnapshot(query(treinosFisicosCollection, orderBy("date", "asc")), (snapshot) => {
                 treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -775,6 +754,7 @@
                 submitTreinoFisicoBtn.disabled = true;
                 submitTreinoCampoBtn.disabled = true;
             }
+            renderAllLogos();
         }
 
         tabDashboardBtn.addEventListener('click', () => switchTab('dashboard'));
@@ -1235,7 +1215,7 @@
 
         function getStats(data) {
             const filteredData = data.filter(d => typeof d === 'number' && !isNaN(d));
-            if (filteredData.length === 0) return { mean: 0, stdDev: 0, sum: 0, count: 0 };
+            if (filteredData.length === 0) return { mean: NaN, stdDev: 0, sum: 0, count: 0 };
             const sum = filteredData.reduce((a, b) => a + b, 0);
             const mean = sum / filteredData.length;
             const stdDev = Math.sqrt(filteredData.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / (filteredData.length > 1 ? filteredData.length - 1 : 1));
@@ -1552,13 +1532,10 @@
 
             let latestDateOverall = null;
 
-            // **AJUSTE LÓGICA PRONTIDÃO**
-            // Gera a tabela de resultados individuais com base no último dado do período selecionado
             const individualResults = Object.keys(athletesData).map(athleteId => {
                 const entriesInSelection = athletesData[athleteId];
                 if (entriesInSelection.length === 0) return null;
 
-                // Ordena todos os dados do atleta no período e pega o mais recente
                 const latestEntry = entriesInSelection.sort((a, b) => new Date(`${b.data}T00:00:00`) - new Date(`${a.data}T00:00:00`))[0];
                 const latestDateInSelection = new Date(`${latestEntry.data}T00:00:00`);
 
@@ -1566,14 +1543,12 @@
                     latestDateOverall = latestDateInSelection;
                 }
 
-                // Histórico para cálculo continua sendo todos os dados do atleta ANTERIORES a este último dado
                 const allHistoricalEntriesForAthlete = fullProntidaoData.filter(d => 
                     d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < latestDateInSelection
                 );
 
                 const result = calculateAthleteReadiness(athleteId, latestEntry, allHistoricalEntriesForAthlete, latestEntry.data);
                 
-                // Pega o histórico diário apenas do período selecionado para o gráfico de detalhe
                 const dailyHistoryData = { hooper: [], salto: [] };
                 entriesInSelection
                     .sort((a, b) => new Date(`${a.data}T00:00:00`) - new Date(`${b.data}T00:00:00`))
@@ -1594,7 +1569,6 @@
 
             }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
             
-            // Lógica de evolução da equipe (gráficos) continua a mesma, analisando cada semana
             const uniqueWeeksSorted = sortWeeks([...new Set(data.map(d => d.semana_id))]);
             const evolutionData = uniqueWeeksSorted.map(weekId => {
                 const dataForThisWeek = data.filter(d => d.semana_id === weekId);
@@ -1616,7 +1590,6 @@
                 };
             });
 
-            // Status geral da equipe é baseado nos dados individuais (ou seja, o último de cada atleta)
             const readyAthletesOverall = individualResults.filter(r => r.status === 'ready');
             const teamStats = {
                 averageIndex: getStats(readyAthletesOverall.map(r => parseFloat(r.index))).mean,
@@ -1640,90 +1613,87 @@
         }
 
         function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, displayDate) {
-    const getZScore = (key, value) => {
-        let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
-        if (dataPoints.length === 0) {
-             dataPoints = fullProntidaoData
-                .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
-                .map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
+            const getZScore = (key, value) => {
+                let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
+                if (dataPoints.length === 0) {
+                     dataPoints = fullProntidaoData
+                        .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
+                        .map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
+                }
+
+                if (value == null || dataPoints.length < 2) return 0;
+                const { mean, stdDev } = getStats(dataPoints);
+                return stdDev === 0 ? 0 : (value - mean) / stdDev;
+            };
+
+            const cap = (val) => Math.max(-2.5, Math.min(2.5, val));
+            
+            const saltoValue = latestEntry['salto_horizontal_cm'];
+            const vfcValue = latestEntry['vfc_rmssd'];
+
+            const performanceScores = [
+                (saltoValue != null && saltoValue > 0) ? getZScore('salto_horizontal_cm', saltoValue) : null,
+                (vfcValue != null && vfcValue > 0) ? getZScore('vfc_rmssd', vfcValue) : null
+            ].filter(s => s != null);
+            
+            let readinessIndex;
+            let zone;
+
+            if (performanceScores.length === 0 && latestEntry.hooper_score != null) {
+                const hooper = latestEntry.hooper_score;
+                if (hooper <= 9) {
+                    zone = 'green';
+                } else if (hooper <= 17) {
+                    zone = 'yellow';
+                } else {
+                    zone = 'red';
+                }
+                readinessIndex = null;
+
+            } else {
+                const performancePillar = performanceScores.length > 0 ? cap(getStats(performanceScores).mean) : 0;
+
+                let hooperAdjustment = 0;
+                if (latestEntry.hooper_score != null) {
+                    if (latestEntry.hooper_score <= 9) hooperAdjustment = 0.25;
+                    else if (latestEntry.hooper_score <= 17) hooperAdjustment = -0.25;
+                    else hooperAdjustment = -0.50;
+                }
+
+                readinessIndex = performancePillar + hooperAdjustment;
+
+                if (readinessIndex < -1.5) zone = 'red';
+                else if (readinessIndex < -0.5) zone = 'yellow';
+                else zone = 'green';
+            }
+
+            const metricsDetail = Object.keys(METRIC_NAMES).reduce((acc, key) => {
+                 let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v));
+                 let mean = getStats(dataPoints).mean;
+
+                 if (dataPoints.length === 0) {
+                     const allOtherEntries = fullProntidaoData
+                        .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
+                        .map(e => e[key])
+                        .filter(v => v != null && !isNaN(v));
+                    mean = getStats(allOtherEntries).mean;
+                 }
+                acc[key] = { latest: latestEntry[key], mean: mean };
+                return acc;
+            }, {});
+            
+            const saltoMeanHistorical = metricsDetail.salto_horizontal_cm?.mean || 0;
+            const saltoLatest = latestEntry.salto_horizontal_cm;
+            const saltoDiff = (saltoLatest && saltoMeanHistorical > 0) ? ((saltoLatest - saltoMeanHistorical) / saltoMeanHistorical) * 100 : null;
+
+            return { 
+                athleteId, status: 'ready', 
+                index: readinessIndex !== null ? readinessIndex.toFixed(2) : null, 
+                zone, 
+                metricsDetail, hooperScore: { latest: latestEntry.hooper_score }, 
+                saltoPercentDiff: saltoDiff, latestDate: displayDate 
+            };
         }
-
-        if (value == null || dataPoints.length < 2) return 0; // Retorna 0 (neutro) se não houver histórico suficiente
-        const { mean, stdDev } = getStats(dataPoints);
-        return stdDev === 0 ? 0 : (value - mean) / stdDev;
-    };
-
-    const cap = (val) => Math.max(-2.5, Math.min(2.5, val));
-    
-    const saltoValue = latestEntry['salto_horizontal_cm'];
-    const vfcValue = latestEntry['vfc_rmssd'];
-
-    const performanceScores = [
-        (saltoValue != null && saltoValue > 0) ? getZScore('salto_horizontal_cm', saltoValue) : null,
-        (vfcValue != null && vfcValue > 0) ? getZScore('vfc_rmssd', vfcValue) : null
-    ].filter(s => s != null);
-    
-    let readinessIndex;
-    let zone;
-
-    // Caso 1: SEM dados de performance (salto/VFC), MAS COM dado de Hooper
-    if (performanceScores.length === 0 && latestEntry.hooper_score != null) {
-        const hooper = latestEntry.hooper_score;
-        if (hooper <= 9) {
-            zone = 'green';
-        } else if (hooper <= 17) {
-            zone = 'yellow';
-        } else {
-            zone = 'red';
-        }
-        // O índice não é aplicável, pois foi baseado apenas no Hooper
-        readinessIndex = null;
-
-    // Caso 2: COM dados de performance (lógica original)
-    } else {
-        const performancePillar = performanceScores.length > 0 ? cap(getStats(performanceScores).mean) : 0;
-
-        let hooperAdjustment = 0;
-        if (latestEntry.hooper_score != null) {
-            if (latestEntry.hooper_score <= 9) hooperAdjustment = 0.25;
-            else if (latestEntry.hooper_score <= 17) hooperAdjustment = -0.25;
-            else hooperAdjustment = -0.50;
-        }
-
-        readinessIndex = performancePillar + hooperAdjustment;
-
-        if (readinessIndex < -1.5) zone = 'red';
-        else if (readinessIndex < -0.5) zone = 'yellow';
-        else zone = 'green';
-    }
-
-    const metricsDetail = Object.keys(METRIC_NAMES).reduce((acc, key) => {
-         let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v));
-         let mean = getStats(dataPoints).mean;
-
-         if (dataPoints.length === 0) {
-             const allOtherEntries = fullProntidaoData
-                .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
-                .map(e => e[key])
-                .filter(v => v != null && !isNaN(v));
-            mean = getStats(allOtherEntries).mean;
-         }
-        acc[key] = { latest: latestEntry[key], mean: mean };
-        return acc;
-    }, {});
-    
-    const saltoMeanHistorical = metricsDetail.salto_horizontal_cm?.mean || 0;
-    const saltoLatest = latestEntry.salto_horizontal_cm;
-    const saltoDiff = (saltoLatest && saltoMeanHistorical > 0) ? ((saltoLatest - saltoMeanHistorical) / saltoMeanHistorical) * 100 : null;
-
-    return { 
-        athleteId, status: 'ready', 
-        index: readinessIndex !== null ? readinessIndex.toFixed(2) : null, 
-        zone, 
-        metricsDetail, hooperScore: { latest: latestEntry.hooper_score }, 
-        saltoPercentDiff: saltoDiff, latestDate: displayDate 
-    };
-}
 
         function renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeks, dailyStats) {
             const selectedWeeksCount = selectedWeeks.length;
@@ -1740,7 +1710,6 @@
                     renderTeamSaltoChart('team-salto-chart', teamStats.evolutionData);
                 }
             }
-
 
             resultsContainer.innerHTML = `
                 <div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0">
@@ -1963,76 +1932,76 @@
         }
 
         function createProntidaoResultRow(result) {
-    if (!result || !result.latestDate) {
-        console.warn("Skipping invalid result row:", result);
-        return '';
-    }
-    if (result.status === 'collecting') {
-        return `<div class="flex items-center p-4 border-b last:border-b-0"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}</div><div class="w-2/3 text-gray-500 text-sm">${result.message}</div></div>`;
-    }
-    let zoneClass, recommendation, statusText;
-    if (result.zone === 'green') { zoneClass = 'text-green-600'; statusText = 'Zona Ótima'; recommendation = "Atleta em bom estado. Treinar conforme o plano."; }
-    else if (result.zone === 'yellow') { zoneClass = 'text-yellow-600'; statusText = 'Zona de Atenção'; recommendation = "Sinais de alerta. A carga deve ser ajustada."; }
-    else { zoneClass = 'text-red-600'; statusText = 'Zona Crítica'; recommendation = "Risco Elevado. Priorizar recuperação ativa."; }
+            if (!result || !result.latestDate) {
+                console.warn("Skipping invalid result row:", result);
+                return '';
+            }
+            if (result.status === 'collecting') {
+                return `<div class="flex items-center p-4 border-b last:border-b-0"><div class="w-1/3 font-bold text-gray-800">${result.athleteId}</div><div class="w-2/3 text-gray-500 text-sm">${result.message}</div></div>`;
+            }
+            let zoneClass, recommendation, statusText;
+            if (result.zone === 'green') { zoneClass = 'text-green-600'; statusText = 'Zona Ótima'; recommendation = "Atleta em bom estado. Treinar conforme o plano."; }
+            else if (result.zone === 'yellow') { zoneClass = 'text-yellow-600'; statusText = 'Zona de Atenção'; recommendation = "Sinais de alerta. A carga deve ser ajustada."; }
+            else { zoneClass = 'text-red-600'; statusText = 'Zona Crítica'; recommendation = "Risco Elevado. Priorizar recuperação ativa."; }
 
-    const hooperScoreValue = result.hooperScore.latest != null ? result.hooperScore.latest.toFixed(1) : '--';
-    const hooperClass = getHooperClassification(result.hooperScore.latest);
-    const saltoClass = result.saltoPercentDiff == null ? 'text-gray-500' : (result.saltoPercentDiff >= 0 ? 'text-green-600' : 'text-red-600');
-    
-    const detailsHtml = Object.entries(result.metricsDetail).map(([key, data]) => {
-        if (!METRIC_NAMES[key] || data.latest == null) return '';
-        const latestValue = (data.latest && !isNaN(data.latest)) ? data.latest.toFixed(1) : 'N/A';
-        const meanValue = (data.mean && !isNaN(data.mean)) ? data.mean.toFixed(1) : 'N/A';
-        return `<li class="flex justify-between items-center text-sm py-1 border-b"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${latestValue} <span class="text-xs text-gray-500 font-normal">(Média Hist.: ${meanValue})</span></span></li>`;
-    }).join('');
-    
-    const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
+            const hooperScoreValue = result.hooperScore.latest != null ? result.hooperScore.latest.toFixed(1) : '--';
+            const hooperClass = getHooperClassification(result.hooperScore.latest);
+            const saltoClass = result.saltoPercentDiff == null ? 'text-gray-500' : (result.saltoPercentDiff >= 0 ? 'text-green-600' : 'text-red-600');
+            
+            const detailsHtml = Object.entries(result.metricsDetail).map(([key, data]) => {
+                if (!METRIC_NAMES[key] || data.latest == null) return '';
+                const latestValue = (data.latest && !isNaN(data.latest)) ? data.latest.toFixed(1) : 'N/A';
+                const meanValue = (data.mean && !isNaN(data.mean)) ? data.mean.toFixed(1) : 'N/A';
+                return `<li class="flex justify-between items-center text-sm py-1 border-b"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${latestValue} <span class="text-xs text-gray-500 font-normal">(Média Hist.: ${meanValue})</span></span></li>`;
+            }).join('');
+            
+            const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
 
-    const dailyChartsHtml = (result.dailyHistory && (result.dailyHistory.hooper.length > 0 || result.dailyHistory.salto.length > 0)) ? `
-        <div class="mt-4 pt-4 border-t col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Hooper Diário (na seleção)</h5>
-                <div class="h-40"><canvas id="history-daily-hooper-${uniqueId}"></canvas></div>
-            </div>
-             <div>
-                <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Salto Diário (na seleção)</h5>
-                <div class="h-40"><canvas id="history-daily-salto-${uniqueId}"></canvas></div>
-            </div>
-        </div>
-    ` : '';
-    
-    const indexDisplay = result.index !== null ? result.index : '<span title="Definido apenas pelo Hooper">--</span>';
-
-    return `<div class="border-b last:border-b-0">
-                <div class="flex items-center p-4">
-                    <div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div>
-                    <div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${indexDisplay}</div>
-                    <div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div>
-                    <div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${hooperScoreValue}</span></div>
-                    <div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div>
-                    <div class="w-12 text-center">
-                        <button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" 
-                                data-target="details-prontidao-${uniqueId}" 
-                                data-daily-history='${result.dailyHistory ? JSON.stringify(result.dailyHistory) : ''}'>
-                            <svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                        </button>
+            const dailyChartsHtml = (result.dailyHistory && (result.dailyHistory.hooper.length > 0 || result.dailyHistory.salto.length > 0)) ? `
+                <div class="mt-4 pt-4 border-t col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Hooper Diário (na seleção)</h5>
+                        <div class="h-40"><canvas id="history-daily-hooper-${uniqueId}"></canvas></div>
+                    </div>
+                     <div>
+                        <h5 class="font-semibold text-xs text-center text-gray-600 mb-1">Salto Diário (na seleção)</h5>
+                        <div class="h-40"><canvas id="history-daily-salto-${uniqueId}"></canvas></div>
                     </div>
                 </div>
-                <div class="details-section bg-gray-50" id="details-prontidao-${uniqueId}">
-                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <h4 class="font-semibold text-sm mb-2">Detalhes (Valor mais recente vs. Média Histórica):</h4>
-                            <ul class="space-y-1">${detailsHtml}</ul>
+            ` : '';
+            
+            const indexDisplay = result.index !== null ? result.index : '<span title="Definido apenas pelo Hooper">--</span>';
+
+            return `<div class="border-b last:border-b-0">
+                        <div class="flex items-center p-4">
+                            <div class="w-1/3 font-bold text-gray-800">${result.athleteId}<span class="ml-2 text-xs font-normal text-gray-500">${new Date(result.latestDate + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}</span></div>
+                            <div class="w-1/6 text-center font-semibold text-2xl ${zoneClass}">${indexDisplay}</div>
+                            <div class="w-1/6 text-center"><span class="px-3 py-1 text-xs font-semibold rounded-full ${zoneClass.replace('text-', 'bg-').replace('-600', '-100')}">${statusText}</span></div>
+                            <div class="w-1/6 text-center"><span class="font-bold text-lg ${hooperClass.class}">${hooperScoreValue}</span></div>
+                            <div class="w-1/6 text-center font-semibold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</div>
+                            <div class="w-12 text-center">
+                                <button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" 
+                                        data-target="details-prontidao-${uniqueId}" 
+                                        data-daily-history='${result.dailyHistory ? JSON.stringify(result.dailyHistory) : ''}'>
+                                    <svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                                </button>
+                            </div>
                         </div>
-                        <div class="bg-blue-50 border p-3 rounded-lg self-start">
-                            <h4 class="font-semibold text-sm mb-1">Sugestão:</h4>
-                            <p class="text-sm">${recommendation}</p>
+                        <div class="details-section bg-gray-50" id="details-prontidao-${uniqueId}">
+                            <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <h4 class="font-semibold text-sm mb-2">Detalhes (Valor mais recente vs. Média Histórica):</h4>
+                                    <ul class="space-y-1">${detailsHtml}</ul>
+                                </div>
+                                <div class="bg-blue-50 border p-3 rounded-lg self-start">
+                                    <h4 class="font-semibold text-sm mb-1">Sugestão:</h4>
+                                    <p class="text-sm">${recommendation}</p>
+                                </div>
+                                ${dailyChartsHtml}
+                            </div>
                         </div>
-                        ${dailyChartsHtml}
-                    </div>
-                </div>
-            </div>`;
-}
+                    </div>`;
+        }
         
         function renderTeamIndexChart(canvasId, evolutionData) {
             const ctx = document.getElementById(canvasId);
@@ -2632,6 +2601,43 @@
             }
         }
         
+        // NOVA FUNÇÃO PARA RENDERIZAR O LOGO EM TODAS AS ÁREAS IMPRIMÍVEIS
+        function renderAllLogos() {
+            const printableAreaIds = [
+                'pdf-content-dashboard',
+                'pdf-content-prontidao',
+                'pdf-content-carga',
+                'pdf-content-planejamento'
+            ];
+
+            let logoHtml = '';
+            // Cria o HTML do logo apenas se uma equipe com logo estiver selecionada
+            if (selectedTeam !== 'all' && teamLogos[selectedTeam]) {
+                logoHtml = `
+                    <div class="printable-logo-container flex justify-start mb-4">
+                        <img src="${teamLogos[selectedTeam]}" alt="Logo da Equipe" class="max-h-16 object-contain">
+                    </div>
+                `;
+            }
+
+            // Itera sobre todas as áreas de conteúdo
+            printableAreaIds.forEach(id => {
+                const container = document.getElementById(id);
+                if (container) {
+                    // Primeiro, remove qualquer logo que já exista para não duplicar
+                    const existingLogo = container.querySelector('.printable-logo-container');
+                    if (existingLogo) {
+                        existingLogo.remove();
+                    }
+
+                    // Se houver um logo para mostrar, adiciona no topo da área
+                    if (logoHtml) {
+                        container.insertAdjacentHTML('afterbegin', logoHtml);
+                    }
+                }
+            });
+        }
+        
         function renderPlanningFilter() {
             const allTrainings = [...treinosFisicos, ...treinosCampo];
             const existingWeeks = [...new Set(allTrainings.map(t => t.semana_id))];
@@ -2643,7 +2649,6 @@
 
             const allWeeks = sortWeeks([...new Set([...existingWeeks, ...futureWeeks, getWeekId(new Date())])].filter(Boolean));
             
-            // Lógica para o botão de logo
             let logoButtonHtml = '';
             if (selectedTeam !== 'all') {
                 logoButtonHtml = `
@@ -2671,7 +2676,6 @@
                     ${logoButtonHtml}
                 </div>`;
 
-            // Adiciona os event listeners após o HTML ser inserido
             document.getElementById('deletePlanningWeeksBtn').addEventListener('click', deleteSelectedPlanningWeeks);
             if (selectedTeam !== 'all') {
                 document.getElementById('addLogoBtn').addEventListener('click', () => {
@@ -2690,18 +2694,7 @@
             const fisicoSemana = dataForTeamFisico.filter(t => selectedPlanningWeeks.includes(t.semana_id));
             const campoSemana = dataForTeamCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
 
-            // Lógica para exibir o logo
-            let logoHtml = '';
-            if (selectedTeam !== 'all' && teamLogos[selectedTeam]) {
-                logoHtml = `
-                    <div class="flex justify-center mb-4 p-2">
-                        <img src="${teamLogos[selectedTeam]}" alt="Logo da Equipe" class="max-h-24 object-contain">
-                    </div>
-                `;
-            }
-
             pdfContentPlanejamento.innerHTML = `
-                ${logoHtml}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="space-y-4">
                          <h3 class="text-2xl font-bold text-gray-900">Treinos Físicos</h3>
