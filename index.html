@@ -241,31 +241,35 @@
                  <div id="pdf-content-carga">
                     <div id="filterContainer" class="mb-6"></div>
                     <div id="teamDashboardCarga" class="mb-8"></div>
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Resultados Individuais de Carga</h2>
-                         <div class="flex gap-x-2">
-                            <button id="clearCargaDataBtn" class="btn bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition flex items-center text-sm">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                </svg>
-                                Limpar Dados de Carga
-                            </button>
-                            <button id="exportPdfBtnCarga" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
-                                Exportar PDF
-                            </button>
-                         </div>
-                    </div>
-                    <div id="resultsContainerCarga" class="bg-white rounded-lg shadow-md border overflow-hidden"></div>
-                    <div id="legendsCarga" class="mt-6 text-xs text-gray-500 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
-                </div>
-            </div>
-             <div id="placeholderSectionCarga" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
-                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                <h3 class="mt-4 text-xl font-semibold text-gray-800">Aguardando dados de Carga</h3>
-                <p class="mt-1 text-gray-500">Selecione uma equipe ou importe um novo arquivo para começar.</p>
-            </div>
-        </div>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Resultados Individuais de Prontidão</h2>
+    
+    <div class="flex items-center gap-x-2 p-3 rounded-lg bg-gray-100 border w-full md:w-auto">
+        <label for="athleteReportSelect" class="text-sm font-semibold text-gray-700 whitespace-nowrap">Relatório Individual:</label>
+        <select id="athleteReportSelect" class="p-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 flex-grow">
+            <option value="">Selecione um atleta</option>
+        </select>
+        <button id="generateIndividualReportBtn" class="btn bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition flex items-center text-sm" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10 3a1 1 0 00-1 1v1a1 1 0 002 0V4a1 1 0 00-1-1zM5.293 6.707a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707zM2 10a1 1 0 011-1h1a1 1 0 110 2H3a1 1 0 01-1-1zm10 0a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1zM14.707 6.707a1 1 0 00-1.414-1.414l-.707.707a1 1 0 101.414 1.414l.707-.707zM10 17a1 1 0 01-1-1v-1a1 1 0 112 0v1a1 1 0 01-1-1zm-4.707-3.293a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707zM14.707 13.293a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707z"></path>
+                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+            </svg>
+            Gerar PDF
+        </button>
+    </div>
+
+    <div class="flex gap-x-2 self-end">
+         <button id="clearProntidaoDataBtn" class="btn bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition flex items-center text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
+            Limpar Dados
+        </button>
+        <button id="exportPdfBtnProntidao" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
+            Exportar PDF da Equipe
+        </button>
+     </div>
+</div>
 
         <div id="planejamentoContent" class="hidden">
             <div id="filterContainerPlanejamento" class="mb-6">
@@ -683,6 +687,16 @@
                 handleTeamChange();
                 renderAllTabs();
                 setupLiveListeners(); // Listeners são configurados após o primeiro carregamento
+                function renderAllTabs() {
+                populateTeamFilter(); 
+                populateAthleteDatalist();
+                populateAthleteReportSelector(); // <<< ADICIONE ESTA LINHA
+                renderProntidaoTab();
+                renderCargaTab();
+                renderPlanningView();
+                renderLesoesTab();
+                updateDashboardView();
+        }
 
                 globalLoader.classList.add('hidden');
                 mainContent.classList.remove('hidden');
@@ -1524,6 +1538,10 @@
             latestProntidaoData = { teamStats, latestDate, dailyStats };
             renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeks, dailyStats);
             updateDashboardView();
+        // ... linha existente
+            renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeks, dailyStats);
+            populateAthleteReportSelector(); // <<< ADICIONE ESTA LINHA
+       // ... resto da função
         }
 
         function analyzeProntidaoData(data, selectedWeeks) {
@@ -3109,6 +3127,283 @@
                 legendsCarga.innerHTML = `<div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Carga Aguda Média (u.a.)</h4><p>Média da carga total dos microciclos selecionados.</p><p><strong class="text-blue-600">< 2500 (Baixa)</strong></p><p><strong class="text-green-600">2500-5000 (Moderada)</strong></p><p><strong class="text-red-600">> 5000 (Alta)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">ACWR (Acute:Chronic Workload Ratio)</h4><p>Carga Aguda / Média das 4 semanas anteriores. <br><em>* <4 semanas de dados crônicos.</em></p><p><strong class="text-green-600">0.8-1.3 (Ideal)</strong></p><p><strong class="text-yellow-600"><0.8 ou 1.3-1.5 (Atenção)</strong></p><p><strong class="text-red-600">>1.5 (Perigo)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Monotonia</h4><p>Média da carga diária / Desvio Padrão. Variabilidade da carga semanal.</p><p><strong class="text-green-600">< 1.5 (Ideal)</strong></p><p><strong class="text-yellow-600">1.5-2.0 (Atenção)</strong></p><p><strong class="text-red-600">> 2.0 (Elevado)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Strain (Tensão)</h4><p>Carga total da semana x Monotonia. Estresse geral da semana.</p><p><strong class="text-green-600">< 6000 (Ideal)</strong></p><p><strong class="text-yellow-600">6000-10000 (Atenção)</strong></p><p><strong class="text-red-600">> 10000 (Elevado)</strong></p></div>`;
              }
         }
+// --- INÍCIO DO CÓDIGO PARA RELATÓRIO INDIVIDUAL ---
+
+// --- DOM ELEMENTS (NOVOS) ---
+const athleteReportSelect = document.getElementById('athleteReportSelect');
+const generateIndividualReportBtn = document.getElementById('generateIndividualReportBtn');
+
+
+// --- EVENT LISTENERS (NOVOS) ---
+athleteReportSelect.addEventListener('change', () => {
+    generateIndividualReportBtn.disabled = !athleteReportSelect.value;
+});
+
+generateIndividualReportBtn.addEventListener('click', gerarRelatorioIndividual);
+
+// --- FUNÇÃO PARA POPULAR O SELETOR DE ATLETAS ---
+function populateAthleteReportSelector() {
+    const dataForTeam = selectedTeam === 'all' 
+        ? [...fullProntidaoData, ...fullCargaData]
+        : [...fullProntidaoData, ...fullCargaData].filter(d => d.equipe_id === selectedTeam);
+
+    const athleteIds = [...new Set(dataForTeam.map(d => d.atleta_id))].sort();
+    
+    athleteReportSelect.innerHTML = '<option value="">Selecione um atleta</option>';
+    athleteIds.forEach(id => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = id;
+        athleteReportSelect.appendChild(option);
+    });
+    
+    generateIndividualReportBtn.disabled = true;
+}
+
+// --- FUNÇÃO PRINCIPAL PARA GERAR O RELATÓRIO ---
+async function gerarRelatorioIndividual() {
+    const atletaId = athleteReportSelect.value;
+    if (!atletaId) {
+        showToast("Por favor, selecione um atleta para gerar o relatório.");
+        return;
+    }
+
+    // 1. Coletar as semanas selecionadas de todas as abas relevantes
+    const prontidaoWeeks = Array.from(document.querySelectorAll('.week-checkbox:checked')).map(cb => cb.value);
+    const cargaWeeks = Array.from(document.querySelectorAll('.microciclo-checkbox:checked')).map(cb => cb.value);
+    const planningWeeks = Array.from(document.querySelectorAll('.planning-week-checkbox:checked')).map(cb => cb.value);
+    const allSelectedWeeks = sortWeeks([...new Set([...prontidaoWeeks, ...cargaWeeks, ...planningWeeks])]);
+    
+    if (allSelectedWeeks.length === 0) {
+        showToast("Selecione pelo menos uma semana nas abas de Prontidão, Carga ou Planejamento.");
+        return;
+    }
+
+    // Desabilitar o botão enquanto gera o PDF
+    generateIndividualReportBtn.disabled = true;
+    generateIndividualReportBtn.innerHTML = `<svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Gerando...`;
+
+    // 2. Criar um container temporário para o conteúdo do PDF
+    const reportContainer = document.createElement('div');
+    reportContainer.id = 'pdf-content-individual';
+    reportContainer.className = 'p-8 bg-white';
+    // Esconder o container para não aparecer na tela
+    reportContainer.style.position = 'absolute';
+    reportContainer.style.left = '-9999px';
+    reportContainer.style.width = '210mm'; // Tamanho A4
+    document.body.appendChild(reportContainer);
+
+    // 3. Montar o conteúdo do relatório
+    const teamLogoUrl = teamLogos[selectedTeam] || '';
+    const logoHtml = teamLogoUrl ? `<img src="${teamLogoUrl}" alt="Logo da Equipe" class="max-h-20 object-contain mb-4">` : '';
+
+    reportContainer.innerHTML = `
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Relatório Individual</h1>
+                <h2 class="text-2xl font-semibold text-blue-600">${atletaId}</h2>
+                <p class="text-gray-600">Equipe: ${selectedTeam}</p>
+                <p class="text-gray-500 text-sm">Período: ${allSelectedWeeks.join(', ')}</p>
+            </div>
+            ${logoHtml}
+        </div>
+        
+        <div class="space-y-8">
+            ${renderIndividualLesoesSection(atletaId)}
+            ${renderIndividualProntidaoSection(atletaId, allSelectedWeeks)}
+            ${renderIndividualCargaSection(atletaId, allSelectedWeeks)}
+            ${renderIndividualPlanejamentoSection(allSelectedWeeks)}
+        </div>
+
+        <footer class="text-center pt-8 mt-8 border-t">
+            <p class="text-xs text-gray-500">Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} por Ciente - Inteligência Esportiva</p>
+        </footer>
+    `;
+
+    // 4. Exportar para PDF
+    try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const canvas = await html2canvas(reportContainer, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const imgProps = pdf.getImageProperties(imgData);
+        const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+        
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdf.internal.pageSize.getHeight();
+
+        while (heightLeft > 0) {
+            position -= pdf.internal.pageSize.getHeight();
+            pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+            heightLeft -= pdf.internal.pageSize.getHeight();
+        }
+        
+        const fileName = `relatorio_${atletaId}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
+        pdf.save(fileName);
+
+    } catch (error) {
+        console.error("Erro ao gerar PDF individual:", error);
+        showToast("Falha ao gerar o PDF individual.");
+    } finally {
+        // 5. Limpeza
+        document.body.removeChild(reportContainer);
+        generateIndividualReportBtn.disabled = false;
+        generateIndividualReportBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 00-1 1v1a1 1 0 002 0V4a1 1 0 00-1-1zM5.293 6.707a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707zM2 10a1 1 0 011-1h1a1 1 0 110 2H3a1 1 0 01-1-1zm10 0a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1zM14.707 6.707a1 1 0 00-1.414-1.414l-.707.707a1 1 0 101.414 1.414l.707-.707zM10 17a1 1 0 01-1-1v-1a1 1 0 112 0v1a1 1 0 01-1-1zm-4.707-3.293a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707zM14.707 13.293a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707z"></path><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
+            Gerar PDF`;
+    }
+}
+
+// --- FUNÇÕES HELPER PARA RENDERIZAR SEÇÕES DO RELATÓRIO ---
+function renderIndividualLesoesSection(atletaId) {
+    const lesoesAtleta = lesoesData.filter(l => l.atleta === atletaId && l.status !== 'liberado');
+    let content;
+
+    if (lesoesAtleta.length === 0) {
+        content = `
+            <div class="flex items-center gap-x-2">
+                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <p class="font-semibold text-gray-800">Atleta liberado, sem registro de lesões ativas.</p>
+            </div>`;
+    } else {
+        const lesao = lesoesAtleta[0]; // Pega a lesão mais recente
+        const statusClass = lesao.status === 'nao-liberado' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800';
+        const statusText = lesao.status === 'nao-liberado' ? 'Não Liberado' : 'Com Restrições';
+        content = `
+            <div class="p-4 rounded-lg border-l-4 ${lesao.status === 'nao-liberado' ? 'border-red-500' : 'border-yellow-500'} bg-gray-50">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-bold text-gray-800">${lesao.lesao}</p>
+                        <p class="text-sm text-gray-700 mt-1">${lesao.tratamento || 'Nenhum tratamento especificado.'}</p>
+                    </div>
+                    <span class="text-xs font-semibold px-2 py-1 rounded-full ${statusClass}">${statusText}</span>
+                </div>
+            </div>`;
+    }
+    return `<div class="p-4 bg-white rounded-xl shadow-md border"><h3 class="text-xl font-bold text-gray-800 mb-3">Status Físico e Lesões</h3>${content}</div>`;
+}
+
+function renderIndividualProntidaoSection(atletaId, weeks) {
+    const data = fullProntidaoData.filter(d => d.atleta_id === atletaId && weeks.includes(d.semana_id));
+    if (data.length === 0) return '';
+
+    const { individualResults } = analyzeProntidaoData(data, weeks);
+    if (individualResults.length === 0) return '';
+    
+    const result = individualResults[0]; // Pega o resultado mais recente na seleção
+    let zoneClass, statusText;
+    if (result.zone === 'green') { zoneClass = 'text-green-600'; statusText = 'Zona Ótima'; }
+    else if (result.zone === 'yellow') { zoneClass = 'text-yellow-600'; statusText = 'Zona de Atenção'; }
+    else { zoneClass = 'text-red-600'; statusText = 'Zona Crítica'; }
+
+    const hooperClass = getHooperClassification(result.hooperScore.latest);
+    const saltoClass = result.saltoPercentDiff == null ? 'text-gray-500' : (result.saltoPercentDiff >= 0 ? 'text-green-600' : 'text-red-600');
+    
+    const detailsHtml = Object.entries(result.metricsDetail).map(([key, data]) => {
+        if (!METRIC_NAMES[key] || data.latest == null) return '';
+        const latestValue = (data.latest && !isNaN(data.latest)) ? data.latest.toFixed(1) : 'N/A';
+        const meanValue = (data.mean && !isNaN(data.mean)) ? data.mean.toFixed(1) : 'N/A';
+        return `<li class="flex justify-between items-center text-sm py-1 border-b last:border-b-0"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${latestValue} <span class="text-xs text-gray-500 font-normal">(Média: ${meanValue})</span></span></li>`;
+    }).join('');
+
+    return `<div class="p-4 bg-white rounded-xl shadow-md border">
+                <h3 class="text-xl font-bold text-gray-800 mb-3">Análise de Prontidão (Dado mais recente na seleção)</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div class="text-center p-3 bg-gray-50 rounded-lg"><p class="text-sm font-medium text-gray-600">Índice Geral</p><p class="text-4xl font-bold ${zoneClass}">${result.index || '--'}</p></div>
+                    <div class="text-center p-3 bg-gray-50 rounded-lg"><p class="text-sm font-medium text-gray-600">Zona</p><p class="text-lg mt-2 font-semibold ${zoneClass}">${statusText}</p></div>
+                    <div class="text-center p-3 bg-gray-50 rounded-lg"><p class="text-sm font-medium text-gray-600">Fadiga (Hooper)</p><p class="text-4xl font-bold ${hooperClass.class}">${result.hooperScore.latest.toFixed(1)}</p></div>
+                    <div class="text-center p-3 bg-gray-50 rounded-lg"><p class="text-sm font-medium text-gray-600">% Rec. Muscular</p><p class="text-4xl font-bold ${saltoClass}">${result.saltoPercentDiff != null ? `${result.saltoPercentDiff > 0 ? '+' : ''}${result.saltoPercentDiff.toFixed(1)}%` : '--'}</p></div>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-sm mb-2">Métricas Detalhadas:</h4>
+                    <ul class="space-y-1 p-3 bg-gray-50 rounded-lg">${detailsHtml}</ul>
+                </div>
+            </div>`;
+}
+
+function renderIndividualCargaSection(atletaId, weeks) {
+    const data = fullCargaData.filter(d => d.atleta_id === atletaId);
+    if (data.length === 0) return '';
+    
+    // Precisamos recalcular os dados de carga para o atleta individualmente
+    processAndStoreLoadData(data); // Isso atualiza `athleteMicrocycleData`
+    const allAthleteCycles = athleteMicrocycleData[atletaId];
+    if (!allAthleteCycles) return '';
+
+    const selectedCycles = allAthleteCycles.filter(c => weeks.includes(c.microciclo_id));
+    if (selectedCycles.length === 0) return '';
+    
+    const avgWeeklyLoad = getStats(selectedCycles.map(c => c.totalLoad)).mean;
+    const avgMonotony = getStats(selectedCycles.map(c => c.monotony)).mean;
+    const avgStrain = getStats(selectedCycles.map(c => c.strain)).mean;
+
+    const lastSelectedCycleId = sortWeeks(weeks)[weeks.length - 1];
+    const lastCycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === lastSelectedCycleId);
+    let acwr = null;
+    if (lastCycleIndex > -1) {
+        const acuteLoad = allAthleteCycles[lastCycleIndex].totalLoad;
+        const chronicCycles = allAthleteCycles.slice(Math.max(0, lastCycleIndex - 3), lastCycleIndex + 1);
+        const chronicLoad = getStats(chronicCycles.map(c => c.totalLoad)).mean;
+        if (chronicLoad > 0) acwr = acuteLoad / chronicLoad;
+    }
+    
+    return `<div class="p-4 bg-white rounded-xl shadow-md border">
+                <h3 class="text-xl font-bold text-gray-800 mb-3">Controle de Carga (Média do período)</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center p-3 bg-gray-50 rounded-lg"><p class="text-sm font-medium text-gray-600">ACWR</p><p class="text-4xl font-bold ${getAwcrClassification(acwr).class}">${acwr ? acwr.toFixed(2) : '--'}</p></div>
+                    <div class="text-center p-3 bg-gray-50 rounded-lg"><p class="text-sm font-medium text-gray-600">Carga Aguda Média</p><p class="text-4xl font-bold ${getCargaAgudaClassification(avgWeeklyLoad).class}">${Math.round(avgWeeklyLoad)}</p></div>
+                    <div class="text-center p-3 bg-gray-50 rounded-lg"><p class="text-sm font-medium text-gray-600">Monotonia Média</p><p class="text-4xl font-bold ${getMonotonyClassification(avgMonotony).class}">${avgMonotony.toFixed(2)}</p></div>
+                    <div class="text-center p-3 bg-gray-50 rounded-lg"><p class="text-sm font-medium text-gray-600">Strain Médio</p><p class="text-4xl font-bold ${getStrainClassification(avgStrain).class}">${Math.round(avgStrain)}</p></div>
+                </div>
+            </div>`;
+}
+
+function renderIndividualPlanejamentoSection(weeks) {
+    const fisicoSemana = (selectedTeam === 'all' ? treinosFisicos : treinosFisicos.filter(d => d.equipe_id === selectedTeam))
+        .filter(t => weeks.includes(t.semana_id));
+    const campoSemana = (selectedTeam === 'all' ? treinosCampo : treinosCampo.filter(d => d.equipe_id === selectedTeam))
+        .filter(t => weeks.includes(t.semana_id));
+    
+    if (fisicoSemana.length === 0 && campoSemana.length === 0) return '';
+    
+    const formatTraining = (treino) => {
+        const borderColorClass = `carga-${treino.carga}`;
+        const objSecundarioText = Array.isArray(treino.objSecundario) && treino.objSecundario.length > 0 ? treino.objSecundario.join(', ') : 'N/A';
+        return `<li class="p-2 rounded-lg border-l-4 ${borderColorClass} bg-gray-50">
+                    <p class="font-semibold text-gray-800 text-sm">${treino.objPrincipal} <span class="text-xs font-normal text-gray-500">(${new Date(treino.date + 'T00:00:00').toLocaleDateString('pt-BR', {weekday: 'short', day: '2-digit'})})</span></p>
+                    <p class="text-xs text-gray-600">${objSecundarioText}</p>
+                </li>`;
+    };
+
+    const fisicoHtml = fisicoSemana.length > 0 ? fisicoSemana.map(formatTraining).join('') : '<li class="text-sm text-gray-500">Nenhum treino físico planejado.</li>';
+    const campoHtml = campoSemana.length > 0 ? campoSemana.map(formatTraining).join('') : '<li class="text-sm text-gray-500">Nenhum treino de campo planejado.</li>';
+    
+    return `<div class="p-4 bg-white rounded-xl shadow-md border">
+                <h3 class="text-xl font-bold text-gray-800 mb-3">Planejamento da Equipe (no período)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-center mb-2">Treinos Físicos</h4>
+                        <ul class="space-y-2">${fisicoHtml}</ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-center mb-2">Treinos de Campo</h4>
+                        <ul class="space-y-2">${campoHtml}</ul>
+                    </div>
+                </div>
+            </div>`;
+}
+
+// --- FIM DO CÓDIGO PARA RELATÓRIO INDIVIDUAL ---
     </script>
 </body>
 </html>
+        }
