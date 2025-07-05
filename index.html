@@ -70,20 +70,6 @@
             background-color: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(4px);
         }
-        .individual-report-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 16px;
-            padding: 24px;
-            margin: 24px 0;
-            color: white;
-        }
-        .individual-report-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 20px;
-        }
 
     </style>
 </head>
@@ -440,26 +426,64 @@
             </div>
         </div>
 
-        <!-- Nova aba de Relatório Individual -->
+        <!-- Nova aba de Relatório Individual Independente -->
         <div id="relatorioContent" class="hidden">
-            <div class="individual-report-section">
+            <div class="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl p-8 text-white mb-8">
                 <div class="text-center mb-8">
                     <h2 class="text-3xl font-bold mb-2">📊 Relatório Individual de Atleta</h2>
-                    <p class="text-lg opacity-90">Gere relatórios personalizados com dados completos de prontidão, carga e lesões</p>
+                    <p class="text-lg opacity-90">Sistema independente para gerar relatórios personalizados</p>
                 </div>
 
-                <div class="individual-report-card mb-6">
-                    <h3 class="text-xl font-semibold mb-4">🎯 Seleção do Atleta</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Seção de Importação -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                        <h3 class="text-xl font-semibold mb-4">📈 Dados de Prontidão</h3>
+                        <div class="space-y-4">
+                            <div class="border-2 border-dashed border-white/30 rounded-lg p-4 text-center">
+                                <input type="file" id="csvProntidaoIndividual" accept=".csv" class="hidden">
+                                <label for="csvProntidaoIndividual" class="cursor-pointer block">
+                                    <div class="text-white/70 mb-2">📁 Clique para carregar CSV de Prontidão</div>
+                                    <div id="fileNameProntidaoIndividual" class="text-sm text-white/50"></div>
+                                </label>
+                            </div>
+                            <button id="processProntidaoIndividual" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300" disabled>
+                                <span id="btnTextProntidaoIndividual">Processar Prontidão</span>
+                                <div id="btnLoaderProntidaoIndividual" class="loader hidden inline-block ml-2" style="width: 16px; height: 16px;"></div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                        <h3 class="text-xl font-semibold mb-4">⚡ Dados de Carga</h3>
+                        <div class="space-y-4">
+                            <div class="border-2 border-dashed border-white/30 rounded-lg p-4 text-center">
+                                <input type="file" id="csvCargaIndividual" accept=".csv" class="hidden">
+                                <label for="csvCargaIndividual" class="cursor-pointer block">
+                                    <div class="text-white/70 mb-2">📁 Clique para carregar CSV de Carga</div>
+                                    <div id="fileNameCargaIndividual" class="text-sm text-white/50"></div>
+                                </label>
+                            </div>
+                            <button id="processCargaIndividual" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300" disabled>
+                                <span id="btnTextCargaIndividual">Processar Carga</span>
+                                <div id="btnLoaderCargaIndividual" class="loader hidden inline-block ml-2" style="width: 16px; height: 16px;"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção de Geração de Relatório -->
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                    <h3 class="text-xl font-semibold mb-4">🎯 Gerar Relatório</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div>
-                            <label for="athleteSelect" class="block text-sm font-medium mb-2">Selecione o Atleta:</label>
-                            <select id="athleteSelect" class="w-full p-3 border border-white/20 rounded-lg bg-white/10 text-white placeholder-white/70 focus:ring-2 focus:ring-white/50 focus:border-transparent">
+                            <label for="athleteSelectIndividual" class="block text-sm font-medium mb-2">Selecione o Atleta:</label>
+                            <select id="athleteSelectIndividual" class="w-full p-3 border border-white/20 rounded-lg bg-white/10 text-white focus:ring-2 focus:ring-white/50 focus:border-transparent">
                                 <option value="" class="text-gray-800">Selecione um atleta...</option>
                             </select>
                         </div>
                         <div>
-                            <label for="periodSelect" class="block text-sm font-medium mb-2">Período de Análise:</label>
-                            <select id="periodSelect" class="w-full p-3 border border-white/20 rounded-lg bg-white/10 text-white focus:ring-2 focus:ring-white/50 focus:border-transparent">
+                            <label for="periodSelectIndividual" class="block text-sm font-medium mb-2">Período de Análise:</label>
+                            <select id="periodSelectIndividual" class="w-full p-3 border border-white/20 rounded-lg bg-white/10 text-white focus:ring-2 focus:ring-white/50 focus:border-transparent">
                                 <option value="last_week" class="text-gray-800">Última Semana</option>
                                 <option value="last_month" class="text-gray-800">Último Mês</option>
                                 <option value="last_3_months" class="text-gray-800">Últimos 3 Meses</option>
@@ -467,46 +491,55 @@
                             </select>
                         </div>
                     </div>
-                </div>
 
-                <div class="individual-report-card mb-6">
-                    <h3 class="text-xl font-semibold mb-4">📋 Seções do Relatório</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="includeProntidao" checked class="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500">
+                            <input type="checkbox" id="includeProntidaoIndividual" checked class="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500">
                             <span>📈 Prontidão</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="includeCarga" checked class="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500">
+                            <input type="checkbox" id="includeCargaIndividual" checked class="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500">
                             <span>⚡ Carga</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="includeLesoes" checked class="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500">
-                            <span>🏥 Lesões</span>
+                            <input type="checkbox" id="includeEstatisticasIndividual" checked class="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500">
+                            <span>📊 Estatísticas</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="includeGraficos" checked class="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500">
-                            <span>📊 Gráficos</span>
+                            <input type="checkbox" id="includeGraficosIndividual" checked class="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500">
+                            <span>📈 Gráficos</span>
                         </label>
                     </div>
-                </div>
 
-                <div class="text-center">
-                    <button id="generateReportBtn" class="btn bg-white text-purple-600 font-bold py-4 px-8 rounded-lg hover:bg-gray-100 transition duration-300 flex items-center mx-auto text-lg shadow-lg" disabled>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span id="generateReportText">Gerar Relatório Individual PDF</span>
-                        <div id="generateReportLoader" class="loader hidden ml-3" style="border-color: #7c3aed; border-top-color: transparent;"></div>
-                    </button>
+                    <div class="text-center">
+                        <button id="generateReportIndividual" class="bg-white text-purple-600 font-bold py-4 px-8 rounded-lg hover:bg-gray-100 transition duration-300 flex items-center mx-auto text-lg shadow-lg" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span id="generateReportTextIndividual">Gerar Relatório Individual PDF</span>
+                            <div id="generateReportLoaderIndividual" class="loader hidden ml-3" style="border-color: #7c3aed; border-top-color: transparent;"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status dos Dados -->
+            <div id="statusDadosIndividual" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="bg-white rounded-lg shadow-md p-4">
+                    <h4 class="font-semibold text-gray-800 mb-2">📈 Status Prontidão</h4>
+                    <div id="statusProntidaoIndividual" class="text-gray-600">Nenhum dado carregado</div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4">
+                    <h4 class="font-semibold text-gray-800 mb-2">⚡ Status Carga</h4>
+                    <div id="statusCargaIndividual" class="text-gray-600">Nenhum dado carregado</div>
                 </div>
             </div>
 
             <!-- Preview do Relatório -->
-            <div id="reportPreview" class="hidden mt-8">
+            <div id="reportPreviewIndividual" class="hidden">
                 <div class="bg-white rounded-2xl shadow-lg border p-6">
                     <h3 class="text-2xl font-bold text-gray-800 mb-4">📋 Preview do Relatório</h3>
-                    <div id="reportPreviewContent" class="space-y-6"></div>
+                    <div id="reportPreviewContentIndividual" class="space-y-6"></div>
                 </div>
             </div>
         </div>
@@ -678,17 +711,29 @@
         const dashboardPlanejamento = document.getElementById('dashboardPlanejamento');
         const exportPdfBtnDashboard = document.getElementById('exportPdfBtnDashboard');
         // Relatório Individual Elements
-        const athleteSelect = document.getElementById('athleteSelect');
-        const periodSelect = document.getElementById('periodSelect');
-        const generateReportBtn = document.getElementById('generateReportBtn');
-        const generateReportText = document.getElementById('generateReportText');
-        const generateReportLoader = document.getElementById('generateReportLoader');
-        const reportPreview = document.getElementById('reportPreview');
-        const reportPreviewContent = document.getElementById('reportPreviewContent');
-        const includeProntidao = document.getElementById('includeProntidao');
-        const includeCarga = document.getElementById('includeCarga');
-        const includeLesoes = document.getElementById('includeLesoes');
-        const includeGraficos = document.getElementById('includeGraficos');
+        const csvProntidaoIndividual = document.getElementById('csvProntidaoIndividual');
+        const csvCargaIndividual = document.getElementById('csvCargaIndividual');
+        const fileNameProntidaoIndividual = document.getElementById('fileNameProntidaoIndividual');
+        const fileNameCargaIndividual = document.getElementById('fileNameCargaIndividual');
+        const processProntidaoIndividual = document.getElementById('processProntidaoIndividual');
+        const processCargaIndividual = document.getElementById('processCargaIndividual');
+        const btnTextProntidaoIndividual = document.getElementById('btnTextProntidaoIndividual');
+        const btnTextCargaIndividual = document.getElementById('btnTextCargaIndividual');
+        const btnLoaderProntidaoIndividual = document.getElementById('btnLoaderProntidaoIndividual');
+        const btnLoaderCargaIndividual = document.getElementById('btnLoaderCargaIndividual');
+        const athleteSelectIndividual = document.getElementById('athleteSelectIndividual');
+        const periodSelectIndividual = document.getElementById('periodSelectIndividual');
+        const generateReportIndividual = document.getElementById('generateReportIndividual');
+        const generateReportTextIndividual = document.getElementById('generateReportTextIndividual');
+        const generateReportLoaderIndividual = document.getElementById('generateReportLoaderIndividual');
+        const reportPreviewIndividual = document.getElementById('reportPreviewIndividual');
+        const reportPreviewContentIndividual = document.getElementById('reportPreviewContentIndividual');
+        const statusProntidaoIndividual = document.getElementById('statusProntidaoIndividual');
+        const statusCargaIndividual = document.getElementById('statusCargaIndividual');
+        const includeProntidaoIndividual = document.getElementById('includeProntidaoIndividual');
+        const includeCargaIndividual = document.getElementById('includeCargaIndividual');
+        const includeEstatisticasIndividual = document.getElementById('includeEstatisticasIndividual');
+        const includeGraficosIndividual = document.getElementById('includeGraficosIndividual');
 
 
         // --- SETUP ---
@@ -3213,31 +3258,113 @@
                 legendsCarga.innerHTML = `<div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Carga Aguda Média (u.a.)</h4><p>Média da carga total dos microciclos selecionados.</p><p><strong class="text-blue-600">< 2500 (Baixa)</strong></p><p><strong class="text-green-600">2500-5000 (Moderada)</strong></p><p><strong class="text-red-600">> 5000 (Alta)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">ACWR (Acute:Chronic Workload Ratio)</h4><p>Carga Aguda / Média das 4 semanas anteriores. <br><em>* <4 semanas de dados crônicos.</em></p><p><strong class="text-green-600">0.8-1.3 (Ideal)</strong></p><p><strong class="text-yellow-600"><0.8 ou 1.3-1.5 (Atenção)</strong></p><p><strong class="text-red-600">>1.5 (Perigo)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Monotonia</h4><p>Média da carga diária / Desvio Padrão. Variabilidade da carga semanal.</p><p><strong class="text-green-600">< 1.5 (Ideal)</strong></p><p><strong class="text-yellow-600">1.5-2.0 (Atenção)</strong></p><p><strong class="text-red-600">> 2.0 (Elevado)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Strain (Tensão)</h4><p>Carga total da semana x Monotonia. Estresse geral da semana.</p><p><strong class="text-green-600">< 6000 (Ideal)</strong></p><p><strong class="text-yellow-600">6000-10000 (Atenção)</strong></p><p><strong class="text-red-600">> 10000 (Elevado)</strong></p></div>`;
              }
         }
-    </script>
-</body>
-</html>
-
 
         // --- RELATÓRIO INDIVIDUAL FUNCTIONS ---
-        function populateAthleteSelect() {
-            const dataForTeam = selectedTeam === 'all' 
-                ? [...fullProntidaoData, ...fullCargaData]
-                : [...fullProntidaoData, ...fullCargaData].filter(d => d.equipe_id === selectedTeam);
+        let prontidaoDataIndividual = [];
+        let cargaDataIndividual = [];
 
-            const athleteIds = [...new Set(dataForTeam.map(d => d.atleta_id))].sort();
+        function handleFileSelectIndividual(fileInput, fileNameEl, processBtn) {
+            if (fileInput.files.length > 0) {
+                fileNameEl.textContent = fileInput.files[0].name;
+                processBtn.disabled = false;
+            } else {
+                fileNameEl.textContent = '';
+                processBtn.disabled = true;
+            }
+        }
+
+        function handleFileProcessingProntidaoIndividual() {
+            const file = csvProntidaoIndividual.files[0];
+            if (!file) return showToast("Por favor, selecione um arquivo de prontidão.");
             
-            athleteSelect.innerHTML = '<option value="">Selecione um atleta...</option>';
+            toggleLoadingIndividual(true, 'prontidao');
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const required = ['equipe_id', 'atleta_id', 'data', 'semana_id'];
+                    const parsedData = parseCSV(event.target.result, required);
+                    prontidaoDataIndividual = parsedData;
+                    updateAthleteSelectIndividual();
+                    updateStatusIndividual('prontidao', parsedData.length);
+                    showToast(`${parsedData.length} registros de prontidão carregados!`, 'success');
+                } catch (error) {
+                    console.error("Erro ao processar prontidão:", error);
+                    showToast(`Erro na análise: ${error.message}`);
+                } finally {
+                    toggleLoadingIndividual(false, 'prontidao');
+                }
+            };
+            reader.onerror = () => {
+                showToast("Erro ao ler o arquivo.");
+                toggleLoadingIndividual(false, 'prontidao');
+            };
+            reader.readAsText(file);
+        }
+
+        function handleFileProcessingCargaIndividual() {
+            const file = csvCargaIndividual.files[0];
+            if (!file) return showToast("Por favor, selecione um arquivo de carga.");
+            
+            toggleLoadingIndividual(true, 'carga');
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const required = ['equipe_id', 'atleta_id', 'data', 'microciclo_id'];
+                    const parsedData = parseCSV(event.target.result, required);
+                    cargaDataIndividual = parsedData;
+                    updateAthleteSelectIndividual();
+                    updateStatusIndividual('carga', parsedData.length);
+                    showToast(`${parsedData.length} registros de carga carregados!`, 'success');
+                } catch (error) {
+                    console.error("Erro ao processar carga:", error);
+                    showToast(`Erro na análise: ${error.message}`);
+                } finally {
+                    toggleLoadingIndividual(false, 'carga');
+                }
+            };
+            reader.onerror = () => {
+                showToast("Erro ao ler o arquivo.");
+                toggleLoadingIndividual(false, 'carga');
+            };
+            reader.readAsText(file);
+        }
+
+        function toggleLoadingIndividual(isLoading, type) {
+            if (type === 'prontidao') {
+                processProntidaoIndividual.disabled = isLoading;
+                btnTextProntidaoIndividual.textContent = isLoading ? 'Processando...' : 'Processar Prontidão';
+                btnLoaderProntidaoIndividual.classList.toggle('hidden', !isLoading);
+            } else if (type === 'carga') {
+                processCargaIndividual.disabled = isLoading;
+                btnTextCargaIndividual.textContent = isLoading ? 'Processando...' : 'Processar Carga';
+                btnLoaderCargaIndividual.classList.toggle('hidden', !isLoading);
+            }
+        }
+
+        function updateAthleteSelectIndividual() {
+            const allData = [...prontidaoDataIndividual, ...cargaDataIndividual];
+            const athleteIds = [...new Set(allData.map(d => d.atleta_id))].sort();
+            
+            athleteSelectIndividual.innerHTML = '<option value="">Selecione um atleta...</option>';
             athleteIds.forEach(id => {
                 const option = document.createElement('option');
                 option.value = id;
                 option.textContent = id;
-                athleteSelect.appendChild(option);
+                athleteSelectIndividual.appendChild(option);
             });
             
-            generateReportBtn.disabled = true;
+            generateReportIndividual.disabled = !athleteSelectIndividual.value;
         }
 
-        function filterDataByPeriod(data, period) {
+        function updateStatusIndividual(type, count) {
+            if (type === 'prontidao') {
+                statusProntidaoIndividual.innerHTML = `<span class="text-green-600 font-semibold">${count} registros carregados</span>`;
+            } else if (type === 'carga') {
+                statusCargaIndividual.innerHTML = `<span class="text-green-600 font-semibold">${count} registros carregados</span>`;
+            }
+        }
+
+        function filterDataByPeriodIndividual(data, period) {
             if (period === 'all') return data;
             
             const now = new Date();
@@ -3263,79 +3390,79 @@
             });
         }
 
-        function generateAthleteReport() {
-            const athleteId = athleteSelect.value;
-            const period = periodSelect.value;
+        function generateAthleteReportIndividual() {
+            const athleteId = athleteSelectIndividual.value;
+            const period = periodSelectIndividual.value;
             
             if (!athleteId) {
                 showToast("Por favor, selecione um atleta.");
                 return;
             }
 
-            generateReportBtn.disabled = true;
-            generateReportText.textContent = "Gerando relatório...";
-            generateReportLoader.classList.remove('hidden');
+            generateReportIndividual.disabled = true;
+            generateReportTextIndividual.textContent = "Gerando relatório...";
+            generateReportLoaderIndividual.classList.remove('hidden');
 
             try {
                 // Filtrar dados do atleta
-                const athleteProntidaoData = filterDataByPeriod(
-                    fullProntidaoData.filter(d => d.atleta_id === athleteId),
+                const athleteProntidaoData = filterDataByPeriodIndividual(
+                    prontidaoDataIndividual.filter(d => d.atleta_id === athleteId),
                     period
                 );
-                const athleteCargaData = filterDataByPeriod(
-                    fullCargaData.filter(d => d.atleta_id === athleteId),
+                const athleteCargaData = filterDataByPeriodIndividual(
+                    cargaDataIndividual.filter(d => d.atleta_id === athleteId),
                     period
                 );
-                const athleteLesoes = lesoesData.filter(d => d.atleta === athleteId);
 
                 // Gerar preview do relatório
                 let previewHtml = `
                     <div class="mb-6">
                         <h4 class="text-xl font-bold text-gray-800 mb-2">Relatório Individual - ${athleteId}</h4>
-                        <p class="text-gray-600">Período: ${getPeriodLabel(period)}</p>
-                        <p class="text-gray-600">Equipe: ${selectedTeam === 'all' ? 'Todas' : selectedTeam}</p>
+                        <p class="text-gray-600">Período: ${getPeriodLabelIndividual(period)}</p>
+                        <p class="text-gray-600">Gerado em: ${new Date().toLocaleDateString('pt-BR')}</p>
                     </div>
                 `;
 
-                if (includeProntidao.checked && athleteProntidaoData.length > 0) {
+                if (includeProntidaoIndividual.checked && athleteProntidaoData.length > 0) {
+                    const latestProntidao = athleteProntidaoData[athleteProntidaoData.length - 1];
                     previewHtml += `
                         <div class="mb-6 p-4 bg-blue-50 rounded-lg">
                             <h5 class="font-semibold text-blue-800 mb-2">📈 Dados de Prontidão</h5>
                             <p class="text-sm text-blue-700">${athleteProntidaoData.length} registros encontrados</p>
-                            <p class="text-sm text-blue-700">Último registro: ${new Date(athleteProntidaoData[athleteProntidaoData.length - 1]?.data).toLocaleDateString('pt-BR')}</p>
+                            <p class="text-sm text-blue-700">Último registro: ${new Date(latestProntidao.data).toLocaleDateString('pt-BR')}</p>
+                            ${latestProntidao.hooper_score ? `<p class="text-sm text-blue-700">Último Hooper Score: ${latestProntidao.hooper_score}</p>` : ''}
                         </div>
                     `;
                 }
 
-                if (includeCarga.checked && athleteCargaData.length > 0) {
+                if (includeCargaIndividual.checked && athleteCargaData.length > 0) {
+                    const latestCarga = athleteCargaData[athleteCargaData.length - 1];
                     previewHtml += `
                         <div class="mb-6 p-4 bg-green-50 rounded-lg">
                             <h5 class="font-semibold text-green-800 mb-2">⚡ Dados de Carga</h5>
                             <p class="text-sm text-green-700">${athleteCargaData.length} registros encontrados</p>
-                            <p class="text-sm text-green-700">Último registro: ${new Date(athleteCargaData[athleteCargaData.length - 1]?.data).toLocaleDateString('pt-BR')}</p>
+                            <p class="text-sm text-green-700">Último registro: ${new Date(latestCarga.data).toLocaleDateString('pt-BR')}</p>
                         </div>
                     `;
                 }
 
-                if (includeLesoes.checked && athleteLesoes.length > 0) {
+                if (includeEstatisticasIndividual.checked) {
                     previewHtml += `
-                        <div class="mb-6 p-4 bg-orange-50 rounded-lg">
-                            <h5 class="font-semibold text-orange-800 mb-2">🏥 Histórico de Lesões</h5>
-                            <p class="text-sm text-orange-700">${athleteLesoes.length} registro(s) de lesão</p>
-                            <p class="text-sm text-orange-700">Status atual: ${athleteLesoes[0]?.status || 'Liberado'}</p>
+                        <div class="mb-6 p-4 bg-purple-50 rounded-lg">
+                            <h5 class="font-semibold text-purple-800 mb-2">📊 Estatísticas</h5>
+                            <p class="text-sm text-purple-700">Análises estatísticas dos dados do período</p>
                         </div>
                     `;
                 }
 
-                reportPreviewContent.innerHTML = previewHtml;
-                reportPreview.classList.remove('hidden');
+                reportPreviewContentIndividual.innerHTML = previewHtml;
+                reportPreviewIndividual.classList.remove('hidden');
 
                 // Gerar PDF
                 setTimeout(() => {
-                    generatePDF(athleteId, period, {
+                    generatePDFIndividual(athleteId, period, {
                         prontidao: athleteProntidaoData,
-                        carga: athleteCargaData,
-                        lesoes: athleteLesoes
+                        carga: athleteCargaData
                     });
                 }, 1000);
 
@@ -3343,13 +3470,13 @@
                 console.error("Erro ao gerar relatório:", error);
                 showToast("Erro ao gerar relatório. Verifique o console.");
             } finally {
-                generateReportBtn.disabled = false;
-                generateReportText.textContent = "Gerar Relatório Individual PDF";
-                generateReportLoader.classList.add('hidden');
+                generateReportIndividual.disabled = false;
+                generateReportTextIndividual.textContent = "Gerar Relatório Individual PDF";
+                generateReportLoaderIndividual.classList.add('hidden');
             }
         }
 
-        function getPeriodLabel(period) {
+        function getPeriodLabelIndividual(period) {
             switch (period) {
                 case 'last_week': return 'Última Semana';
                 case 'last_month': return 'Último Mês';
@@ -3359,58 +3486,71 @@
             }
         }
 
-        async function generatePDF(athleteId, period, data) {
+        async function generatePDFIndividual(athleteId, period, data) {
             try {
-                // Criar container temporário para o PDF
-                const reportContainer = document.createElement('div');
-                reportContainer.id = 'pdf-content-individual';
-                reportContainer.className = 'p-8 bg-white';
-                reportContainer.style.position = 'absolute';
-                reportContainer.style.left = '-9999px';
-                reportContainer.style.width = '210mm';
-                document.body.appendChild(reportContainer);
-
-                // Conteúdo do relatório
-                reportContainer.innerHTML = `
-                    <div class="text-center mb-8">
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2">Relatório Individual de Atleta</h1>
-                        <h2 class="text-2xl font-semibold text-blue-600">${athleteId}</h2>
-                        <p class="text-gray-600">Equipe: ${selectedTeam === 'all' ? 'Todas' : selectedTeam}</p>
-                        <p class="text-gray-500">Período: ${getPeriodLabel(period)}</p>
-                        <p class="text-gray-500 text-sm">Gerado em: ${new Date().toLocaleDateString('pt-BR')}</p>
-                    </div>
-                    
-                    <div class="space-y-8">
-                        ${includeProntidao.checked ? generateProntidaoSection(data.prontidao) : ''}
-                        ${includeCarga.checked ? generateCargaSection(data.carga) : ''}
-                        ${includeLesoes.checked ? generateLesoesSection(data.lesoes) : ''}
-                    </div>
-
-                    <footer class="text-center pt-8 mt-8 border-t">
-                        <p class="text-xs text-gray-500">Relatório gerado por Ciente - Inteligência Esportiva</p>
-                    </footer>
-                `;
-
-                // Exportar para PDF
+                // Usar jsPDF para gerar o PDF
                 const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const canvas = await html2canvas(reportContainer, { 
-                    scale: 2, 
-                    useCORS: true, 
-                    backgroundColor: '#ffffff' 
-                });
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const pdf = new jsPDF();
                 
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const imgProps = pdf.getImageProperties(imgData);
-                const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                // Título
+                pdf.setFontSize(20);
+                pdf.text('Relatório Individual de Atleta', 20, 30);
                 
-                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight);
+                pdf.setFontSize(16);
+                pdf.text(`Atleta: ${athleteId}`, 20, 50);
+                pdf.text(`Período: ${getPeriodLabelIndividual(period)}`, 20, 65);
+                pdf.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 20, 80);
                 
-                const fileName = `relatorio_${athleteId}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
+                let yPosition = 100;
+                
+                // Dados de Prontidão
+                if (includeProntidaoIndividual.checked && data.prontidao.length > 0) {
+                    pdf.setFontSize(14);
+                    pdf.text('📈 Dados de Prontidão', 20, yPosition);
+                    yPosition += 15;
+                    
+                    pdf.setFontSize(10);
+                    pdf.text(`Total de registros: ${data.prontidao.length}`, 25, yPosition);
+                    yPosition += 10;
+                    
+                    const latest = data.prontidao[data.prontidao.length - 1];
+                    pdf.text(`Último registro: ${new Date(latest.data).toLocaleDateString('pt-BR')}`, 25, yPosition);
+                    yPosition += 15;
+                }
+                
+                // Dados de Carga
+                if (includeCargaIndividual.checked && data.carga.length > 0) {
+                    pdf.setFontSize(14);
+                    pdf.text('⚡ Dados de Carga', 20, yPosition);
+                    yPosition += 15;
+                    
+                    pdf.setFontSize(10);
+                    pdf.text(`Total de registros: ${data.carga.length}`, 25, yPosition);
+                    yPosition += 10;
+                    
+                    const latest = data.carga[data.carga.length - 1];
+                    pdf.text(`Último registro: ${new Date(latest.data).toLocaleDateString('pt-BR')}`, 25, yPosition);
+                    yPosition += 15;
+                }
+                
+                // Estatísticas
+                if (includeEstatisticasIndividual.checked) {
+                    pdf.setFontSize(14);
+                    pdf.text('📊 Estatísticas', 20, yPosition);
+                    yPosition += 15;
+                    
+                    pdf.setFontSize(10);
+                    pdf.text('Análises estatísticas dos dados do período selecionado', 25, yPosition);
+                    yPosition += 15;
+                }
+                
+                // Rodapé
+                pdf.setFontSize(8);
+                pdf.text('Relatório gerado por Ciente - Inteligência Esportiva', 20, 280);
+                
+                const fileName = `relatorio_individual_${athleteId}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
                 pdf.save(fileName);
 
-                document.body.removeChild(reportContainer);
                 showToast("Relatório PDF gerado com sucesso!", "success");
 
             } catch (error) {
@@ -3419,132 +3559,17 @@
             }
         }
 
-        function generateProntidaoSection(data) {
-            if (!data || data.length === 0) {
-                return `
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="text-lg font-bold text-gray-800 mb-2">📈 Análise de Prontidão</h3>
-                        <p class="text-gray-600">Nenhum dado de prontidão encontrado para o período selecionado.</p>
-                    </div>
-                `;
-            }
-
-            const latest = data[data.length - 1];
-            return `
-                <div class="p-4 bg-blue-50 rounded-lg">
-                    <h3 class="text-lg font-bold text-blue-800 mb-4">📈 Análise de Prontidão</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm font-medium text-blue-700">Total de Registros:</p>
-                            <p class="text-xl font-bold text-blue-900">${data.length}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-blue-700">Último Registro:</p>
-                            <p class="text-xl font-bold text-blue-900">${new Date(latest.data).toLocaleDateString('pt-BR')}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-blue-700">Hooper Score:</p>
-                            <p class="text-xl font-bold text-blue-900">${latest.hooper_score || 'N/A'}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-blue-700">Qualidade do Sono:</p>
-                            <p class="text-xl font-bold text-blue-900">${latest.qualidade_sono || 'N/A'}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function generateCargaSection(data) {
-            if (!data || data.length === 0) {
-                return `
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="text-lg font-bold text-gray-800 mb-2">⚡ Controle de Carga</h3>
-                        <p class="text-gray-600">Nenhum dado de carga encontrado para o período selecionado.</p>
-                    </div>
-                `;
-            }
-
-            const totalSessions = data.length;
-            const avgPSE = data.reduce((sum, d) => sum + (d.pse_sessao || 0), 0) / totalSessions;
-            const avgDuration = data.reduce((sum, d) => sum + (d.duracao_sessao_min || 0), 0) / totalSessions;
-
-            return `
-                <div class="p-4 bg-green-50 rounded-lg">
-                    <h3 class="text-lg font-bold text-green-800 mb-4">⚡ Controle de Carga</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm font-medium text-green-700">Total de Sessões:</p>
-                            <p class="text-xl font-bold text-green-900">${totalSessions}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-green-700">PSE Médio:</p>
-                            <p class="text-xl font-bold text-green-900">${avgPSE.toFixed(1)}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-green-700">Duração Média (min):</p>
-                            <p class="text-xl font-bold text-green-900">${avgDuration.toFixed(0)}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-green-700">Carga Total:</p>
-                            <p class="text-xl font-bold text-green-900">${(avgPSE * avgDuration * totalSessions).toFixed(0)}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function generateLesoesSection(data) {
-            if (!data || data.length === 0) {
-                return `
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="text-lg font-bold text-gray-800 mb-2">🏥 Histórico de Lesões</h3>
-                        <p class="text-green-600 font-medium">✅ Nenhuma lesão registrada - Atleta liberado</p>
-                    </div>
-                `;
-            }
-
-            const activeLesoes = data.filter(l => l.status !== 'liberado');
-            const statusClass = activeLesoes.length > 0 ? 'bg-red-50' : 'bg-green-50';
-            const statusColor = activeLesoes.length > 0 ? 'text-red-800' : 'text-green-800';
-
-            return `
-                <div class="p-4 ${statusClass} rounded-lg">
-                    <h3 class="text-lg font-bold ${statusColor} mb-4">🏥 Histórico de Lesões</h3>
-                    ${data.map(lesao => `
-                        <div class="mb-3 p-3 bg-white rounded border-l-4 ${lesao.status === 'nao-liberado' ? 'border-red-500' : lesao.status === 'restricoes' ? 'border-yellow-500' : 'border-green-500'}">
-                            <p class="font-semibold">${lesao.lesao}</p>
-                            <p class="text-sm text-gray-600">${lesao.tratamento || 'Sem tratamento especificado'}</p>
-                            <p class="text-xs text-gray-500">Status: ${lesao.status === 'nao-liberado' ? 'Não Liberado' : lesao.status === 'restricoes' ? 'Com Restrições' : 'Liberado'}</p>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
         // Event listeners para a nova aba
-        athleteSelect.addEventListener('change', () => {
-            generateReportBtn.disabled = !athleteSelect.value;
-            reportPreview.classList.add('hidden');
+        csvProntidaoIndividual.addEventListener('change', () => handleFileSelectIndividual(csvProntidaoIndividual, fileNameProntidaoIndividual, processProntidaoIndividual));
+        csvCargaIndividual.addEventListener('change', () => handleFileSelectIndividual(csvCargaIndividual, fileNameCargaIndividual, processCargaIndividual));
+        processProntidaoIndividual.addEventListener('click', handleFileProcessingProntidaoIndividual);
+        processCargaIndividual.addEventListener('click', handleFileProcessingCargaIndividual);
+        athleteSelectIndividual.addEventListener('change', () => {
+            generateReportIndividual.disabled = !athleteSelectIndividual.value;
+            reportPreviewIndividual.classList.add('hidden');
         });
-
-        generateReportBtn.addEventListener('click', generateAthleteReport);
-
-        teamFilterSelect.addEventListener('change', (e) => {
-            selectedTeam = e.target.value;
-            populateAthleteSelect();
-            updateTeamInputs();
-            renderAllTabs();
-        });
-
-        // Atualizar a função populateTeamFilter para incluir a nova funcionalidade
-        const originalPopulateTeamFilter = populateTeamFilter;
-        populateTeamFilter = function() {
-            originalPopulateTeamFilter();
-            populateAthleteSelect();
-        };
+        generateReportIndividual.addEventListener('click', generateAthleteReportIndividual);
 
     </script>
 </body>
 </html>
-
