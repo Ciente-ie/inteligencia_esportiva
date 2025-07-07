@@ -981,6 +981,7 @@
             renderPlanningView();
             renderLesoesTab();
             updateDashboardView();
+            updateAthleteSelectIndividual(); // Atualizar relatório individual com novos dados
         }
 
         // --- MAIN RENDER FUNCTIONS ---
@@ -3342,8 +3343,14 @@
         }
 
         function updateAthleteSelectIndividual() {
-            const allData = [...prontidaoDataIndividual, ...cargaDataIndividual];
-            const athleteIds = [...new Set(allData.map(d => d.atleta_id))].sort();
+            // Combinar dados próprios da aba com dados globais das outras abas
+            const allData = [
+                ...prontidaoDataIndividual, 
+                ...cargaDataIndividual,
+                ...fullProntidaoData,
+                ...fullCargaData
+            ];
+            const athleteIds = [...new Set(allData.map(d => d.atleta_id))].filter(id => id).sort();
             
             athleteSelectIndividual.innerHTML = '<option value="">Selecione um atleta...</option>';
             athleteIds.forEach(id => {
@@ -3354,6 +3361,9 @@
             });
             
             generateReportIndividual.disabled = !athleteSelectIndividual.value;
+            
+            // Atualizar status com informações dos dados disponíveis
+            updateStatusIndividualWithGlobalData();
         }
 
         function updateStatusIndividual(type, count) {
@@ -3362,6 +3372,53 @@
             } else if (type === 'carga') {
                 statusCargaIndividual.innerHTML = `<span class="text-green-600 font-semibold">${count} registros carregados</span>`;
             }
+        }
+
+        function updateStatusIndividualWithGlobalData() {
+            const totalProntidao = prontidaoDataIndividual.length + fullProntidaoData.length;
+            const totalCarga = cargaDataIndividual.length + fullCargaData.length;
+            
+            let prontidaoStatus = '';
+            let cargaStatus = '';
+            
+            if (totalProntidao > 0) {
+                const fromIndividual = prontidaoDataIndividual.length;
+                const fromGlobal = fullProntidaoData.length;
+                
+                if (fromIndividual > 0 && fromGlobal > 0) {
+                    prontidaoStatus = `<span class="text-green-600 font-semibold">${totalProntidao} registros disponíveis</span><br>
+                                     <span class="text-sm text-gray-600">${fromIndividual} próprios + ${fromGlobal} das outras abas</span>`;
+                } else if (fromIndividual > 0) {
+                    prontidaoStatus = `<span class="text-green-600 font-semibold">${fromIndividual} registros carregados</span><br>
+                                     <span class="text-sm text-blue-600">Dados próprios da aba</span>`;
+                } else {
+                    prontidaoStatus = `<span class="text-blue-600 font-semibold">${fromGlobal} registros disponíveis</span><br>
+                                     <span class="text-sm text-blue-600">Dados das outras abas</span>`;
+                }
+            } else {
+                prontidaoStatus = '<span class="text-gray-600">Nenhum dado carregado</span>';
+            }
+            
+            if (totalCarga > 0) {
+                const fromIndividual = cargaDataIndividual.length;
+                const fromGlobal = fullCargaData.length;
+                
+                if (fromIndividual > 0 && fromGlobal > 0) {
+                    cargaStatus = `<span class="text-green-600 font-semibold">${totalCarga} registros disponíveis</span><br>
+                                  <span class="text-sm text-gray-600">${fromIndividual} próprios + ${fromGlobal} das outras abas</span>`;
+                } else if (fromIndividual > 0) {
+                    cargaStatus = `<span class="text-green-600 font-semibold">${fromIndividual} registros carregados</span><br>
+                                  <span class="text-sm text-blue-600">Dados próprios da aba</span>`;
+                } else {
+                    cargaStatus = `<span class="text-blue-600 font-semibold">${fromGlobal} registros disponíveis</span><br>
+                                  <span class="text-sm text-blue-600">Dados das outras abas</span>`;
+                }
+            } else {
+                cargaStatus = '<span class="text-gray-600">Nenhum dado carregado</span>';
+            }
+            
+            statusProntidaoIndividual.innerHTML = prontidaoStatus;
+            statusCargaIndividual.innerHTML = cargaStatus;
         }
 
         function filterDataByPeriodIndividual(data, period) {
@@ -3404,13 +3461,17 @@
             generateReportLoaderIndividual.classList.remove('hidden');
 
             try {
+                // Combinar dados próprios da aba com dados globais das outras abas
+                const allProntidaoData = [...prontidaoDataIndividual, ...fullProntidaoData];
+                const allCargaData = [...cargaDataIndividual, ...fullCargaData];
+                
                 // Filtrar dados do atleta
                 const athleteProntidaoData = filterDataByPeriodIndividual(
-                    prontidaoDataIndividual.filter(d => d.atleta_id === athleteId),
+                    allProntidaoData.filter(d => d.atleta_id === athleteId),
                     period
                 );
                 const athleteCargaData = filterDataByPeriodIndividual(
-                    cargaDataIndividual.filter(d => d.atleta_id === athleteId),
+                    allCargaData.filter(d => d.atleta_id === athleteId),
                     period
                 );
 
@@ -3569,6 +3630,21 @@
             reportPreviewIndividual.classList.add('hidden');
         });
         generateReportIndividual.addEventListener('click', generateAthleteReportIndividual);
+
+        // Inicialização automática do relatório individual
+        function initializeRelatorioIndividual() {
+            updateAthleteSelectIndividual();
+        }
+
+        // Chamar inicialização quando a página carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initializeRelatorioIndividual, 1000); // Aguardar carregamento dos dados
+        });
+
+        // Atualizar quando mudar de equipe
+        teamFilterSelect.addEventListener('change', () => {
+            setTimeout(updateAthleteSelectIndividual, 500); // Aguardar atualização dos dados globais
+        });
 
     </script>
 </body>
