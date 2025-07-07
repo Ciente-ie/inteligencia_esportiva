@@ -119,9 +119,6 @@
                 <button id="tabLesoesBtn" class="tab-btn text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
                     Lesões
                 </button>
-                <button id="tabRelatorioBtn" class="tab-btn text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-purple-600">
-                    📊 Relatório Individual
-                </button>
             </div>
         </div>
 
@@ -426,124 +423,6 @@
             </div>
         </div>
 
-        <!-- Nova aba de Relatório Individual Independente -->
-        <div id="relatorioContent" class="hidden">
-            <div class="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl p-8 text-white mb-8">
-                <div class="text-center mb-8">
-                    <h2 class="text-3xl font-bold mb-2">📊 Relatório Individual de Atleta</h2>
-                    <p class="text-lg opacity-90">Sistema independente para gerar relatórios personalizados</p>
-                </div>
-
-                <!-- Seção de Importação -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                        <h3 class="text-xl font-semibold mb-4">📈 Dados de Prontidão</h3>
-                        <div class="space-y-4">
-                            <div class="border-2 border-dashed border-white/30 rounded-lg p-4 text-center">
-                                <input type="file" id="csvProntidaoIndividual" accept=".csv" class="hidden">
-                                <label for="csvProntidaoIndividual" class="cursor-pointer block">
-                                    <div class="text-white/70 mb-2">📁 Clique para carregar CSV de Prontidão</div>
-                                    <div id="fileNameProntidaoIndividual" class="text-sm text-white/50"></div>
-                                </label>
-                            </div>
-                            <button id="processProntidaoIndividual" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300" disabled>
-                                <span id="btnTextProntidaoIndividual">Processar Prontidão</span>
-                                <div id="btnLoaderProntidaoIndividual" class="loader hidden inline-block ml-2" style="width: 16px; height: 16px;"></div>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                        <h3 class="text-xl font-semibold mb-4">⚡ Dados de Carga</h3>
-                        <div class="space-y-4">
-                            <div class="border-2 border-dashed border-white/30 rounded-lg p-4 text-center">
-                                <input type="file" id="csvCargaIndividual" accept=".csv" class="hidden">
-                                <label for="csvCargaIndividual" class="cursor-pointer block">
-                                    <div class="text-white/70 mb-2">📁 Clique para carregar CSV de Carga</div>
-                                    <div id="fileNameCargaIndividual" class="text-sm text-white/50"></div>
-                                </label>
-                            </div>
-                            <button id="processCargaIndividual" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300" disabled>
-                                <span id="btnTextCargaIndividual">Processar Carga</span>
-                                <div id="btnLoaderCargaIndividual" class="loader hidden inline-block ml-2" style="width: 16px; height: 16px;"></div>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Seção de Geração de Relatório -->
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                    <h3 class="text-xl font-semibold mb-4">🎯 Gerar Relatório</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div>
-                            <label for="athleteSelectIndividual" class="block text-sm font-medium mb-2">Selecione o Atleta:</label>
-                            <select id="athleteSelectIndividual" class="w-full p-3 border border-white/20 rounded-lg bg-white/10 text-white focus:ring-2 focus:ring-white/50 focus:border-transparent">
-                                <option value="" class="text-gray-800">Selecione um atleta...</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="periodSelectIndividual" class="block text-sm font-medium mb-2">Período de Análise:</label>
-                            <select id="periodSelectIndividual" class="w-full p-3 border border-white/20 rounded-lg bg-white/10 text-white focus:ring-2 focus:ring-white/50 focus:border-transparent">
-                                <option value="last_week" class="text-gray-800">Última Semana</option>
-                                <option value="last_month" class="text-gray-800">Último Mês</option>
-                                <option value="last_3_months" class="text-gray-800">Últimos 3 Meses</option>
-                                <option value="all" class="text-gray-800">Todos os Dados</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="includeProntidaoIndividual" checked class="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500">
-                            <span>📈 Prontidão</span>
-                        </label>
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="includeCargaIndividual" checked class="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500">
-                            <span>⚡ Carga</span>
-                        </label>
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="includeEstatisticasIndividual" checked class="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500">
-                            <span>📊 Estatísticas</span>
-                        </label>
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" id="includeGraficosIndividual" checked class="w-4 h-4 text-blue-600 bg-white/20 border-white/30 rounded focus:ring-blue-500">
-                            <span>📈 Gráficos</span>
-                        </label>
-                    </div>
-
-                    <div class="text-center">
-                        <button id="generateReportIndividual" class="bg-white text-purple-600 font-bold py-4 px-8 rounded-lg hover:bg-gray-100 transition duration-300 flex items-center mx-auto text-lg shadow-lg" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <span id="generateReportTextIndividual">Gerar Relatório Individual PDF</span>
-                            <div id="generateReportLoaderIndividual" class="loader hidden ml-3" style="border-color: #7c3aed; border-top-color: transparent;"></div>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Status dos Dados -->
-            <div id="statusDadosIndividual" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div class="bg-white rounded-lg shadow-md p-4">
-                    <h4 class="font-semibold text-gray-800 mb-2">📈 Status Prontidão</h4>
-                    <div id="statusProntidaoIndividual" class="text-gray-600">Nenhum dado carregado</div>
-                </div>
-                <div class="bg-white rounded-lg shadow-md p-4">
-                    <h4 class="font-semibold text-gray-800 mb-2">⚡ Status Carga</h4>
-                    <div id="statusCargaIndividual" class="text-gray-600">Nenhum dado carregado</div>
-                </div>
-            </div>
-
-            <!-- Preview do Relatório -->
-            <div id="reportPreviewIndividual" class="hidden">
-                <div class="bg-white rounded-2xl shadow-lg border p-6">
-                    <h3 class="text-2xl font-bold text-gray-800 mb-4">📋 Preview do Relatório</h3>
-                    <div id="reportPreviewContentIndividual" class="space-y-6"></div>
-                </div>
-            </div>
-        </div>
-
 
     </div>
 
@@ -653,13 +532,11 @@
         const tabCargaBtn = document.getElementById('tabCargaBtn');
         const tabPlanejamentoBtn = document.getElementById('tabPlanejamentoBtn');
         const tabLesoesBtn = document.getElementById('tabLesoesBtn');
-        const tabRelatorioBtn = document.getElementById('tabRelatorioBtn');
         const dashboardContent = document.getElementById('dashboardContent');
         const prontidaoContent = document.getElementById('prontidaoContent');
         const cargaContent = document.getElementById('cargaContent');
         const planejamentoContent = document.getElementById('planejamentoContent');
         const lesoesContent = document.getElementById('lesoesContent');
-        const relatorioContent = document.getElementById('relatorioContent');
         const toast = document.getElementById('toast');
         const confirmModal = document.getElementById('confirmModal');
         // Prontidão Elements
@@ -710,30 +587,6 @@
         const dashboardCarga = document.getElementById('dashboardCarga');
         const dashboardPlanejamento = document.getElementById('dashboardPlanejamento');
         const exportPdfBtnDashboard = document.getElementById('exportPdfBtnDashboard');
-        // Relatório Individual Elements
-        const csvProntidaoIndividual = document.getElementById('csvProntidaoIndividual');
-        const csvCargaIndividual = document.getElementById('csvCargaIndividual');
-        const fileNameProntidaoIndividual = document.getElementById('fileNameProntidaoIndividual');
-        const fileNameCargaIndividual = document.getElementById('fileNameCargaIndividual');
-        const processProntidaoIndividual = document.getElementById('processProntidaoIndividual');
-        const processCargaIndividual = document.getElementById('processCargaIndividual');
-        const btnTextProntidaoIndividual = document.getElementById('btnTextProntidaoIndividual');
-        const btnTextCargaIndividual = document.getElementById('btnTextCargaIndividual');
-        const btnLoaderProntidaoIndividual = document.getElementById('btnLoaderProntidaoIndividual');
-        const btnLoaderCargaIndividual = document.getElementById('btnLoaderCargaIndividual');
-        const athleteSelectIndividual = document.getElementById('athleteSelectIndividual');
-        const periodSelectIndividual = document.getElementById('periodSelectIndividual');
-        const generateReportIndividual = document.getElementById('generateReportIndividual');
-        const generateReportTextIndividual = document.getElementById('generateReportTextIndividual');
-        const generateReportLoaderIndividual = document.getElementById('generateReportLoaderIndividual');
-        const reportPreviewIndividual = document.getElementById('reportPreviewIndividual');
-        const reportPreviewContentIndividual = document.getElementById('reportPreviewContentIndividual');
-        const statusProntidaoIndividual = document.getElementById('statusProntidaoIndividual');
-        const statusCargaIndividual = document.getElementById('statusCargaIndividual');
-        const includeProntidaoIndividual = document.getElementById('includeProntidaoIndividual');
-        const includeCargaIndividual = document.getElementById('includeCargaIndividual');
-        const includeEstatisticasIndividual = document.getElementById('includeEstatisticasIndividual');
-        const includeGraficosIndividual = document.getElementById('includeGraficosIndividual');
 
 
         // --- SETUP ---
@@ -915,7 +768,6 @@
         tabCargaBtn.addEventListener('click', () => switchTab('carga'));
         tabPlanejamentoBtn.addEventListener('click', () => switchTab('planejamento'));
         tabLesoesBtn.addEventListener('click', () => switchTab('lesoes'));
-        tabRelatorioBtn.addEventListener('click', () => switchTab('relatorio'));
         
         csvFileInput.addEventListener('change', () => handleFileSelect(csvFileInput, fileNameEl, processBtn));
         processBtn.addEventListener('click', handleFileProcessing);
@@ -981,7 +833,6 @@
             renderPlanningView();
             renderLesoesTab();
             updateDashboardView();
-            updateAthleteSelectIndividual(); // Atualizar relatório individual com novos dados
         }
 
         // --- MAIN RENDER FUNCTIONS ---
@@ -1486,14 +1337,13 @@
             cargaContent.classList.toggle('hidden', tab !== 'carga');
             planejamentoContent.classList.toggle('hidden', tab !== 'planejamento');
             lesoesContent.classList.toggle('hidden', tab !== 'lesoes');
-            relatorioContent.classList.toggle('hidden', tab !== 'relatorio');
+
 
             tabDashboardBtn.classList.toggle('active', tab === 'dashboard');
             tabProntidaoBtn.classList.toggle('active', tab === 'prontidao');
             tabCargaBtn.classList.toggle('active', tab === 'carga');
             tabPlanejamentoBtn.classList.toggle('active', tab === 'planejamento');
             tabLesoesBtn.classList.toggle('active', tab === 'lesoes');
-            tabRelatorioBtn.classList.toggle('active', tab === 'relatorio');
         }
 
         function handleFileSelect(fileInput, fileNameEl, processBtn) {
@@ -3259,393 +3109,6 @@
                 legendsCarga.innerHTML = `<div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Carga Aguda Média (u.a.)</h4><p>Média da carga total dos microciclos selecionados.</p><p><strong class="text-blue-600">< 2500 (Baixa)</strong></p><p><strong class="text-green-600">2500-5000 (Moderada)</strong></p><p><strong class="text-red-600">> 5000 (Alta)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">ACWR (Acute:Chronic Workload Ratio)</h4><p>Carga Aguda / Média das 4 semanas anteriores. <br><em>* <4 semanas de dados crônicos.</em></p><p><strong class="text-green-600">0.8-1.3 (Ideal)</strong></p><p><strong class="text-yellow-600"><0.8 ou 1.3-1.5 (Atenção)</strong></p><p><strong class="text-red-600">>1.5 (Perigo)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Monotonia</h4><p>Média da carga diária / Desvio Padrão. Variabilidade da carga semanal.</p><p><strong class="text-green-600">< 1.5 (Ideal)</strong></p><p><strong class="text-yellow-600">1.5-2.0 (Atenção)</strong></p><p><strong class="text-red-600">> 2.0 (Elevado)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Strain (Tensão)</h4><p>Carga total da semana x Monotonia. Estresse geral da semana.</p><p><strong class="text-green-600">< 6000 (Ideal)</strong></p><p><strong class="text-yellow-600">6000-10000 (Atenção)</strong></p><p><strong class="text-red-600">> 10000 (Elevado)</strong></p></div>`;
              }
         }
-
-        // --- RELATÓRIO INDIVIDUAL FUNCTIONS ---
-        let prontidaoDataIndividual = [];
-        let cargaDataIndividual = [];
-
-        function handleFileSelectIndividual(fileInput, fileNameEl, processBtn) {
-            if (fileInput.files.length > 0) {
-                fileNameEl.textContent = fileInput.files[0].name;
-                processBtn.disabled = false;
-            } else {
-                fileNameEl.textContent = '';
-                processBtn.disabled = true;
-            }
-        }
-
-        function handleFileProcessingProntidaoIndividual() {
-            const file = csvProntidaoIndividual.files[0];
-            if (!file) return showToast("Por favor, selecione um arquivo de prontidão.");
-            
-            toggleLoadingIndividual(true, 'prontidao');
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const required = ['equipe_id', 'atleta_id', 'data', 'semana_id'];
-                    const parsedData = parseCSV(event.target.result, required);
-                    prontidaoDataIndividual = parsedData;
-                    updateAthleteSelectIndividual();
-                    updateStatusIndividual('prontidao', parsedData.length);
-                    showToast(`${parsedData.length} registros de prontidão carregados!`, 'success');
-                } catch (error) {
-                    console.error("Erro ao processar prontidão:", error);
-                    showToast(`Erro na análise: ${error.message}`);
-                } finally {
-                    toggleLoadingIndividual(false, 'prontidao');
-                }
-            };
-            reader.onerror = () => {
-                showToast("Erro ao ler o arquivo.");
-                toggleLoadingIndividual(false, 'prontidao');
-            };
-            reader.readAsText(file);
-        }
-
-        function handleFileProcessingCargaIndividual() {
-            const file = csvCargaIndividual.files[0];
-            if (!file) return showToast("Por favor, selecione um arquivo de carga.");
-            
-            toggleLoadingIndividual(true, 'carga');
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const required = ['equipe_id', 'atleta_id', 'data', 'microciclo_id'];
-                    const parsedData = parseCSV(event.target.result, required);
-                    cargaDataIndividual = parsedData;
-                    updateAthleteSelectIndividual();
-                    updateStatusIndividual('carga', parsedData.length);
-                    showToast(`${parsedData.length} registros de carga carregados!`, 'success');
-                } catch (error) {
-                    console.error("Erro ao processar carga:", error);
-                    showToast(`Erro na análise: ${error.message}`);
-                } finally {
-                    toggleLoadingIndividual(false, 'carga');
-                }
-            };
-            reader.onerror = () => {
-                showToast("Erro ao ler o arquivo.");
-                toggleLoadingIndividual(false, 'carga');
-            };
-            reader.readAsText(file);
-        }
-
-        function toggleLoadingIndividual(isLoading, type) {
-            if (type === 'prontidao') {
-                processProntidaoIndividual.disabled = isLoading;
-                btnTextProntidaoIndividual.textContent = isLoading ? 'Processando...' : 'Processar Prontidão';
-                btnLoaderProntidaoIndividual.classList.toggle('hidden', !isLoading);
-            } else if (type === 'carga') {
-                processCargaIndividual.disabled = isLoading;
-                btnTextCargaIndividual.textContent = isLoading ? 'Processando...' : 'Processar Carga';
-                btnLoaderCargaIndividual.classList.toggle('hidden', !isLoading);
-            }
-        }
-
-        function updateAthleteSelectIndividual() {
-            // Combinar dados próprios da aba com dados globais das outras abas
-            const allData = [
-                ...prontidaoDataIndividual, 
-                ...cargaDataIndividual,
-                ...fullProntidaoData,
-                ...fullCargaData
-            ];
-            const athleteIds = [...new Set(allData.map(d => d.atleta_id))].filter(id => id).sort();
-            
-            athleteSelectIndividual.innerHTML = '<option value="">Selecione um atleta...</option>';
-            athleteIds.forEach(id => {
-                const option = document.createElement('option');
-                option.value = id;
-                option.textContent = id;
-                athleteSelectIndividual.appendChild(option);
-            });
-            
-            generateReportIndividual.disabled = !athleteSelectIndividual.value;
-            
-            // Atualizar status com informações dos dados disponíveis
-            updateStatusIndividualWithGlobalData();
-        }
-
-        function updateStatusIndividual(type, count) {
-            if (type === 'prontidao') {
-                statusProntidaoIndividual.innerHTML = `<span class="text-green-600 font-semibold">${count} registros carregados</span>`;
-            } else if (type === 'carga') {
-                statusCargaIndividual.innerHTML = `<span class="text-green-600 font-semibold">${count} registros carregados</span>`;
-            }
-        }
-
-        function updateStatusIndividualWithGlobalData() {
-            const totalProntidao = prontidaoDataIndividual.length + fullProntidaoData.length;
-            const totalCarga = cargaDataIndividual.length + fullCargaData.length;
-            
-            let prontidaoStatus = '';
-            let cargaStatus = '';
-            
-            if (totalProntidao > 0) {
-                const fromIndividual = prontidaoDataIndividual.length;
-                const fromGlobal = fullProntidaoData.length;
-                
-                if (fromIndividual > 0 && fromGlobal > 0) {
-                    prontidaoStatus = `<span class="text-green-600 font-semibold">${totalProntidao} registros disponíveis</span><br>
-                                     <span class="text-sm text-gray-600">${fromIndividual} próprios + ${fromGlobal} das outras abas</span>`;
-                } else if (fromIndividual > 0) {
-                    prontidaoStatus = `<span class="text-green-600 font-semibold">${fromIndividual} registros carregados</span><br>
-                                     <span class="text-sm text-blue-600">Dados próprios da aba</span>`;
-                } else {
-                    prontidaoStatus = `<span class="text-blue-600 font-semibold">${fromGlobal} registros disponíveis</span><br>
-                                     <span class="text-sm text-blue-600">Dados das outras abas</span>`;
-                }
-            } else {
-                prontidaoStatus = '<span class="text-gray-600">Nenhum dado carregado</span>';
-            }
-            
-            if (totalCarga > 0) {
-                const fromIndividual = cargaDataIndividual.length;
-                const fromGlobal = fullCargaData.length;
-                
-                if (fromIndividual > 0 && fromGlobal > 0) {
-                    cargaStatus = `<span class="text-green-600 font-semibold">${totalCarga} registros disponíveis</span><br>
-                                  <span class="text-sm text-gray-600">${fromIndividual} próprios + ${fromGlobal} das outras abas</span>`;
-                } else if (fromIndividual > 0) {
-                    cargaStatus = `<span class="text-green-600 font-semibold">${fromIndividual} registros carregados</span><br>
-                                  <span class="text-sm text-blue-600">Dados próprios da aba</span>`;
-                } else {
-                    cargaStatus = `<span class="text-blue-600 font-semibold">${fromGlobal} registros disponíveis</span><br>
-                                  <span class="text-sm text-blue-600">Dados das outras abas</span>`;
-                }
-            } else {
-                cargaStatus = '<span class="text-gray-600">Nenhum dado carregado</span>';
-            }
-            
-            statusProntidaoIndividual.innerHTML = prontidaoStatus;
-            statusCargaIndividual.innerHTML = cargaStatus;
-        }
-
-        function filterDataByPeriodIndividual(data, period) {
-            if (period === 'all') return data;
-            
-            const now = new Date();
-            let cutoffDate;
-            
-            switch (period) {
-                case 'last_week':
-                    cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                    break;
-                case 'last_month':
-                    cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-                    break;
-                case 'last_3_months':
-                    cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-                    break;
-                default:
-                    return data;
-            }
-            
-            return data.filter(d => {
-                const dataDate = new Date(d.data);
-                return dataDate >= cutoffDate;
-            });
-        }
-
-        function generateAthleteReportIndividual() {
-            const athleteId = athleteSelectIndividual.value;
-            const period = periodSelectIndividual.value;
-            
-            if (!athleteId) {
-                showToast("Por favor, selecione um atleta.");
-                return;
-            }
-
-            generateReportIndividual.disabled = true;
-            generateReportTextIndividual.textContent = "Gerando relatório...";
-            generateReportLoaderIndividual.classList.remove('hidden');
-
-            try {
-                // Combinar dados próprios da aba com dados globais das outras abas
-                const allProntidaoData = [...prontidaoDataIndividual, ...fullProntidaoData];
-                const allCargaData = [...cargaDataIndividual, ...fullCargaData];
-                
-                // Filtrar dados do atleta
-                const athleteProntidaoData = filterDataByPeriodIndividual(
-                    allProntidaoData.filter(d => d.atleta_id === athleteId),
-                    period
-                );
-                const athleteCargaData = filterDataByPeriodIndividual(
-                    allCargaData.filter(d => d.atleta_id === athleteId),
-                    period
-                );
-
-                // Gerar preview do relatório
-                let previewHtml = `
-                    <div class="mb-6">
-                        <h4 class="text-xl font-bold text-gray-800 mb-2">Relatório Individual - ${athleteId}</h4>
-                        <p class="text-gray-600">Período: ${getPeriodLabelIndividual(period)}</p>
-                        <p class="text-gray-600">Gerado em: ${new Date().toLocaleDateString('pt-BR')}</p>
-                    </div>
-                `;
-
-                if (includeProntidaoIndividual.checked && athleteProntidaoData.length > 0) {
-                    const latestProntidao = athleteProntidaoData[athleteProntidaoData.length - 1];
-                    previewHtml += `
-                        <div class="mb-6 p-4 bg-blue-50 rounded-lg">
-                            <h5 class="font-semibold text-blue-800 mb-2">📈 Dados de Prontidão</h5>
-                            <p class="text-sm text-blue-700">${athleteProntidaoData.length} registros encontrados</p>
-                            <p class="text-sm text-blue-700">Último registro: ${new Date(latestProntidao.data).toLocaleDateString('pt-BR')}</p>
-                            ${latestProntidao.hooper_score ? `<p class="text-sm text-blue-700">Último Hooper Score: ${latestProntidao.hooper_score}</p>` : ''}
-                        </div>
-                    `;
-                }
-
-                if (includeCargaIndividual.checked && athleteCargaData.length > 0) {
-                    const latestCarga = athleteCargaData[athleteCargaData.length - 1];
-                    previewHtml += `
-                        <div class="mb-6 p-4 bg-green-50 rounded-lg">
-                            <h5 class="font-semibold text-green-800 mb-2">⚡ Dados de Carga</h5>
-                            <p class="text-sm text-green-700">${athleteCargaData.length} registros encontrados</p>
-                            <p class="text-sm text-green-700">Último registro: ${new Date(latestCarga.data).toLocaleDateString('pt-BR')}</p>
-                        </div>
-                    `;
-                }
-
-                if (includeEstatisticasIndividual.checked) {
-                    previewHtml += `
-                        <div class="mb-6 p-4 bg-purple-50 rounded-lg">
-                            <h5 class="font-semibold text-purple-800 mb-2">📊 Estatísticas</h5>
-                            <p class="text-sm text-purple-700">Análises estatísticas dos dados do período</p>
-                        </div>
-                    `;
-                }
-
-                reportPreviewContentIndividual.innerHTML = previewHtml;
-                reportPreviewIndividual.classList.remove('hidden');
-
-                // Gerar PDF
-                setTimeout(() => {
-                    generatePDFIndividual(athleteId, period, {
-                        prontidao: athleteProntidaoData,
-                        carga: athleteCargaData
-                    });
-                }, 1000);
-
-            } catch (error) {
-                console.error("Erro ao gerar relatório:", error);
-                showToast("Erro ao gerar relatório. Verifique o console.");
-            } finally {
-                generateReportIndividual.disabled = false;
-                generateReportTextIndividual.textContent = "Gerar Relatório Individual PDF";
-                generateReportLoaderIndividual.classList.add('hidden');
-            }
-        }
-
-        function getPeriodLabelIndividual(period) {
-            switch (period) {
-                case 'last_week': return 'Última Semana';
-                case 'last_month': return 'Último Mês';
-                case 'last_3_months': return 'Últimos 3 Meses';
-                case 'all': return 'Todos os Dados';
-                default: return 'Período Selecionado';
-            }
-        }
-
-        async function generatePDFIndividual(athleteId, period, data) {
-            try {
-                // Usar jsPDF para gerar o PDF
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF();
-                
-                // Título
-                pdf.setFontSize(20);
-                pdf.text('Relatório Individual de Atleta', 20, 30);
-                
-                pdf.setFontSize(16);
-                pdf.text(`Atleta: ${athleteId}`, 20, 50);
-                pdf.text(`Período: ${getPeriodLabelIndividual(period)}`, 20, 65);
-                pdf.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 20, 80);
-                
-                let yPosition = 100;
-                
-                // Dados de Prontidão
-                if (includeProntidaoIndividual.checked && data.prontidao.length > 0) {
-                    pdf.setFontSize(14);
-                    pdf.text('📈 Dados de Prontidão', 20, yPosition);
-                    yPosition += 15;
-                    
-                    pdf.setFontSize(10);
-                    pdf.text(`Total de registros: ${data.prontidao.length}`, 25, yPosition);
-                    yPosition += 10;
-                    
-                    const latest = data.prontidao[data.prontidao.length - 1];
-                    pdf.text(`Último registro: ${new Date(latest.data).toLocaleDateString('pt-BR')}`, 25, yPosition);
-                    yPosition += 15;
-                }
-                
-                // Dados de Carga
-                if (includeCargaIndividual.checked && data.carga.length > 0) {
-                    pdf.setFontSize(14);
-                    pdf.text('⚡ Dados de Carga', 20, yPosition);
-                    yPosition += 15;
-                    
-                    pdf.setFontSize(10);
-                    pdf.text(`Total de registros: ${data.carga.length}`, 25, yPosition);
-                    yPosition += 10;
-                    
-                    const latest = data.carga[data.carga.length - 1];
-                    pdf.text(`Último registro: ${new Date(latest.data).toLocaleDateString('pt-BR')}`, 25, yPosition);
-                    yPosition += 15;
-                }
-                
-                // Estatísticas
-                if (includeEstatisticasIndividual.checked) {
-                    pdf.setFontSize(14);
-                    pdf.text('📊 Estatísticas', 20, yPosition);
-                    yPosition += 15;
-                    
-                    pdf.setFontSize(10);
-                    pdf.text('Análises estatísticas dos dados do período selecionado', 25, yPosition);
-                    yPosition += 15;
-                }
-                
-                // Rodapé
-                pdf.setFontSize(8);
-                pdf.text('Relatório gerado por Ciente - Inteligência Esportiva', 20, 280);
-                
-                const fileName = `relatorio_individual_${athleteId}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`;
-                pdf.save(fileName);
-
-                showToast("Relatório PDF gerado com sucesso!", "success");
-
-            } catch (error) {
-                console.error("Erro ao gerar PDF:", error);
-                showToast("Erro ao gerar PDF. Verifique o console.");
-            }
-        }
-
-        // Event listeners para a nova aba
-        csvProntidaoIndividual.addEventListener('change', () => handleFileSelectIndividual(csvProntidaoIndividual, fileNameProntidaoIndividual, processProntidaoIndividual));
-        csvCargaIndividual.addEventListener('change', () => handleFileSelectIndividual(csvCargaIndividual, fileNameCargaIndividual, processCargaIndividual));
-        processProntidaoIndividual.addEventListener('click', handleFileProcessingProntidaoIndividual);
-        processCargaIndividual.addEventListener('click', handleFileProcessingCargaIndividual);
-        athleteSelectIndividual.addEventListener('change', () => {
-            generateReportIndividual.disabled = !athleteSelectIndividual.value;
-            reportPreviewIndividual.classList.add('hidden');
-        });
-        generateReportIndividual.addEventListener('click', generateAthleteReportIndividual);
-
-        // Inicialização automática do relatório individual
-        function initializeRelatorioIndividual() {
-            updateAthleteSelectIndividual();
-        }
-
-        // Chamar inicialização quando a página carregar
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(initializeRelatorioIndividual, 1000); // Aguardar carregamento dos dados
-        });
-
-        // Atualizar quando mudar de equipe
-        teamFilterSelect.addEventListener('change', () => {
-            setTimeout(updateAthleteSelectIndividual, 500); // Aguardar atualização dos dados globais
-        });
-
     </script>
 </body>
 </html>
