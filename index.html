@@ -95,27 +95,27 @@
         </header>
 
         <div class="mb-6 flex justify-center items-end gap-x-8">
-    <div class="w-64">
-        <label for="teamFilterSelect" class="block text-sm font-medium text-gray-700 mb-1 text-center">Selecione a Equipe</label>
-        <select id="teamFilterSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-        <option value="all">Todas as Equipes</option>
-        </select>
-    </div>
-
-    <div class="w-64">
-         <label for="athleteGroupFilterSelect" class="block text-sm font-medium text-gray-700 mb-1 text-center">Filtrar Atletas</label>
-         <select id="athleteGroupFilterSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-            <option value="all" selected>Todos os Atletas</option>
-            <optgroup label="Posições">
-                <option value="Defesa">Defesa</option>
-                <option value="Meio">Meio-Campo</option>
-                <option value="Ataque">Ataque</option>
-            </optgroup>
-            <optgroup label="Atletas Individuais" id="individualAthleteOptions">
-                </optgroup>
-         </select>
-    </div>
-</div>
+            <div class="w-64">
+                <label for="teamFilterSelect" class="block text-sm font-medium text-gray-700 mb-1 text-center">Selecione a Equipe</label>
+                <select id="teamFilterSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <option value="all">Todas as Equipes</option>
+                </select>
+            </div>
+            
+            <div class="w-64">
+                 <label for="athleteGroupFilterSelect" class="block text-sm font-medium text-gray-700 mb-1 text-center">Filtrar Atletas</label>
+                 <select id="athleteGroupFilterSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="all" selected>Todos os Atletas</option>
+                    <optgroup label="Posições">
+                        <option value="Defesa">Defesa</option>
+                        <option value="Meio">Meio-Campo</option>
+                        <option value="Ataque">Ataque</option>
+                    </optgroup>
+                    <optgroup label="Atletas Individuais" id="individualAthleteOptions">
+                        </optgroup>
+                 </select>
+            </div>
+        </div>
 
 
         <div class="mb-8">
@@ -158,12 +158,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                     <div>
                         <h2 class="text-xl font-semibold text-gray-800 mb-3">1. Prepare seu arquivo de Prontidão</h2>
-                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo, incluindo o `equipe_id` e `semana_id`.</p>
+                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo, incluindo `equipe_id`, `semana_id` e a nova coluna `posicao_grupo`.</p>
                         <div class="bg-gray-100 p-4 rounded-lg text-sm text-gray-700 font-mono border">
-                            <p><strong class="text-blue-600">equipe_id</strong>,atleta_id,data,<strong class="text-blue-600">semana_id</strong>,qualidade_sono,niveis_stress,fadiga_geral,dor_muscular,hooper_score,salto_horizontal_cm,vfc_rmssd</p>
+                            <p><strong class="text-blue-600">equipe_id</strong>,atleta_id,<strong class="text-red-600">posicao_grupo</strong>,data,<strong class="text-blue-600">semana_id</strong>,qualidade_sono,niveis_stress,fadiga_geral,dor_muscular,hooper_score,...</p>
                         </div>
                          <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
                              <li>O `semana_id` deve ser consistente (ex: "Sem25", "S26").</li>
+                             <li>A `posicao_grupo` deve ser `Defesa`, `Meio` ou `Ataque`.</li>
                              <li>A análise comparará o dado mais recente de um atleta na semana selecionada com todos os seus dados anteriores.</li>
                         </ul>
                     </div>
@@ -223,9 +224,9 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                     <div>
                         <h2 class="text-xl font-semibold text-gray-800 mb-3">1. Prepare seu arquivo de Carga</h2>
-                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo, incluindo o `equipe_id` e `microciclo_id`.</p>
+                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo, incluindo `equipe_id`, `microciclo_id` e a nova coluna `posicao_grupo`.</p>
                         <div class="bg-gray-100 p-4 rounded-lg text-sm text-gray-700 font-mono border">
-                            <p><strong class="text-blue-600">equipe_id</strong>,atleta_id,data,<strong class="text-blue-600">microciclo_id</strong>,pse_sessao,duracao_sessao_min</p>
+                            <p><strong class="text-blue-600">equipe_id</strong>,atleta_id,<strong class="text-red-600">posicao_grupo</strong>,data,<strong class="text-blue-600">microciclo_id</strong>,pse_sessao,...</p>
                         </div>
                         <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
                             <li>O `microciclo_id` deve ser consistente (ex: "Sem25", "S26").</li>
@@ -434,12 +435,18 @@
                         <h3 class="text-xl font-bold text-gray-800 mb-4">Atletas Lesionados ou em Transição</h3>
                         <div id="lesoesList" class="space-y-3">
                            </div>
-                <div class="mt-8">
-    <h3 class="text-xl font-bold text-gray-800 mb-4">Histórico Completo de Lesões</h3>
-    <div id="lesoesHistoryList" class="bg-white rounded-lg shadow-sm border overflow-x-auto">
+                        <div class="mt-8">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Histórico Completo de Lesões</h3>
+                            <div id="lesoesHistoryList" class="bg-white rounded-lg shadow-sm border overflow-x-auto">
+                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>                  
- </div>
+
+
+    </div>
 
     <footer class="text-center py-4 text-xs text-gray-400">
         Powered by Ciente - Inteligência Esportiva
@@ -469,8 +476,7 @@
 
 
     <script type="module">
-    
-    // --- Firebase v9+ modular imports ---
+        // --- Firebase v9+ modular imports ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs, where, updateDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
@@ -535,7 +541,7 @@ let selectedPlanningWeeks = [getWeekId(new Date())];
 let isInitialLoadComplete = false;
 let toastTimeout = null; 
 let selectedTeam = 'all';
-let selectedAthleteGroup = 'all'; // Nova variável para o filtro de atletas
+let selectedAthleteGroup = 'all'; 
 let teamLogos = {};
 
 // --- DOM ELEMENTS ---
@@ -544,7 +550,7 @@ const loaderText = document.getElementById('loaderText');
 const mainContent = document.getElementById('mainContent');
 const authStatus = document.getElementById('authStatus');
 const teamFilterSelect = document.getElementById('teamFilterSelect'); 
-const athleteGroupFilterSelect = document.getElementById('athleteGroupFilterSelect'); // Novo filtro
+const athleteGroupFilterSelect = document.getElementById('athleteGroupFilterSelect'); 
 const tabDashboardBtn = document.getElementById('tabDashboardBtn');
 const tabProntidaoBtn = document.getElementById('tabProntidaoBtn');
 const tabCargaBtn = document.getElementById('tabCargaBtn');
@@ -695,7 +701,7 @@ async function loadInitialData() {
         treinosFisicos = fisicoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         treinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         lesoesData = lesoesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-
+        
         populateTeamFilter(); 
         handleTeamChange();
         renderAllTabs();
@@ -738,7 +744,7 @@ function setupLiveListeners() {
         }
         updateDashboardView();
     });
-
+    
     onSnapshot(query(cargaCollection), (snapshot) => {
         fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         populateAthleteDatalist();
@@ -881,10 +887,10 @@ function renderProntidaoTab() {
         renderFilterProntidao(dataToRender); 
         placeholderSectionProntidao.classList.add('hidden');
         resultsSection.classList.remove('hidden');
-
+        
         const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
         let selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
-
+        
         if(selectedWeeks.length === 0 && document.querySelectorAll('.week-checkbox').length > 0) {
                 const lastWeekEl = document.querySelector('.week-checkbox:last-of-type');
                 if(lastWeekEl) {
@@ -892,9 +898,9 @@ function renderProntidaoTab() {
                     selectedWeeks = [lastWeekEl.value];
                 }
         }
-
+        
         selectedWeeks = sortWeeks(selectedWeeks);
-
+        
         const filteredDataForWeeks = dataToRender.filter(d => selectedWeeks.includes(d.semana_id));
 
         if (filteredDataForWeeks.length > 0) {
@@ -929,12 +935,12 @@ function renderCargaTab() {
     } else {
         placeholderSectionCarga.classList.add('hidden');
         resultsSectionCarga.classList.remove('hidden');
-
+        
         processAndStoreLoadData(dataToRender); 
-
+        
         const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
         let selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-
+        
         if(selectedIds.length === 0 && document.querySelectorAll('.microciclo-checkbox').length > 0) {
                 const lastMcEl = document.querySelector('.microciclo-checkbox:last-of-type');
                 if(lastMcEl) {
@@ -944,7 +950,7 @@ function renderCargaTab() {
         }
 
         selectedIds = sortWeeks(selectedIds);
-
+        
         if (selectedIds.length > 0) {
             displayFilteredLoadData(selectedIds, dataToRender); 
         } else {
@@ -957,10 +963,8 @@ function renderCargaTab() {
 }
 
 function renderLesoesTab() {
-    // Pega todos os dados de lesões
     let todasLesoes = lesoesData;
-
-    // --- Filtra os atletas com base nos menus de Equipe e Grupo/Individual ---
+    
     let atletasDoGrupoFiltrado = [];
     let isGroupOrAthleteFiltered = selectedTeam !== 'all' || selectedAthleteGroup !== 'all';
 
@@ -978,7 +982,7 @@ function renderLesoesTab() {
                 baseAtletas = baseAtletas.filter(d => d.atleta_id === selectedAthleteGroup);
             }
         }
-
+        
         atletasDoGrupoFiltrado = [...new Set(baseAtletas.map(d => d.atleta_id))];
         todasLesoes = todasLesoes.filter(l => atletasDoGrupoFiltrado.includes(l.atleta));
     }
@@ -1007,7 +1011,7 @@ function renderLesoesTab() {
                 ? `Tem certeza que deseja marcar a lesão de ${atleta} como 'Liberado'?`
                 : `Tem certeza que deseja remover o registro de lesão de ${atleta}?`;
             const title = newStatus === 'liberado' ? 'Liberar Atleta' : 'Remover Registro';
-
+            
             showConfirmationModal(text, async () => {
                 if (newStatus === 'delete') {
                     await deleteDoc(doc(db, "lesoes", id));
@@ -1028,7 +1032,7 @@ function renderLesoesTab() {
     } else {
         // Ordena da mais recente para a mais antiga
         const sortedHistory = todasLesoes.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-
+        
         const tableRows = sortedHistory.map(l => {
             const dataRegistro = l.createdAt ? l.createdAt.toDate().toLocaleDateString('pt-BR') : 'N/A';
             let statusClass = '';
@@ -1068,51 +1072,6 @@ function renderLesoesTab() {
     }
 }
 
-        atletasDoGrupoFiltrado = [...new Set(baseAtletas.map(d => d.atleta_id))];
-        dataToRender = dataToRender.filter(d => atletasDoGrupoFiltrado.includes(d.atleta));
-    }
-
-
-    const activeLesoes = dataToRender.filter(l => l.status !== 'liberado');
-    if (activeLesoes.length === 0) {
-        lesoesList.innerHTML = `<div class="text-center py-10 px-6 bg-gray-50 rounded-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum atleta no departamento médico</h3>
-            <p class="mt-1 text-sm text-gray-500">Nenhum atleta deste grupo está lesionado ou em transição.</p>
-        </div>`;
-    } else {
-        lesoesList.innerHTML = activeLesoes.map(createLesaoCard).join('');
-    }
-
-    lesoesList.querySelectorAll('.btn-update-lesao').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const id = e.currentTarget.dataset.id;
-            const newStatus = e.currentTarget.dataset.status;
-            const atleta = e.currentTarget.dataset.atleta;
-            const text = newStatus === 'liberado' 
-                ? `Tem certeza que deseja marcar a lesão de ${atleta} como 'Liberado'?`
-                : `Tem certeza que deseja remover o registro de lesão de ${atleta}?`;
-            const title = newStatus === 'liberado' ? 'Liberar Atleta' : 'Remover Registro';
-
-            showConfirmationModal(text, async () => {
-                if (newStatus === 'delete') {
-                    await deleteDoc(doc(db, "lesoes", id));
-                    showToast(`${atleta} removido dos registros de lesão.`, 'success');
-                } else {
-                    const lesaoRef = doc(db, "lesoes", id);
-                    await updateDoc(lesaoRef, { status: newStatus });
-                    showToast(`${atleta} foi liberado.`, 'success');
-                }
-            }, title);
-        });
-    });
-}
-
-// --- As outras funções continuam aqui... ---
-// (O resto do seu código, de updateDashboardView() em diante, não precisa ser colado novamente,
-// pois ele já está no seu arquivo. Estamos apenas substituindo a parte com erro.)
 
 function updateDashboardView() {
     renderDashboardLesoes();
@@ -1121,41 +1080,27 @@ function updateDashboardView() {
     renderDashboardPlanejamento();
 }
 
-function getFilteredDataForDashboard(fullDataSet) {
-    let data = fullDataSet;
-    if (selectedTeam !== 'all') {
-        data = data.filter(d => d.equipe_id === selectedTeam);
-    }
-    if (selectedAthleteGroup !== 'all') {
-        if (['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
-            data = data.filter(d => d.posicao_grupo === selectedAthleteGroup);
-        } else {
-            data = data.filter(d => d.atleta_id === selectedAthleteGroup);
-        }
-    }
-    return data;
-}
-
 function renderDashboardLesoes() {
     let lesoesFiltradas = lesoesData;
     if (selectedTeam !== 'all' || selectedAthleteGroup !== 'all') {
          let atletasDoGrupo = [...new Set(fullProntidaoData.map(d => d.atleta_id))];
          if(selectedTeam !== 'all'){
-             atletasDoGrupo = atletasDoGrupo.filter(atletaId => fullProntidaoData.find(d => d.atleta_id === atletaId && d.equipe_id === selectedTeam));
+             const atletasDaEquipe = [...new Set(fullProntidaoData.filter(d => d.equipe_id === selectedTeam).map(d => d.atleta_id))];
+             atletasDoGrupo = atletasDoGrupo.filter(id => atletasDaEquipe.includes(id));
          }
          if(selectedAthleteGroup !== 'all'){
              if(['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)){
-                 const atletasNoGrupoPosicao = [...new Set(fullProntidaoData.filter(d => d.posicao_grupo === selectedAthleteGroup).map(d => d.atleta_id))];
-                 atletasDoGrupo = atletasDoGrupo.filter(id => atletasNoGrupoPosicao.includes(id));
+                 const atletasNaPosicao = [...new Set(fullProntidaoData.filter(d => d.posicao_grupo === selectedAthleteGroup).map(d => d.atleta_id))];
+                 atletasDoGrupo = atletasDoGrupo.filter(id => atletasNaPosicao.includes(id));
              } else {
                  atletasDoGrupo = [selectedAthleteGroup];
              }
          }
-         lesoesFiltradas = lesoesFiltradas.filter(l => atletasDoGrupo.includes(l.atleta));
+         lesoesFiltradas = lesoesData.filter(l => atletasDoGrupo.includes(l.atleta));
     }
-
+    
     const activeLesoes = lesoesFiltradas.filter(l => l.status !== 'liberado');
-
+    
     let contentHtml = '';
     if(activeLesoes.length === 0) {
         contentHtml = `<div class="text-center py-4">
@@ -1202,7 +1147,7 @@ function renderDashboardProntidao() {
 
     const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
     const selectedWeeks = sortWeeks(Array.from(selectedCheckboxes).map(cb => cb.value));
-
+    
     if (latestProntidaoData && latestProntidaoData.teamStats) {
         if (selectedWeeks.length > 1 && latestProntidaoData.teamStats.evolutionData.length > 0) {
             dashboardProntidao.innerHTML = renderTeamDashboardProntidaoWithCharts(latestProntidaoData.teamStats, latestProntidaoData.latestDate, true, selectedWeeks.length, 'dashboard-');
@@ -1323,7 +1268,7 @@ function renderDashboardPlanejamento() {
             <span class="flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-orange-500 mr-1 border border-orange-600"></span>Alta</span>
             <span class="flex items-center"><span class="inline-block w-3 h-3 rounded-full bg-red-600 mr-1 border border-red-700"></span>Máxima</span>
         </div>`;
-
+    
     if (selectedPlanningWeeks.length === 1) {
         renderDailyLoadChart('dashboardLoadChartFisico', trainingsFisico, true);
         renderDailyLoadChart('dashboardLoadChartCampo', trainingsCampo, true);
@@ -1396,7 +1341,7 @@ function showToast(message, type = 'error') {
     }
     toast.textContent = message;
     toast.className = `fixed bottom-5 right-5 text-white py-3 px-6 rounded-lg shadow-xl opacity-0 transition-all duration-300 transform translate-y-10 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
-
+    
     setTimeout(() => {
         toast.classList.remove('opacity-0', 'translate-y-10');
         toast.classList.add('opacity-100', 'translate-y-0');
@@ -1426,7 +1371,7 @@ function toggleDetails(event, type) {
 
     const isOpen = detailsSection.classList.toggle('open');
     button.querySelector('.arrow-icon').classList.toggle('rotate-180');
-
+    
     if (isOpen) {
         if (type === 'carga' && button.dataset.chartdata) {
             const athleteId = button.dataset.athlete;
@@ -1436,7 +1381,7 @@ function toggleDetails(event, type) {
         }
         if (type === 'prontidao') {
             const uniqueId = targetId.replace('details-prontidao-', '');
-
+            
             if (button.dataset.dailyHistory && button.dataset.dailyHistory.trim() !== '') {
                 try {
                     const dailyHistoryData = JSON.parse(button.dataset.dailyHistory);
@@ -1461,7 +1406,7 @@ async function exportToPDF(type) {
     } else {
          pdfButtonId = `exportPdfBtn${type === 'dashboard' ? 'Dashboard' : type.charAt(0).toUpperCase() + type.slice(1)}`;
     }
-
+    
     const pdfButton = document.getElementById(pdfButtonId);
     if (!pdfButton) {
         console.error(`PDF button with id ${pdfButtonId} not found.`);
@@ -1478,7 +1423,7 @@ async function exportToPDF(type) {
     const originalText = pdfButton.innerHTML;
     pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
     pdfButton.disabled = true;
-
+    
     if (type !== 'prontidao') {
         const detailsSections = contentToPrint.querySelectorAll('.details-section');
         detailsSections.forEach(el => el.classList.add('open'));
@@ -1491,15 +1436,15 @@ async function exportToPDF(type) {
         const pdf = new jsPDF('p', 'mm', 'a4');
         const canvas = await html2canvas(contentToPrint, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
         const imgData = canvas.toDataURL('image/jpeg', 0.95);
-
+        
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         const imgProps = pdf.getImageProperties(imgData);
         const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
+        
         let heightLeft = imgHeight;
         let position = 0;
-
+        
         pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
         heightLeft -= pdfHeight;
 
@@ -1555,7 +1500,7 @@ function parseCSV(text, requiredHeaders) {
     const firstLine = lines[0];
     const separator = firstLine.includes(';') ? ';' : ',';
     const headers = firstLine.split(separator).map(h => h.trim().toLowerCase()).filter(h => h);
-
+    
     const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
     if (missingHeaders.length > 0) {
         throw new Error(`Cabeçalho inválido. Colunas ausentes: ${missingHeaders.join(', ')}.`);
@@ -1696,7 +1641,7 @@ function renderFilterProntidao(data) {
     }
     const currentSelection = Array.from(document.querySelectorAll('.week-checkbox:checked')).map(cb => cb.value);
     const latestWeek = weekIds[weekIds.length - 1];
-
+    
     filterContainerProntidao.innerHTML = `
          <div class="bg-white p-4 rounded-lg border shadow-sm">
             <label class="font-semibold text-gray-700 block mb-2">Selecione a(s) Semana(s) para Análise de Evolução:</label>
@@ -1743,7 +1688,7 @@ function analyzeProntidaoData(data, selectedWeeks) {
         );
 
         const result = calculateAthleteReadiness(athleteId, latestEntry, allHistoricalEntriesForAthlete, latestEntry.data);
-
+        
         const dailyHistoryData = { hooper: [], salto: [] };
         entriesInSelection
             .sort((a, b) => new Date(`${a.data}T00:00:00`) - new Date(`${b.data}T00:00:00`))
@@ -1763,7 +1708,7 @@ function analyzeProntidaoData(data, selectedWeeks) {
         return result;
 
     }).filter(Boolean).sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
-
+    
     const uniqueWeeksSorted = sortWeeks([...new Set(data.map(d => d.semana_id))]);
     const evolutionData = uniqueWeeksSorted.map(weekId => {
         const dataForThisWeek = data.filter(d => d.semana_id === weekId);
@@ -1775,7 +1720,7 @@ function analyzeProntidaoData(data, selectedWeeks) {
             const historicalEntries = fullProntidaoData.filter(d => d.atleta_id === athleteId && new Date(`${d.data}T00:00:00`) < new Date(`${latestEntryInWeek.data}T00:00:00`));
             return calculateAthleteReadiness(athleteId, latestEntryInWeek, historicalEntries, latestEntryInWeek.data);
         }).filter(Boolean);
-
+        
         const readyAthletesThisWeek = resultsForThisWeek.filter(r => r.status === 'ready');
         return {
             weekId,
@@ -1796,13 +1741,13 @@ function analyzeProntidaoData(data, selectedWeeks) {
         }, { green: 0, yellow: 0, red: 0, collecting: 0 }),
         evolutionData
     };
-
+    
     let dailyStats = null;
     if (selectedWeeks.length === 1) {
         const weekData = data.filter(d => d.semana_id === selectedWeeks[0]);
         dailyStats = analyzeDailyProntidao(weekData);
     }
-
+    
     const latestDate = latestDateOverall ? latestDateOverall.toISOString().split('T')[0] : null;
     return { individualResults, teamStats, latestDate, dailyStats };
 }
@@ -1822,7 +1767,7 @@ function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, di
     };
 
     const cap = (val) => Math.max(-2.5, Math.min(2.5, val));
-
+    
     const saltoValue = latestEntry['salto_horizontal_cm'];
     const vfcValue = latestEntry['vfc_rmssd'];
 
@@ -1830,7 +1775,7 @@ function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, di
         (saltoValue != null && saltoValue > 0) ? getZScore('salto_horizontal_cm', saltoValue) : null,
         (vfcValue != null && vfcValue > 0) ? getZScore('vfc_rmssd', vfcValue) : null
     ].filter(s => s != null);
-
+    
     let readinessIndex;
     let zone;
 
@@ -1876,7 +1821,7 @@ function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, di
         acc[key] = { latest: latestEntry[key], mean: mean };
         return acc;
     }, {});
-
+    
     const saltoMeanHistorical = metricsDetail.salto_horizontal_cm?.mean || 0;
     const saltoLatest = latestEntry.salto_horizontal_cm;
     const saltoDiff = (saltoLatest && saltoMeanHistorical > 0) ? ((saltoLatest - saltoMeanHistorical) / saltoMeanHistorical) * 100 : null;
@@ -2142,14 +2087,14 @@ function createProntidaoResultRow(result) {
     const hooperScoreValue = result.hooperScore.latest != null ? result.hooperScore.latest.toFixed(1) : '--';
     const hooperClass = getHooperClassification(result.hooperScore.latest);
     const saltoClass = result.saltoPercentDiff == null ? 'text-gray-500' : (result.saltoPercentDiff >= 0 ? 'text-green-600' : 'text-red-600');
-
+    
     const detailsHtml = Object.entries(result.metricsDetail).map(([key, data]) => {
         if (!METRIC_NAMES[key] || data.latest == null) return '';
         const latestValue = (data.latest && !isNaN(data.latest)) ? data.latest.toFixed(1) : 'N/A';
         const meanValue = (data.mean && !isNaN(data.mean)) ? data.mean.toFixed(1) : 'N/A';
         return `<li class="flex justify-between items-center text-sm py-1 border-b"><span class="text-gray-600">${METRIC_NAMES[key]}</span><span class="font-semibold text-gray-800">${latestValue} <span class="text-xs text-gray-500 font-normal">(Média Hist.: ${meanValue})</span></span></li>`;
     }).join('');
-
+    
     const uniqueId = `${result.athleteId}-${result.latestDate.replace(/[^a-zA-Z0-9]/g, "")}`;
 
     const dailyChartsHtml = (result.dailyHistory && (result.dailyHistory.hooper.length > 0 || result.dailyHistory.salto.length > 0)) ? `
@@ -2164,7 +2109,7 @@ function createProntidaoResultRow(result) {
             </div>
         </div>
     ` : '';
-
+    
     const indexDisplay = result.index !== null ? result.index : '<span title="Definido apenas pelo Hooper">--</span>';
 
     return `<div class="border-b last:border-b-0">
@@ -2329,7 +2274,7 @@ function renderAthleteDailyChart(type, canvasId, data) {
     if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
     const labels = data.map(d => new Date(d.date + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}));
-    const values = data.map(d => d.value.toFixed(type === 'salto' ? 1 : 0));
+    const values = data.map(d => d.value ? d.value.toFixed(type === 'salto' ? 1 : 0) : 0);
 
     let chartOptions = {
         type: 'bar',
@@ -2413,7 +2358,7 @@ function processAndStoreLoadData(dataToProcess) {
     Object.values(dataByAthlete).flat().forEach(row => {
         if(row.microciclo_id) allMicrocyclesForTeam.add(row.microciclo_id);
     });
-
+    
     athleteMicrocycleData = {};
 
     for (const athleteId in dataByAthlete) {
@@ -2437,7 +2382,7 @@ function processAndStoreLoadData(dataToProcess) {
                     load: (e.pse_sessao || 0) * (e.duracao_sessao_min || 0)
                 }));
                 const loadStats = getStats(dailyEntries.map(e => e.load));
-
+                
                 let monotony = 0;
                 if (loadStats.mean > 0) {
                     if (loadStats.stdDev > 0) {
@@ -2484,19 +2429,19 @@ function renderFilter(microcycles) {
 
 function displayFilteredLoadData(selectedIds, dataForTeam) {
     if (!selectedIds || selectedIds.length === 0) return;
-
+    
     const individualResults = [];
     let allEntriesInCycles = [];
     let weeklyTeamData = [];
     const sortedSelectedIds = sortWeeks([...selectedIds]);
-
+    
     const athletesInTeam = [...new Set(dataForTeam.map(d => d.atleta_id))];
 
     athletesInTeam.forEach(athleteId => {
          if (!athleteMicrocycleData[athleteId]) return;
 
         const allAthleteCycles = athleteMicrocycleData[athleteId];
-
+        
         sortedSelectedIds.forEach(mc_id => {
             const cycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === mc_id);
             if (cycleIndex !== -1) {
@@ -2511,16 +2456,16 @@ function displayFilteredLoadData(selectedIds, dataForTeam) {
                 }
             }
         });
-
+        
         const selectedCycles = allAthleteCycles.filter(c => selectedIds.includes(c.microciclo_id));
         if(selectedCycles.length === 0) return;
 
         const avgWeeklyLoad = getStats(selectedCycles.map(c => c.totalLoad)).mean;
         const avgMonotony = getStats(selectedCycles.map(c => c.monotony)).mean;
         const avgStrain = getStats(selectedCycles.map(c => c.strain)).mean;
-
+        
         const aggregatedDailyEntries = selectedCycles.flatMap(c => c.dailyEntries);
-
+        
         const lastSelectedCycleId = sortedSelectedIds[sortedSelectedIds.length - 1];
         const lastCycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === lastSelectedCycleId);
         let acwrForTable = null;
@@ -2530,13 +2475,13 @@ function displayFilteredLoadData(selectedIds, dataForTeam) {
             const acuteLoad = allAthleteCycles[lastCycleIndex].totalLoad;
             const chronicCycles = allAthleteCycles.slice(Math.max(0, lastCycleIndex - 3), lastCycleIndex + 1);
             const chronicLoad = getStats(chronicCycles.map(c => c.totalLoad)).mean;
-
+            
             if (chronicLoad > 0) {
                 acwrForTable = acuteLoad / chronicLoad;
             }
             hasEnoughDataForAcwr = chronicCycles.length >= 4;
         }
-
+        
         individualResults.push({
             athleteId,
             totalLoad: avgWeeklyLoad, 
@@ -2575,7 +2520,7 @@ function displayFilteredLoadData(selectedIds, dataForTeam) {
         dailyAverages: dailyAverages, evolutionData: evolutionData,
         selectionCount: selectedIds.length, microcicloId: sortedSelectedIds.join(', ')
     };
-
+    
     latestCargaData = teamStats;
     updateDashboardView();
     individualResults.sort((a, b) => (b.acwr ?? -1) - (a.acwr ?? -1));
@@ -2857,7 +2802,7 @@ function renderPlanningFilter() {
     });
 
     const allWeeks = sortWeeks([...new Set([...existingWeeks, ...futureWeeks, getWeekId(new Date())])].filter(Boolean));
-
+    
     let logoButtonHtml = '';
     if (selectedTeam !== 'all') {
         logoButtonHtml = `
@@ -2923,7 +2868,7 @@ function renderPlanningView() {
             </button>
         </div>
     `;
-
+    
     document.getElementById('exportPdfBtnPlanejamento').addEventListener('click', () => exportToPDF('planejamento'));
 
     renderTimeline('timelineFisico', fisicoSemana, `Nenhum treino físico cadastrado para esta seleção.`);
@@ -2946,7 +2891,7 @@ async function deleteSelectedPlanningWeeks() {
         async () => {
             showToast('Excluindo treinos...', 'success');
             const batch = writeBatch(db);
-
+            
             const qFisico = query(treinosFisicosCollection, where("semana_id", "in", weeksToDelete));
             const qCampo = query(treinosCampoCollection, where("semana_id", "in", weeksToDelete));
 
@@ -2965,7 +2910,7 @@ async function deleteSelectedPlanningWeeks() {
 function renderTimeline(containerId, treinos, emptyMessage) {
     const container = document.getElementById(containerId);
     if (!container) return;
-
+    
     container.innerHTML = '';
     if (treinos.length === 0) {
          container.innerHTML = `<p class="col-span-full text-gray-500 text-center w-full py-8">${emptyMessage}</p>`;
@@ -3060,7 +3005,7 @@ function renderDailyLoadChart(canvasId, treinos, isDashboard = false) {
         if (load === 70) return 'rgba(245, 158, 11, 0.7)'; if (load > 0) return 'rgba(59, 130, 246, 0.7)';
         return '#e5e7eb';
     });
-
+    
     const options = {
          responsive: true, maintainAspectRatio: false, 
          scales: { 
@@ -3092,7 +3037,7 @@ function renderDailyLoadChart(canvasId, treinos, isDashboard = false) {
 // --- LESÕES FUNCTIONS ---
 async function handleFormLesaoSubmit(e) {
     e.preventDefault();
-
+    
     const equipeId = equipeIdLesaoInput.value;
     if(!equipeId || equipeId === 'Selecione uma equipe') {
         showToast("Por favor, selecione uma equipe antes de registrar uma lesão.");
@@ -3160,9 +3105,9 @@ function createLesaoCard(lesao) {
 function populateTeamFilter() {
     const allData = [...fullProntidaoData, ...fullCargaData, ...lesoesData];
     const teams = [...new Set(allData.map(d => d.equipe_id).filter(Boolean))].sort();
-
+    
     const currentSelectedTeam = teamFilterSelect.value;
-
+    
     teamFilterSelect.innerHTML = `<option value="all">Todas as Equipes</option>`;
     teams.forEach(team => {
         const option = document.createElement('option');
@@ -3187,7 +3132,7 @@ function populateAthleteDatalist() {
     const athleteNamesFromProntidao = dataForTeamProntidao.map(d => d.atleta_id);
     const athleteNamesFromCarga = dataForTeamCarga.map(d => d.atleta_id);
     const allNames = [...new Set([...athleteNamesFromProntidao, ...athleteNamesFromCarga])].sort();
-
+    
     const datalist = document.getElementById('atleta-list-options');
     datalist.innerHTML = allNames.map(name => `<option value="${name}"></option>`).join('');
 }
@@ -3204,7 +3149,7 @@ function showConfirmationModal(text, onConfirm, title = "Confirmar Ação") {
         onConfirm();
         hideModal();
     };
-
+    
     const cancelHandler = () => {
         hideModal();
     };
@@ -3307,9 +3252,9 @@ function populateAthleteFilterOptions() {
     if (selectedTeam !== 'all') {
         atletas = atletas.filter(d => d.equipe_id === selectedTeam);
     }
-
+    
     const nomesUnicos = [...new Set(atletas.map(d => d.atleta_id))];
-
+    
     individualOptionsContainer.innerHTML = ''; // Limpa opções antigas
     nomesUnicos.sort().forEach(atleta => {
         const option = document.createElement('option');
@@ -3318,7 +3263,7 @@ function populateAthleteFilterOptions() {
         individualOptionsContainer.appendChild(option);
     });
 }
-    
+
     </script>
 </body>
 </html>
