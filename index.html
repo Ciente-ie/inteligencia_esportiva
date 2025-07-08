@@ -862,7 +862,7 @@
 
         // --- MAIN RENDER FUNCTIONS ---
         function renderProntidaoTab() {
-            const dataForTeam = selectedTeam === 'all' ? fullProntidaoData : fullProntidaoData.filter(d => d.equipe_id === selectedTeam);
+            const dataToRender = selectedTeam === 'all' ? fullProntidaoData : fullProntidaoData.filter(d => d.equipe_id === selectedTeam);
         ```javascript
        // Filtra por grupo de atletas
        let dataToRender = fullProntidaoData;
@@ -931,7 +931,7 @@
                 selectedIds = sortWeeks(selectedIds);
                 
                 if (selectedIds.length > 0) {
-                    displayFilteredLoadData(selectedIds, dataForTeam);
+                    displayFilteredLoadData(selectedIds, dataToRender);
                 } else {
                     teamDashboardCarga.innerHTML = '<p class="text-center text-gray-500">Nenhum microciclo selecionado para esta equipe.</p>';
                     resultsContainerCarga.innerHTML = '';
@@ -988,8 +988,8 @@
         }
 
         function renderDashboardLesoes() {
-            const dataForTeam = selectedTeam === 'all' ? lesoesData : lesoesData.filter(d => d.equipe_id === selectedTeam);
-            const activeLesoes = dataForTeam.filter(l => l.status !== 'liberado');
+            const dataToRender = selectedTeam === 'all' ? lesoesData : lesoesData.filter(d => d.equipe_id === selectedTeam);
+            const activeLesoes = dataToRender.filter(l => l.status !== 'liberado');
             
             let contentHtml = '';
             if(activeLesoes.length === 0) {
@@ -1078,11 +1078,11 @@
         }
 
         function renderDashboardPlanejamento() {
-            const dataForTeamFisico = selectedTeam === 'all' ? treinosFisicos : treinosFisicos.filter(d => d.equipe_id === selectedTeam);
-            const dataForTeamCampo = selectedTeam === 'all' ? treinosCampo : treinosCampo.filter(d => d.equipe_id === selectedTeam);
+            const dataToRenderFisico = selectedTeam === 'all' ? treinosFisicos : treinosFisicos.filter(d => d.equipe_id === selectedTeam);
+            const dataToRenderCampo = selectedTeam === 'all' ? treinosCampo : treinosCampo.filter(d => d.equipe_id === selectedTeam);
 
-            const trainingsFisico = dataForTeamFisico.filter(t => selectedPlanningWeeks.includes(t.semana_id));
-            const trainingsCampo = dataForTeamCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
+            const trainingsFisico = dataToRenderFisico.filter(t => selectedPlanningWeeks.includes(t.semana_id));
+            const trainingsCampo = dataToRenderCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
             const totalSessions = trainingsFisico.length + trainingsCampo.length;
 
             let mainContentHtml;
@@ -2317,7 +2317,7 @@
                 </div>`;
         }
 
-        function displayFilteredLoadData(selectedIds, dataForTeam) {
+        function displayFilteredLoadData(selectedIds, dataToRender) {
             if (!selectedIds || selectedIds.length === 0) return;
             
             const individualResults = [];
@@ -2325,7 +2325,7 @@
             let weeklyTeamData = [];
             const sortedSelectedIds = sortWeeks([...selectedIds]);
             
-            const athletesInTeam = [...new Set(dataForTeam.map(d => d.atleta_id))];
+            const athletesInTeam = [...new Set(dataToRender.map(d => d.atleta_id))];
 
             athletesInTeam.forEach(athleteId => {
                  if (!athleteMicrocycleData[athleteId]) return;
@@ -2732,11 +2732,11 @@
         function renderPlanningView() {
             renderPlanningFilter();
 
-            const dataForTeamFisico = selectedTeam === 'all' ? treinosFisicos : treinosFisicos.filter(d => d.equipe_id === selectedTeam);
-            const dataForTeamCampo = selectedTeam === 'all' ? treinosCampo : treinosCampo.filter(d => d.equipe_id === selectedTeam);
+            const dataToRenderFisico = selectedTeam === 'all' ? treinosFisicos : treinosFisicos.filter(d => d.equipe_id === selectedTeam);
+            const dataToRenderCampo = selectedTeam === 'all' ? treinosCampo : treinosCampo.filter(d => d.equipe_id === selectedTeam);
 
-            const fisicoSemana = dataForTeamFisico.filter(t => selectedPlanningWeeks.includes(t.semana_id));
-            const campoSemana = dataForTeamCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
+            const fisicoSemana = dataToRenderFisico.filter(t => selectedPlanningWeeks.includes(t.semana_id));
+            const campoSemana = dataToRenderCampo.filter(t => selectedPlanningWeeks.includes(t.semana_id));
 
             pdfContentPlanejamento.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -3017,11 +3017,11 @@
 
 
         function populateAthleteDatalist() {
-            const dataForTeamProntidao = selectedTeam === 'all' ? fullProntidaoData : fullProntidaoData.filter(d => d.equipe_id === selectedTeam);
-            const dataForTeamCarga = selectedTeam === 'all' ? fullCargaData : fullCargaData.filter(d => d.equipe_id === selectedTeam);
+            const dataToRenderProntidao = selectedTeam === 'all' ? fullProntidaoData : fullProntidaoData.filter(d => d.equipe_id === selectedTeam);
+            const dataToRenderCarga = selectedTeam === 'all' ? fullCargaData : fullCargaData.filter(d => d.equipe_id === selectedTeam);
 
-            const athleteNamesFromProntidao = dataForTeamProntidao.map(d => d.atleta_id);
-            const athleteNamesFromCarga = dataForTeamCarga.map(d => d.atleta_id);
+            const athleteNamesFromProntidao = dataToRenderProntidao.map(d => d.atleta_id);
+            const athleteNamesFromCarga = dataToRenderCarga.map(d => d.atleta_id);
             const allNames = [...new Set([...athleteNamesFromProntidao, ...athleteNamesFromCarga])].sort();
             
             const datalist = document.getElementById('atleta-list-options');
@@ -3139,19 +3139,19 @@
         // Função auxiliar para obter os dados já filtrados por equipe e grupo de atletas
     function getFilteredData(fullDataSet) {
         // 1. Filtra por equipe
-        const dataForTeam = selectedTeam === 'all' 
+        const dataToRender = selectedTeam === 'all' 
             ? fullDataSet 
             : fullDataSet.filter(d => d.equipe_id === selectedTeam);
 
         // 2. Filtra por grupo de atletas
         if (selectedAthleteGroup === 'all') {
-            return dataForTeam;
+            return dataToRender;
         }
         if (['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
-            return dataForTeam.filter(d => d.posicao_grupo === selectedAthleteGroup);
+            return dataToRender.filter(d => d.posicao_grupo === selectedAthleteGroup);
         }
         // Se não for um grupo, é um atleta individual
-        return dataForTeam.filter(d => d.atleta_id === selectedAthleteGroup);
+        return dataToRender.filter(d => d.atleta_id === selectedAthleteGroup);
     }
 
     // Função para popular a lista de atletas individuais no filtro
