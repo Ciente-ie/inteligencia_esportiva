@@ -1195,6 +1195,148 @@ function renderScoutTab() {
     }
 }
 
+function analyzeScoutData(data) {
+    // Agrupa todos os jogos por atleta
+    const gamesByAthlete = data.reduce((acc, game) => {
+        const athleteId = game.atleta_id || game.jogador;
+        if (!acc[athleteId]) {
+            acc[athleteId] = {
+                details: [],
+                posicao: game.posicao || game.posicao_grupo
+            };
+        }
+        acc[athleteId].details.push(game);
+        return acc;
+    }, {});
+
+    // Calcula os totais e as médias para cada atleta
+    const aggregatedData = Object.keys(gamesByAthlete).map(athleteId => {
+        const athleteData = gamesByAthlete[athleteId];
+        const games = athleteData.details;
+        const totalJogos = games.length;
+
+        const totals = games.reduce((acc, game) => {
+            acc.gols += game.gols || 0;
+            acc.assistencias += game.assistencias || 0;
+            acc.finalizacoes += game.finalizacoes || 0;
+            acc.duelos_ganhos += game.duelos_ganhos || 0;
+            acc.duelos_perdidos += game.duelos_perdidos || 0;
+            acc.media_geral_sum += game.media_geral || 0;
+            return acc;
+        }, { gols: 0, assistencias: 0, finalizacoes: 0, duelos_ganhos: 0, duelos_perdidos: 0, media_geral_sum: 0 });
+
+        const mediaGeral = totalJogos > 0 ? totals.media_geral_sum / totalJogos : 0;
+        
+        return {
+            athleteId: athleteId,
+            posicao: athleteData.posicao,
+            mediaGeral: mediaGeral,
+            jogos: totalJogos,
+            gols: totals.gols,
+            assistencias: totals.assistencias,
+            // Campos calculados
+            golsPorJogo: totalJogos > 0 ? totals.gols / totalJogos : 0,
+            finalizacoesPorJogo: totalJogos > 0 ? totals.finalizacoes / totalJogos : 0,
+            duelosGanhosPorJogo: totalJogos > 0 ? totals.duelos_ganhos / totalJogos : 0,
+            duelosPerdidosPorJogo: totalJogos > 0 ? totals.duelos_perdidos / totalJogos : 0,
+            // Detalhes para a aba oculta
+            gameDetails: games.sort((a,b) => (a.adversario || "").localeCompare(b.adversario || ""))
+        };
+    });
+
+    return aggregatedData.sort((a, b) => b.mediaGeral - a.mediaGeral);
+}
+
+function renderScoutTable(aggregatedData) {
+    const container = document.getElementById('resultsContainerScout');
+    const headers = ['Jogador', 'Posição', 'Média Geral', 'Jogos', 'Gols', 'Gols/Jogo', 'Assist.', 'Fin./Jogo', 'Duelos Ganhos/J', 'Duelos Perdidos/J', ''];
+
+    const tableRows = aggregatedData.map(player => {
+        const mediaGeral = player.mediaGeral.toFixed(2);
+        let mediaClass = 'text-gray-800';
+        if(player.mediaGeral >= 8) mediaClass = 'text-green-600 font-bold';
+        else if(player.mediaGeral >= 6.5) mediaClass = 'text-yellow-600';
+        else if(player.mediaGeral > 0) mediaClass = 'text-red-600';
+
+        const uniqueId = player.athleteId.replace(/[^a-zA-Z0-9]/g, "");
+
+        const gameDetailsHtml = player.gameDetails.map(game => `
+            <tr class="text-xs bg-gray-100">
+                <td class="p-2 pl-6 border-b border-gray-200" colspan="2">vs. ${game.adversario}</td>
+                <td class="p-2 text-center border-b border-gray-200">${(game.media_geral || 0).toFixed(1)}</td>
+                <td class="p-2 text-center border-b border-gray-200">-</td>
+                <td class="p-2 text-center border-b border-gray-200">${game.gols || 0}</td>
+                <td class="p-2 text-center border-b border-gray-200">-</td>
+                <td class="p-2 text-center border-b border-gray-200">${game.assistencias || 0}</td>
+                <td class="p-2 text-center border-b border-gray-200">${game.finalizacoes || 0}</td>
+                <td class="p-2 text-center border-b border-gray-200">${game.duelos_ganhos || 0}</td>
+                <td class="p-2 text-center border-b border-gray-200">${game.duelos_perdidos || 0}</td>
+                <td class="p-2 border-b border-gray-200"></td>
+            </tr>
+        `).join('');
+
+        return `
+            <tbody class="border-b last:border-0">
+                <tr class="hover:bg-gray-50 text-sm">
+                    <td class="p-3 font-semibold text-gray-900">${player.athleteId}</td>
+                    <td class="p-3 text-gray-600">${player.posicao}</td>
+                    <td class="p-3 text-center ${mediaClass}">${mediaGeral}</td>
+                    <td class="p-3 text-center text-gray-600">${player.jogos}</td>
+                    <td class="p-3 text-center text-gray-600">${player.gols}</td>
+                    <td class="p-3 text-center text-gray-600 font-semibold">${player.golsPorJogo.toFixed(2)}</td>
+                    <td class="p-3 text-center text-gray-600">${player.assistencias}</td>
+                    <td class="p-3 text-center text-gray-600 font-semibold">${player.finalizacoesPorJogo.toFixed(2)}</td>
+                    <td class="p-3 text-center text-gray-600 font-semibold">${player.duelosGanhosPorJogo.toFixed(2)}</td>
+                    <td class="p-3 text-center text-gray-600 font-semibold">${player.duelosPerdidosPorJogo.toFixed(2)}</td>
+                    <td class="p-3 text-center">
+                        <button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-scout-${uniqueId}">
+                            <svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </td>
+                </tr>
+                <tr class="details-section" id="details-scout-${uniqueId}">
+                    <td colspan="${headers.length}">
+                        <table class="w-full">
+                           <thead class="text-xs text-gray-500 bg-gray-100">
+                                <tr>
+                                    <th class="p-2 pl-6 font-semibold text-left" colspan="2">Adversário</th>
+                                    <th class="p-2 font-semibold">Nota</th>
+                                    <th class="p-2 font-semibold"></th>
+                                    <th class="p-2 font-semibold">Gols</th>
+                                    <th class="p-2 font-semibold"></th>
+                                    <th class="p-2 font-semibold">Assist.</th>
+                                    <th class="p-2 font-semibold">Fin.</th>
+                                    <th class="p-2 font-semibold">Duelos Ganhos</th>
+                                    <th class="p-2 font-semibold">Duelos Perdidos</th>
+                                    <th class="p-2 font-semibold"></th>
+                                </tr>
+                           </thead>
+                           <tbody>
+                                ${gameDetailsHtml}
+                           </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <table class="w-full text-left">
+            <thead class="bg-gray-50 sticky top-0 z-10">
+                <tr>
+                    ${headers.map(h => `<th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider ${h !== 'Jogador' && h !== 'Posição' ? 'text-center' : ''}">${h}</th>`).join('')}
+                </tr>
+            </thead>
+            ${tableRows}
+        </table>
+    `;
+    
+    // Adiciona o listener para os botões de expandir
+    container.querySelectorAll('.toggle-details-btn').forEach(button => {
+        button.addEventListener('click', (e) => toggleDetails(e, 'scout'));
+    });
+}
 
 function updateDashboardView() {
     renderDashboardLesoes();
@@ -1625,7 +1767,7 @@ function parseCSV(text, requiredHeaders) {
     const separator = firstLine.includes(';') ? ';' : ',';
     const headers = firstLine.split(separator).map(h => h.trim().toLowerCase().replace(/\s+/g, ' ')).filter(h => h);
     
-    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h.toLowerCase()));
     if (missingHeaders.length > 0) {
         throw new Error(`Cabeçalho inválido. Colunas ausentes: ${missingHeaders.join(', ')}.`);
     }
@@ -1639,7 +1781,10 @@ function parseCSV(text, requiredHeaders) {
                 const value = values[index] ? values[index].trim() : null;
                 const key = header.replace(/\s+/g, '_');
                 
-                if (['equipe_id', 'atleta_id', 'data', 'microciclo_id', 'semana_id', 'posicao_grupo', 'jogador', 'posicao'].includes(key)) {
+                // Colunas que devem ser tratadas como texto
+                const textColumns = ['equipe_id', 'atleta_id', 'data', 'microciclo_id', 'semana_id', 'posicao_grupo', 'jogador', 'posicao', 'adversario'];
+
+                if (textColumns.includes(key)) {
                      if (key === 'data' && value && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
                         const parts = value.split('/');
                         entry[key] = `${parts[2]}-${parts[1]}-${parts[0]}`; 
@@ -1647,6 +1792,7 @@ function parseCSV(text, requiredHeaders) {
                         entry[key] = value;
                     }
                 } else {
+                    // Tenta converter para número, se falhar, mantém como null
                     const sanitizedValue = value ? value.replace(',', '.') : null;
                     entry[key] = sanitizedValue && !isNaN(parseFloat(sanitizedValue)) ? parseFloat(sanitizedValue) : null;
                 }
@@ -1660,10 +1806,6 @@ function parseCSV(text, requiredHeaders) {
             console.warn(`Linha ${i + 2} ignorada por falta de 'equipe_id'.`);
             return null;
         }
-        if ((requiredHeaders.includes('microciclo_id') && !entry.microciclo_id) || (requiredHeaders.includes('semana_id') && !entry.semana_id)) {
-            console.warn(`Linha ${i + 2} ignorada por falta de id da semana/microciclo.`);
-            return null;
-        };
         return entry;
     }).filter(Boolean);
 }
@@ -1790,33 +1932,65 @@ function handleFileProcessingCarga() {
 function handleFileProcessingScout() {
     const file = csvFileInputScout.files[0];
     if (!file) return showToast("Por favor, selecione um arquivo de scout.");
-    toggleLoading(true, 'scout');
+
     const reader = new FileReader();
     reader.onload = async (event) => {
         try {
-            const required = ['equipe_id', 'jogador', 'media geral', 'posicao', 'jogos', 'gols', 'assistencias', 'finalizacoes', 'duelos ganhos', 'duelos perdidos'];
+            // Adiciona 'adversario' como campo obrigatório
+            const required = ['equipe_id', 'Jogador', 'Posicao', 'Adversario', 'Media Geral'];
             let parsedData = parseCSV(event.target.result, required);
+            
+            if (parsedData.length === 0) {
+                showToast("Nenhum dado válido encontrado no arquivo.", "error");
+                toggleLoading(false, 'scout');
+                return;
+            }
 
-            parsedData = parsedData.map(item => ({
-                ...item,
-                atleta_id: item.jogador,
-                posicao_grupo: item.posicao,
-            }));
+            const uniqueTeamIds = [...new Set(parsedData.map(d => d.equipe_id))];
 
-            await saveBatchData(scoutCollection, parsedData);
-            showToast(`${parsedData.length} registros de scout salvos com sucesso!`, 'success');
+            showConfirmationModal(
+                `Isso substituirá TODOS os dados de Scout existentes para a(s) equipe(s): ${uniqueTeamIds.join(', ')}. Esta ação não pode ser desfeita. Deseja continuar?`,
+                async () => {
+                    toggleLoading(true, 'scout');
+                    try {
+                        const q = query(scoutCollection, where("equipe_id", "in", uniqueTeamIds));
+                        const snapshot = await getDocs(q);
+                        
+                        const batch = writeBatch(db);
+                        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+                        parsedData.forEach(item => {
+                            const docRef = doc(scoutCollection);
+                            batch.set(docRef, {
+                                ...item,
+                                atleta_id: item.jogador, // Mantém a consistência interna
+                                posicao_grupo: item.posicao 
+                            });
+                        });
+
+                        await batch.commit();
+                        showToast(`Dados de scout para ${uniqueTeamIds.join(', ')} foram atualizados com sucesso!`, 'success');
+                    } catch (e) {
+                        console.error("Erro ao substituir dados de scout:", e);
+                        showToast("Ocorreu um erro ao atualizar os dados.");
+                    } finally {
+                        toggleLoading(false, 'scout');
+                    }
+                },
+                'Confirmar Substituição de Dados'
+            );
+
         } catch (error) {
              console.error("Error during scout processing/saving:", error);
-             showToast(`Erro: ${error.message}`);
-        } finally {
-            toggleLoading(false, 'scout');
+             showToast(`Erro na análise do arquivo: ${error.message}`);
+             toggleLoading(false, 'scout');
         }
     };
     reader.onerror = () => {
         showToast("Erro ao ler o arquivo.");
         toggleLoading(false, 'scout');
     };
-    reader.readAsText(file);
+    reader.readAsText(file, 'UTF-8');
 }
 
 function getWeekId(date) {
@@ -2854,45 +3028,30 @@ function renderAthleteChart(canvasId, chartData, label) {
 }
 
 // --- SCOUT FUNCTIONS ---
-function renderScoutTable(data) {
-    const container = document.getElementById('resultsContainerScout');
-    const headers = ['Jogador', 'Posição', 'Média Geral', 'Jogos', 'Gols', 'Assist.', 'Finaliz.', 'Duelos Ganhos', 'Duelos Perdidos'];
-    const sortedData = data.sort((a, b) => (b.media_geral || 0) - (a.media_geral || 0));
+function renderScoutTab() {
+    let dataToRender = fullScoutData;
 
-    const tableRows = sortedData.map(row => {
-        const mediaGeral = row.media_geral ? row.media_geral.toFixed(2) : 'N/A';
-        let mediaClass = 'text-gray-800';
-        if(row.media_geral >= 8) mediaClass = 'text-green-600 font-bold';
-        else if(row.media_geral >= 6) mediaClass = 'text-yellow-600';
-        else if(row.media_geral > 0) mediaClass = 'text-red-600';
+    if (selectedTeam !== 'all') {
+        dataToRender = dataToRender.filter(d => d.equipe_id === selectedTeam);
+    }
 
-        return `
-            <tr class="border-b last:border-0 hover:bg-gray-50 text-sm">
-                <td class="p-3 font-semibold text-gray-900">${row.atleta_id || 'N/A'}</td>
-                <td class="p-3 text-gray-600">${row.posicao_grupo || 'N/A'}</td>
-                <td class="p-3 text-center ${mediaClass}">${mediaGeral}</td>
-                <td class="p-3 text-center text-gray-600">${row.jogos || 0}</td>
-                <td class="p-3 text-center text-gray-600">${row.gols || 0}</td>
-                <td class="p-3 text-center text-gray-600">${row.assistencias || 0}</td>
-                <td class="p-3 text-center text-gray-600">${row.finalizacoes || 0}</td>
-                <td class="p-3 text-center text-gray-600">${row.duelos_ganhos || 0}</td>
-                <td class="p-3 text-center text-gray-600">${row.duelos_perdidos || 0}</td>
-            </tr>
-        `;
-    }).join('');
+    if (selectedAthleteGroup !== 'all') {
+        if (['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
+            dataToRender = dataToRender.filter(d => (d.posicao_grupo || d.posicao) === selectedAthleteGroup);
+        } else {
+            dataToRender = dataToRender.filter(d => (d.atleta_id || d.jogador) === selectedAthleteGroup);
+        }
+    }
 
-    container.innerHTML = `
-        <table class="w-full text-left">
-            <thead class="bg-gray-50 sticky top-0">
-                <tr>
-                    ${headers.map(h => `<th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider ${h !== 'Jogador' && h !== 'Posição' ? 'text-center' : ''}">${h}</th>`).join('')}
-                </tr>
-            </thead>
-            <tbody class="bg-white">
-                ${tableRows}
-            </tbody>
-        </table>
-    `;
+    if (dataToRender.length === 0) {
+        placeholderSectionScout.classList.remove('hidden');
+        resultsSectionScout.classList.add('hidden');
+    } else {
+        placeholderSectionScout.classList.add('hidden');
+        resultsSectionScout.classList.remove('hidden');
+        const aggregatedData = analyzeScoutData(dataToRender);
+        renderScoutTable(aggregatedData);
+    }
 }
 
 // --- PLANEJAMENTO FUNCTIONS ---
