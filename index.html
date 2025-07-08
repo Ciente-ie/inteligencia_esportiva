@@ -112,7 +112,7 @@
                         <option value="Ataque">Ataque</option>
                     </optgroup>
                     <optgroup label="Atletas Individuais" id="individualAthleteOptions">
-                        </optgroup>
+                    </optgroup>
                  </select>
             </div>
         </div>
@@ -141,7 +141,7 @@
             </div>
         </div>
 
-        <div id="dashboardContent">
+<div id="dashboardContent">
             <div class="space-y-10" id="pdf-content-dashboard">
                 <div id="dashboardLesoes" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200"></div>
                 <div id="dashboardProntidao" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200"></div>
@@ -397,8 +397,8 @@
                     </div>
             </div>
         </div>
-
-<div id="lesoesContent" class="hidden">
+        
+        <div id="lesoesContent" class="hidden">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-1">
                     <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
@@ -449,23 +449,23 @@
         </div>
 
         <div id="scoutContent" class="hidden">
-           <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200">
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                     <div>
                         <h2 class="text-xl font-semibold text-gray-800 mb-3">1. Prepare seu arquivo de Scout</h2>
-                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo. Para melhor compatibilidade, use nomes de colunas sem espaços e em minúsculo.</p>
+                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo. Para que o filtro de equipe funcione, adicione a coluna `equipe_id`.</p>
                         <div class="bg-gray-100 p-4 rounded-lg text-sm text-gray-700 font-mono border">
-                            <p>jogador,posicao,media_geral,jogos,gols,assistencias,finalizacoes,duelos_ganhos,duelos_perdidos</p>
+                            <p><strong class="text-blue-600">equipe_id</strong>,Jogador,Media Geral,Posicao,Jogos,Gols,Assistencias,Finalizacoes,Duelos Ganhos,Duelos Perdidos</p>
                         </div>
-                        <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
-                            <li>A coluna `posicao` pode ser usada para filtrar por `Defesa`, `Meio` ou `Ataque`.</li>
-                            <li>Para filtrar por equipe, adicione uma coluna `equipe_id` ao seu CSV.</li>
+                         <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
+                             <li>A coluna `Posicao` será usada para o filtro de grupo (Defesa, Meio, Ataque).</li>
+                             <li>A coluna `Jogador` será usada para o filtro individual.</li>
                         </ul>
                     </div>
 
                     <div class="mt-6 md:mt-0">
                         <h2 class="text-xl font-semibold text-gray-800 mb-3">2. Importe o arquivo e analise</h2>
-                         <div class="flex flex-col items-center justify-center w-full">
+                        <div class="flex flex-col items-center justify-center w-full">
                              <label for="csvFileInputScout" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
                                 <div class="flex flex-col items-center justify-center pt-5 pb-6">
                                     <svg class="w-10 h-10 mb-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
@@ -486,7 +486,7 @@
             <div id="resultsSectionScout" class="mt-10 hidden">
                  <div id="pdf-content-scout">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Ranking de Atletas (Scout)</h2>
+                        <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Resultados do Scout</h2>
                          <div class="flex gap-x-2">
                             <button id="clearScoutDataBtn" class="btn bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition flex items-center text-sm">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -494,20 +494,25 @@
                                 </svg>
                                 Limpar Dados de Scout
                             </button>
+                            <button id="exportPdfBtnScout" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
+                                Exportar PDF
+                            </button>
                          </div>
                     </div>
                     <div id="resultsContainerScout" class="bg-white rounded-lg shadow-md border overflow-x-auto"></div>
                 </div>
             </div>
              <div id="placeholderSectionScout" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
-                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
                 <h3 class="mt-4 text-xl font-semibold text-gray-800">Aguardando dados de Scout</h3>
-                <p class="mt-1 text-gray-500">Importe um novo arquivo para começar a análise.</p>
+                <p class="mt-1 text-gray-500">Selecione uma equipe ou importe um novo arquivo para começar.</p>
             </div>
         </div>
 
-
-    </div>
+</div>
 
     <footer class="text-center py-4 text-xs text-gray-400">
         Powered by Ciente - Inteligência Esportiva
@@ -570,7 +575,6 @@ const treinosCampoCollection = collection(db, 'treinosCampo');
 const prontidaoCollection = collection(db, 'prontidaoData');
 const cargaCollection = collection(db, 'cargaData');
 const lesoesCollection = collection(db, 'lesoes');
-// NOVA COLEÇÃO PARA SCOUT
 const scoutCollection = collection(db, 'scoutData');
 
 
@@ -594,7 +598,6 @@ let activeCharts = {};
 let fullProntidaoData = [];
 let fullCargaData = [];
 let lesoesData = [];
-// NOVA VARIÁVEL DE ESTADO PARA SCOUT
 let fullScoutData = [];
 let athleteMicrocycleData = {};
 let treinosFisicos = [];
@@ -621,14 +624,12 @@ const tabProntidaoBtn = document.getElementById('tabProntidaoBtn');
 const tabCargaBtn = document.getElementById('tabCargaBtn');
 const tabPlanejamentoBtn = document.getElementById('tabPlanejamentoBtn');
 const tabLesoesBtn = document.getElementById('tabLesoesBtn');
-// NOVO BOTÃO DA ABA
 const tabScoutBtn = document.getElementById('tabScoutBtn');
 const dashboardContent = document.getElementById('dashboardContent');
 const prontidaoContent = document.getElementById('prontidaoContent');
 const cargaContent = document.getElementById('cargaContent');
 const planejamentoContent = document.getElementById('planejamentoContent');
 const lesoesContent = document.getElementById('lesoesContent');
-// NOVO CONTEÚDO DA ABA
 const scoutContent = document.getElementById('scoutContent');
 const toast = document.getElementById('toast');
 const confirmModal = document.getElementById('confirmModal');
@@ -689,6 +690,7 @@ const btnLoaderScout = document.getElementById('btnLoaderScout');
 const resultsSectionScout = document.getElementById('resultsSectionScout');
 const placeholderSectionScout = document.getElementById('placeholderSectionScout');
 const resultsContainerScout = document.getElementById('resultsContainerScout');
+const exportPdfBtnScout = document.getElementById('exportPdfBtnScout');
 const clearScoutDataBtn = document.getElementById('clearScoutDataBtn');
 
 
@@ -773,7 +775,7 @@ async function loadInitialData() {
             getDocs(query(treinosFisicosCollection, orderBy("date", "asc"))),
             getDocs(query(treinosCampoCollection, orderBy("date", "asc"))),
             getDocs(query(lesoesCollection, orderBy("createdAt", "desc"))),
-            getDocs(query(collection(db, 'scoutData'))), // NOVA QUERY
+            getDocs(query(scoutCollection)),
         ]);
 
         fullProntidaoData = prontidaoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -781,434 +783,6 @@ async function loadInitialData() {
         treinosFisicos = fisicoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         treinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         lesoesData = lesoesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        fullScoutData = scoutSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })); // NOVO
-        
-        populateTeamFilter(); 
-        handleTeamChange();
-        renderAllTabs();
-        populateAthleteFilterOptions();
-        setupLiveListeners(); 
-
-        globalLoader.classList.add('hidden');
-        mainContent.classList.remove('hidden');
-
-    } catch (error) {
-        console.error("Error loading initial data:", error);
-        loaderText.textContent = "Erro ao carregar os dados. Verifique o console.";
-        showToast("Erro crítico ao carregar os dados iniciais.");
-    }
-}
-
-function setupLiveListeners() {
-     onSnapshot(query(treinosFisicosCollection), (snapshot) => {
-        treinosFisicos = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        if(document.getElementById('planejamentoContent').style.display !== 'none') {
-            renderPlanningView();
-        }
-        updateDashboardView();
-    });
-
-    onSnapshot(query(treinosCampoCollection), (snapshot) => {
-        treinosCampo = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-         if(document.getElementById('planejamentoContent').style.display !== 'none') {
-            renderPlanningView();
-        }
-        updateDashboardView();
-    });
-
-    onSnapshot(query(prontidaoCollection), (snapshot) => {
-        fullProntidaoData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        populateAthleteDatalist();
-        populateAthleteFilterOptions();
-        if(document.getElementById('prontidaoContent').style.display !== 'none') {
-            renderProntidaoTab(); 
-        }
-        updateDashboardView();
-    });
-    
-    onSnapshot(query(cargaCollection), (snapshot) => {
-        fullCargaData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        populateAthleteDatalist();
-        if(document.getElementById('cargaContent').style.display !== 'none') {
-            renderCargaTab();
-        }
-        updateDashboardView();
-    });
-
-    onSnapshot(query(lesoesCollection), (snapshot) => {
-        lesoesData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        if(document.getElementById('lesoesContent').style.display !== 'none') {
-            renderLesoesTab();
-        }
-        updateDashboardView();
-    });
-
-    // NOVO LISTENER PARA SCOUT
-    onSnapshot(query(scoutCollection), (snapshot) => {
-        fullScoutData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        if (document.getElementById('scoutContent').style.display !== 'none') {
-            renderScoutTab();
-        }
-    });
-}
-
-
-// --- EVENT LISTENERS ---
-teamFilterSelect.addEventListener('change', (e) => {
-    selectedTeam = e.target.value;
-    handleTeamChange();
-    renderAllTabs();
-    populateAthleteFilterOptions();
-});
-
-athleteGroupFilterSelect.addEventListener('change', (e) => {
-    selectedAthleteGroup = e.target.value;
-    renderAllTabs();
-});
-
-function handleTeamChange() {
-    const isTeamSelected = selectedTeam !== 'all';
-
-    submitTreinoFisicoBtn.disabled = !isTeamSelected;
-    submitTreinoCampoBtn.disabled = !isTeamSelected;
-    submitLesaoBtn.disabled = !isTeamSelected;
-
-    const teamIdForInputs = isTeamSelected ? selectedTeam : 'Selecione uma equipe';
-    equipeIdLesaoInput.value = teamIdForInputs;
-    equipeIdFisicoInput.value = teamIdForInputs;
-    equipeIdCampoInput.value = teamIdForInputs;
-
-    renderAllLogos();
-}
-
-tabDashboardBtn.addEventListener('click', () => switchTab('dashboard'));
-tabProntidaoBtn.addEventListener('click', () => switchTab('prontidao'));
-tabCargaBtn.addEventListener('click', () => switchTab('carga'));
-tabPlanejamentoBtn.addEventListener('click', () => switchTab('planejamento'));
-tabLesoesBtn.addEventListener('click', () => switchTab('lesoes'));
-// NOVO
-tabScoutBtn.addEventListener('click', () => switchTab('scout'));
-
-csvFileInput.addEventListener('change', () => handleFileSelect(csvFileInput, fileNameEl, processBtn));
-processBtn.addEventListener('click', handleFileProcessing);
-exportPdfBtnProntidao.addEventListener('click', () => exportToPDF('prontidao'));
-resultsContainer.addEventListener('click', (e) => toggleDetails(e, 'prontidao'));
-filterContainerProntidao.addEventListener('change', () => renderProntidaoTab());
-clearProntidaoDataBtn.addEventListener('click', clearProntidaoData);
-
-csvFileInputCarga.addEventListener('change', () => handleFileSelect(csvFileInputCarga, fileNameCargaEl, processBtnCarga));
-processBtnCarga.addEventListener('click', handleFileProcessingCarga);
-exportPdfBtnCarga.addEventListener('click', () => exportToPDF('carga'));
-resultsContainerCarga.addEventListener('click', (e) => toggleDetails(e, 'carga'));
-filterContainer.addEventListener('change', (e) => {
-    if (e.target.classList.contains('microciclo-checkbox')) {
-        renderCargaTab();
-    }
-});
-clearCargaDataBtn.addEventListener('click', clearCargaData);
-
-formTreinoFisico.addEventListener('submit', handleFormFisicoSubmit);
-formTreinoCampo.addEventListener('submit', handleFormCampoSubmit);
-document.getElementById('dataTreinoFisico').addEventListener('change', (e) => {
-    const date = e.target.valueAsDate;
-    if (date) {
-        const timezoneOffset = date.getTimezoneOffset() * 60000;
-        const utcDate = new Date(date.getTime() + timezoneOffset);
-        document.getElementById('semanaIdFisico').value = getWeekId(utcDate) || '';
-    }
-});
-document.getElementById('dataTreinoCampo').addEventListener('change', (e) => {
-    const date = e.target.valueAsDate;
-    if (date) {
-        const timezoneOffset = date.getTimezoneOffset() * 60000;
-        const utcDate = new Date(date.getTime() + timezoneOffset);
-        document.getElementById('semanaIdCampo').value = getWeekId(utcDate) || '';
-    }
-});
-
-formLesao.addEventListener('submit', handleFormLesaoSubmit);
-
-filterContainerPlanejamento.addEventListener('change', (e) => {
-     if (e.target.classList.contains('planning-week-checkbox')) {
-        const selectedCheckboxes = document.querySelectorAll('.planning-week-checkbox:checked');
-        selectedPlanningWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
-        renderPlanningView();
-        updateDashboardView();
-    }
-});
-
-exportPdfBtnDashboard.addEventListener('click', () => exportToPDF('dashboard'));
-
-// NOVO - Scout Listeners
-csvFileInputScout.addEventListener('change', () => handleFileSelect(csvFileInputScout, fileNameScoutEl, processBtnScout));
-processBtnScout.addEventListener('click', handleFileProcessingScout);
-clearScoutDataBtn.addEventListener('click', clearScoutData);
-
-
-// --- INITIALIZATION ---
-document.getElementById('dataTreinoFisico').valueAsDate = new Date();
-document.getElementById('dataTreinoFisico').dispatchEvent(new Event('change'));
-document.getElementById('dataTreinoCampo').valueAsDate = new Date();
-document.getElementById('dataTreinoCampo').dispatchEvent(new Event('change'));
-
-function renderAllTabs() {
-    populateTeamFilter(); 
-    populateAthleteDatalist();
-    renderProntidaoTab();
-    renderCargaTab();
-    renderPlanningView();
-    renderLesoesTab();
-    renderScoutTab(); // NOVO
-    updateDashboardView();
-}
-
-<script type="module">
-        // --- Firebase v9+ modular imports ---
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs, where, updateDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-
-
-// --- FIREBASE SETUP ---
-const firebaseConfig = {
-    apiKey: "AIzaSyCSxaH-QFQbhrCttS-J8KmVN1MXmjXqY1s",
-    authDomain: "meu-scout-pro.firebaseapp.com",
-    projectId: "meu-scout-pro",
-    storageBucket: "meu-scout-pro.appspot.com",
-    messagingSenderId: "303977649743",
-    appId: "1:303977649743:web:4e81e55c7180390ec97c3a"
-};
-
-// Initialize Firebase and services
-let db, auth;
-try {
-    const app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    auth = getAuth(app);
-} catch (e) {
-    console.error("Firebase initialization failed. Please check your firebaseConfig.", e);
-    showToast("Erro na configuração do Firebase. Verifique o console.");
-}
-
-// Firebase Collection References
-const treinosFisicosCollection = collection(db, 'treinosFisicos');
-const treinosCampoCollection = collection(db, 'treinosCampo');
-const prontidaoCollection = collection(db, 'prontidaoData');
-const cargaCollection = collection(db, 'cargaData');
-const lesoesCollection = collection(db, 'lesoes');
-// NOVO - COLEÇÃO PARA SCOUT
-const scoutCollection = collection(db, 'scoutData');
-
-
-// --- CONSTANTS AND GLOBAL STATE ---
-const METRIC_NAMES = {
-    qualidade_sono: 'Qualidade do Sono',
-    niveis_stress: 'Níveis de Stress',
-    fadiga_geral: 'Fadiga Geral',
-    dor_muscular: 'Dor Muscular',
-    hooper_score: 'Pontuação Hooper',
-    salto_horizontal_cm: 'Salto Horizontal',
-    vfc_rmssd: 'VFC (RMSSD)'
-};
-const CARGA_PERCENTUAL = {
-    leve: 40,
-    moderada: 70,
-    alta: 90,
-    maxima: 100
-};
-let activeCharts = {};
-let fullProntidaoData = [];
-let fullCargaData = [];
-let lesoesData = [];
-// NOVO - VARIÁVEL DE ESTADO PARA SCOUT
-let fullScoutData = []; 
-let athleteMicrocycleData = {};
-let treinosFisicos = [];
-let treinosCampo = [];
-let currentUser = null;
-let latestProntidaoData = null;
-let latestCargaData = null;
-let selectedPlanningWeeks = [getWeekId(new Date())];
-let isInitialLoadComplete = false;
-let toastTimeout = null; 
-let selectedTeam = 'all';
-let selectedAthleteGroup = 'all'; 
-let teamLogos = {};
-
-// --- DOM ELEMENTS ---
-const globalLoader = document.getElementById('globalLoader');
-const loaderText = document.getElementById('loaderText');
-const mainContent = document.getElementById('mainContent');
-const authStatus = document.getElementById('authStatus');
-const teamFilterSelect = document.getElementById('teamFilterSelect'); 
-const athleteGroupFilterSelect = document.getElementById('athleteGroupFilterSelect'); 
-const tabDashboardBtn = document.getElementById('tabDashboardBtn');
-const tabProntidaoBtn = document.getElementById('tabProntidaoBtn');
-const tabCargaBtn = document.getElementById('tabCargaBtn');
-const tabPlanejamentoBtn = document.getElementById('tabPlanejamentoBtn');
-const tabLesoesBtn = document.getElementById('tabLesoesBtn');
-// NOVO - BOTÃO DA ABA SCOUT
-const tabScoutBtn = document.getElementById('tabScoutBtn');
-const dashboardContent = document.getElementById('dashboardContent');
-const prontidaoContent = document.getElementById('prontidaoContent');
-const cargaContent = document.getElementById('cargaContent');
-const planejamentoContent = document.getElementById('planejamentoContent');
-const lesoesContent = document.getElementById('lesoesContent');
-// NOVO - CONTEÚDO DA ABA SCOUT
-const scoutContent = document.getElementById('scoutContent');
-const toast = document.getElementById('toast');
-const confirmModal = document.getElementById('confirmModal');
-// Prontidão Elements
-const csvFileInput = document.getElementById('csvFileInput');
-const fileNameEl = document.getElementById('fileName');
-const processBtn = document.getElementById('processBtn');
-const btnText = document.getElementById('btnText');
-const btnLoader = document.getElementById('btnLoader');
-const resultsSection = document.getElementById('resultsSection');
-const placeholderSectionProntidao = document.getElementById('placeholderSectionProntidao');
-const filterContainerProntidao = document.getElementById('filterContainerProntidao');
-const teamDashboard = document.getElementById('teamDashboard');
-const resultsContainer = document.getElementById('resultsContainer');
-const exportPdfBtnProntidao = document.getElementById('exportPdfBtnProntidao');
-const legendsProntidao = document.getElementById('legendsProntidao');
-const clearProntidaoDataBtn = document.getElementById('clearProntidaoDataBtn');
-// Carga Elements
-const csvFileInputCarga = document.getElementById('csvFileInputCarga');
-const fileNameCargaEl = document.getElementById('fileNameCarga');
-const processBtnCarga = document.getElementById('processBtnCarga');
-const btnTextCarga = document.getElementById('btnTextCarga');
-const btnLoaderCarga = document.getElementById('btnLoaderCarga');
-const resultsSectionCarga = document.getElementById('resultsSectionCarga');
-const placeholderSectionCarga = document.getElementById('placeholderSectionCarga');
-const filterContainer = document.getElementById('filterContainer');
-const teamDashboardCarga = document.getElementById('teamDashboardCarga');
-const resultsContainerCarga = document.getElementById('resultsContainerCarga');
-const exportPdfBtnCarga = document.getElementById('exportPdfBtnCarga');
-const legendsCarga = document.getElementById('legendsCarga');
-const clearCargaDataBtn = document.getElementById('clearCargaDataBtn');
-// Planejamento Elements
-const formTreinoFisico = document.getElementById('formTreinoFisico');
-const formTreinoCampo = document.getElementById('formTreinoCampo');
-const submitTreinoFisicoBtn = document.getElementById('submitTreinoFisico');
-const submitTreinoCampoBtn = document.getElementById('submitTreinoCampo');
-const filterContainerPlanejamento = document.getElementById('filterContainerPlanejamento');
-const pdfContentPlanejamento = document.getElementById('pdf-content-planejamento');
-const equipeIdFisicoInput = document.getElementById('equipeIdFisico');
-const equipeIdCampoInput = document.getElementById('equipeIdCampo');
-// Lesões Elements
-const formLesao = document.getElementById('formLesao');
-const submitLesaoBtn = document.getElementById('submitLesao');
-const lesoesList = document.getElementById('lesoesList');
-const dashboardLesoes = document.getElementById('dashboardLesoes');
-const equipeIdLesaoInput = document.getElementById('equipeIdLesao');
-// Dashboard Elements
-const dashboardProntidao = document.getElementById('dashboardProntidao');
-const dashboardCarga = document.getElementById('dashboardCarga');
-const dashboardPlanejamento = document.getElementById('dashboardPlanejamento');
-const exportPdfBtnDashboard = document.getElementById('exportPdfBtnDashboard');
-// NOVO - Scout Elements
-const csvFileInputScout = document.getElementById('csvFileInputScout');
-const fileNameScoutEl = document.getElementById('fileNameScout');
-const processBtnScout = document.getElementById('processBtnScout');
-const btnTextScout = document.getElementById('btnTextScout');
-const btnLoaderScout = document.getElementById('btnLoaderScout');
-const resultsSectionScout = document.getElementById('resultsSectionScout');
-const placeholderSectionScout = document.getElementById('placeholderSectionScout');
-const resultsContainerScout = document.getElementById('resultsContainerScout');
-const clearScoutDataBtn = document.getElementById('clearScoutDataBtn');
-
-
-// --- SETUP ---
-Chart.register(ChartDataLabels);
-
-const readinessZonePlugin = {
-    id: 'readinessZonePlugin',
-    beforeDraw: (chart) => {
-        const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
-        if (chart.config.type !== 'line' || !y || !y.getPixelForValue) return;
-
-        const greenZone = y.getPixelForValue(-0.5);
-        const yellowZone = y.getPixelForValue(-1.5);
-
-        ctx.save();
-        ctx.fillStyle = 'rgba(34, 197, 94, 0.1)';
-        ctx.fillRect(left, top, right - left, greenZone - top);
-        ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
-        ctx.fillRect(left, greenZone, right - left, yellowZone - greenZone);
-        ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
-        ctx.fillRect(left, yellowZone, right - left, bottom - yellowZone);
-        ctx.restore();
-    }
-};
-Chart.register(readinessZonePlugin);
-
-Chart.defaults.set('plugins.datalabels', {
-    color: '#333',
-    font: {
-        weight: 'bold'
-    },
-    formatter: (value, context) => value ? (context.dataset.label.includes('%') ? `${value}%` : Math.round(value * 100) / 100) : null
-});
-
-
-// --- AUTHENTICATION & DATA LOADING ---
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentUser = user;
-        authStatus.textContent = 'Conectado';
-        authStatus.classList.add('text-green-600', 'font-semibold');
-        authStatus.classList.remove('text-red-600');
-        if (!isInitialLoadComplete) {
-           loadInitialData();
-        }
-    } else {
-        currentUser = null;
-        authStatus.textContent = 'Offline';
-        authStatus.classList.add('text-red-600', 'font-semibold');
-        authStatus.classList.remove('text-green-600');
-        submitTreinoFisicoBtn.disabled = true;
-        submitTreinoCampoBtn.disabled = true;
-        submitLesaoBtn.disabled = true;
-        loaderText.textContent = "Você está desconectado. Por favor, recarregue a página.";
-        showToast("Você está desconectado. Os dados não serão salvos ou carregados.");
-    }
-});
-
-signInAnonymously(auth).catch((error) => {
-    console.error("Anonymous sign-in failed", error);
-    loaderText.textContent = "Falha na autenticação. Verifique o console e recarregue.";
-    showToast("Falha na autenticação. Os dados não serão salvos.");
-});
-
-async function loadInitialData() {
-    isInitialLoadComplete = true; 
-    loaderText.textContent = 'Carregando dados...';
-    try {
-        const savedLogos = localStorage.getItem('teamLogos');
-        if (savedLogos) {
-            teamLogos = JSON.parse(savedLogos);
-        }
-    } catch (e) {
-        console.error("Erro ao carregar logos do localStorage", e);
-        teamLogos = {};
-    }
-    try {
-        // MODIFICADO - Adicionado scoutSnap
-        const [prontidaoSnap, cargaSnap, fisicoSnap, campoSnap, lesoesSnap, scoutSnap] = await Promise.all([
-            getDocs(query(prontidaoCollection, orderBy("data", "desc"))),
-            getDocs(query(cargaCollection, orderBy("data", "desc"))),
-            getDocs(query(treinosFisicosCollection, orderBy("date", "asc"))),
-            getDocs(query(treinosCampoCollection, orderBy("date", "asc"))),
-            getDocs(query(lesoesCollection, orderBy("createdAt", "desc"))),
-            getDocs(query(scoutCollection)) // NOVA QUERY
-        ]);
-
-        fullProntidaoData = prontidaoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        fullCargaData = cargaSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        treinosFisicos = fisicoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        treinosCampo = campoSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        lesoesData = lesoesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        // NOVO - Preenche os dados de scout
         fullScoutData = scoutSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         
         populateTeamFilter(); 
@@ -1270,11 +844,11 @@ function setupLiveListeners() {
         }
         updateDashboardView();
     });
-    
-    // NOVO - LISTENER PARA SCOUT
+
     onSnapshot(query(scoutCollection), (snapshot) => {
         fullScoutData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        if (document.getElementById('scoutContent').style.display !== 'none') {
+        populateAthleteFilterOptions();
+        if(document.getElementById('scoutContent').style.display !== 'none') {
             renderScoutTab();
         }
     });
@@ -1314,7 +888,6 @@ tabProntidaoBtn.addEventListener('click', () => switchTab('prontidao'));
 tabCargaBtn.addEventListener('click', () => switchTab('carga'));
 tabPlanejamentoBtn.addEventListener('click', () => switchTab('planejamento'));
 tabLesoesBtn.addEventListener('click', () => switchTab('lesoes'));
-// NOVO - Event listener para a aba Scout
 tabScoutBtn.addEventListener('click', () => switchTab('scout'));
 
 csvFileInput.addEventListener('change', () => handleFileSelect(csvFileInput, fileNameEl, processBtn));
@@ -1334,6 +907,11 @@ filterContainer.addEventListener('change', (e) => {
     }
 });
 clearCargaDataBtn.addEventListener('click', clearCargaData);
+
+csvFileInputScout.addEventListener('change', () => handleFileSelect(csvFileInputScout, fileNameScoutEl, processBtnScout));
+processBtnScout.addEventListener('click', handleFileProcessingScout);
+exportPdfBtnScout.addEventListener('click', () => exportToPDF('scout'));
+clearScoutDataBtn.addEventListener('click', clearScoutData);
 
 formTreinoFisico.addEventListener('submit', handleFormFisicoSubmit);
 formTreinoCampo.addEventListener('submit', handleFormCampoSubmit);
@@ -1367,12 +945,6 @@ filterContainerPlanejamento.addEventListener('change', (e) => {
 
 exportPdfBtnDashboard.addEventListener('click', () => exportToPDF('dashboard'));
 
-// NOVO - Listeners para os botões da aba Scout
-csvFileInputScout.addEventListener('change', () => handleFileSelect(csvFileInputScout, fileNameScoutEl, processBtnScout));
-processBtnScout.addEventListener('click', handleFileProcessingScout);
-clearScoutDataBtn.addEventListener('click', clearScoutData);
-
-
 // --- INITIALIZATION ---
 document.getElementById('dataTreinoFisico').valueAsDate = new Date();
 document.getElementById('dataTreinoFisico').dispatchEvent(new Event('change'));
@@ -1386,7 +958,7 @@ function renderAllTabs() {
     renderCargaTab();
     renderPlanningView();
     renderLesoesTab();
-    renderScoutTab(); // NOVO
+    renderScoutTab();
     updateDashboardView();
 }
 
@@ -1595,6 +1167,31 @@ function renderLesoesTab() {
                 </tbody>
             </table>
         `;
+    }
+}
+
+function renderScoutTab() {
+    let dataToRender = fullScoutData;
+
+    if (selectedTeam !== 'all') {
+        dataToRender = dataToRender.filter(d => d.equipe_id === selectedTeam);
+    }
+
+    if (selectedAthleteGroup !== 'all') {
+        if (['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
+            dataToRender = dataToRender.filter(d => d.posicao_grupo === selectedAthleteGroup);
+        } else {
+            dataToRender = dataToRender.filter(d => d.atleta_id === selectedAthleteGroup);
+        }
+    }
+
+    if (dataToRender.length === 0) {
+        placeholderSectionScout.classList.remove('hidden');
+        resultsSectionScout.classList.add('hidden');
+    } else {
+        placeholderSectionScout.classList.add('hidden');
+        resultsSectionScout.classList.remove('hidden');
+        renderScoutTable(dataToRender);
     }
 }
 
@@ -1994,23 +1591,21 @@ async function exportToPDF(type) {
     }
 }
 
-// MODIFICADO - Para incluir a nova aba Scout
 function switchTab(tab) {
     dashboardContent.classList.toggle('hidden', tab !== 'dashboard');
     prontidaoContent.classList.toggle('hidden', tab !== 'prontidao');
     cargaContent.classList.toggle('hidden', tab !== 'carga');
     planejamentoContent.classList.toggle('hidden', tab !== 'planejamento');
     lesoesContent.classList.toggle('hidden', tab !== 'lesoes');
-    scoutContent.classList.toggle('hidden', tab !== 'scout'); // NOVO
+    scoutContent.classList.toggle('hidden', tab !== 'scout');
 
     tabDashboardBtn.classList.toggle('active', tab === 'dashboard');
     tabProntidaoBtn.classList.toggle('active', tab === 'prontidao');
     tabCargaBtn.classList.toggle('active', tab === 'carga');
     tabPlanejamentoBtn.classList.toggle('active', tab === 'planejamento');
     tabLesoesBtn.classList.toggle('active', tab === 'lesoes');
-    tabScoutBtn.classList.toggle('active', tab === 'scout'); // NOVO
+    tabScoutBtn.classList.toggle('active', tab === 'scout');
 }
-
 
 function handleFileSelect(fileInput, fileNameEl, processBtn) {
      if (fileInput.files.length > 0) {
@@ -2028,9 +1623,9 @@ function parseCSV(text, requiredHeaders) {
 
     const firstLine = lines[0];
     const separator = firstLine.includes(';') ? ';' : ',';
-    const headers = firstLine.split(separator).map(h => h.trim().toLowerCase()).filter(h => h);
+    const headers = firstLine.split(separator).map(h => h.trim().toLowerCase().replace(/\s+/g, ' ')).filter(h => h);
     
-    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h.replace(/_/g, ' '))); // Permite cabeçalhos com espaço no arquivo
+    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
     if (missingHeaders.length > 0) {
         throw new Error(`Cabeçalho inválido. Colunas ausentes: ${missingHeaders.join(', ')}.`);
     }
@@ -2041,53 +1636,53 @@ function parseCSV(text, requiredHeaders) {
         const entry = {};
         headers.forEach((header, index) => {
             if (header) { 
-                // Normaliza o cabeçalho para usar underscore
-                const normalizedHeader = header.replace(/ /g, '_');
                 const value = values[index] ? values[index].trim() : null;
-                // Colunas de texto
-                const textColumns = ['equipe_id', 'atleta_id', 'posicao_grupo', 'microciclo_id', 'semana_id', 'jogador', 'posicao'];
-                if (textColumns.includes(normalizedHeader)) {
-                     entry[normalizedHeader] = value;
-                } 
-                // Coluna de data
-                else if (normalizedHeader === 'data') {
-                     if (value && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+                const key = header.replace(/\s+/g, '_');
+                
+                if (['equipe_id', 'atleta_id', 'data', 'microciclo_id', 'semana_id', 'posicao_grupo', 'jogador', 'posicao'].includes(key)) {
+                     if (key === 'data' && value && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
                         const parts = value.split('/');
-                        entry[normalizedHeader] = `${parts[2]}-${parts[1]}-${parts[0]}`; 
+                        entry[key] = `${parts[2]}-${parts[1]}-${parts[0]}`; 
                     } else {
-                        entry[normalizedHeader] = value;
+                        entry[key] = value;
                     }
-                } 
-                // Outras colunas (numéricas)
-                else {
+                } else {
                     const sanitizedValue = value ? value.replace(',', '.') : null;
-                    entry[normalizedHeader] = sanitizedValue && !isNaN(parseFloat(sanitizedValue)) ? parseFloat(sanitizedValue) : null;
+                    entry[key] = sanitizedValue && !isNaN(parseFloat(sanitizedValue)) ? parseFloat(sanitizedValue) : null;
                 }
             }
         });
-         // Validação básica para diferentes tipos de entrada
-        if ((requiredHeaders.includes('atleta_id') && !entry.atleta_id) || (requiredHeaders.includes('jogador') && !entry.jogador)) {
-            console.warn(`Linha ${i + 2} ignorada por falta de 'atleta_id' ou 'jogador'.`);
-            return null;
-        }
-        if (requiredHeaders.includes('data') && !entry.data) {
-             console.warn(`Linha ${i + 2} ignorada por falta de 'data'.`);
+        if (!entry.atleta_id && !entry.jogador) {
+             console.warn(`Linha ${i + 2} ignorada por falta de 'atleta_id' ou 'jogador'.`);
              return null;
         }
-
+        if (!entry.equipe_id) {
+            console.warn(`Linha ${i + 2} ignorada por falta de 'equipe_id'.`);
+            return null;
+        }
+        if ((requiredHeaders.includes('microciclo_id') && !entry.microciclo_id) || (requiredHeaders.includes('semana_id') && !entry.semana_id)) {
+            console.warn(`Linha ${i + 2} ignorada por falta de id da semana/microciclo.`);
+            return null;
+        };
         return entry;
     }).filter(Boolean);
 }
 
-// --- PRONTIDÃO FUNCTIONS ---
+// --- PRONTIDÃO, CARGA, SCOUT SHARED FUNCTIONS ---
 function toggleLoading(isLoading, type = 'prontidao') {
-    const textEl = type === 'prontidao' ? btnText : btnTextCarga;
-    const loaderEl = type === 'prontidao' ? btnLoader : btnLoaderCarga;
-    const buttonEl = type === 'prontidao' ? processBtn : processBtnCarga;
+    let textEl, loaderEl, buttonEl;
+    if (type === 'prontidao') {
+        [textEl, loaderEl, buttonEl] = [btnText, btnLoader, processBtn];
+    } else if (type === 'carga') {
+        [textEl, loaderEl, buttonEl] = [btnTextCarga, btnLoaderCarga, processBtnCarga];
+    } else { // type === 'scout'
+        [textEl, loaderEl, buttonEl] = [btnTextScout, btnLoaderScout, processBtnScout];
+    }
     textEl.classList.toggle('hidden', isLoading);
     loaderEl.classList.toggle('hidden', !isLoading);
     buttonEl.disabled = isLoading;
 }
+
 
 async function saveBatchData(collectionRef, data) {
     const batch = writeBatch(db);
@@ -2126,6 +1721,21 @@ function clearCargaData() {
     );
 }
 
+function clearScoutData() {
+    showConfirmationModal(
+        'Tem certeza que deseja apagar TODOS os dados de Scout? Esta ação não pode ser desfeita.',
+        async () => {
+            showToast('Limpando dados de scout...', 'success');
+            const snapshot = await getDocs(query(scoutCollection));
+            const batch = writeBatch(db);
+            snapshot.docs.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+            showToast('Dados de scout removidos.', 'success');
+        }, 'Apagar Dados de Scout'
+    );
+}
+
+
 function handleFileProcessing() {
     const file = csvFileInput.files[0];
     if (!file) return showToast("Por favor, selecione um arquivo de prontidão.");
@@ -2148,6 +1758,63 @@ function handleFileProcessing() {
     reader.onerror = () => {
         showToast("Erro ao ler o arquivo.");
         toggleLoading(false, 'prontidao');
+    };
+    reader.readAsText(file);
+}
+
+function handleFileProcessingCarga() {
+    const file = csvFileInputCarga.files[0];
+    if (!file) return showToast("Por favor, selecione um arquivo de carga.");
+    toggleLoading(true, 'carga');
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        try {
+            const required = ['equipe_id', 'atleta_id', 'posicao_grupo', 'data', 'microciclo_id', 'pse_sessao', 'duracao_sessao_min'];
+            const parsedData = parseCSV(event.target.result, required);
+            await saveBatchData(cargaCollection, parsedData);
+            showToast(`${parsedData.length} registros de carga salvos com sucesso!`, 'success');
+        } catch (error) {
+             console.error("Error during carga processing/saving:", error);
+             showToast(`Erro na análise: ${error.message}`);
+        } finally {
+            toggleLoading(false, 'carga');
+        }
+    };
+    reader.onerror = () => {
+        showToast("Erro ao ler o arquivo.");
+        toggleLoading(false, 'carga');
+    };
+    reader.readAsText(file);
+}
+
+function handleFileProcessingScout() {
+    const file = csvFileInputScout.files[0];
+    if (!file) return showToast("Por favor, selecione um arquivo de scout.");
+    toggleLoading(true, 'scout');
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        try {
+            const required = ['equipe_id', 'jogador', 'media geral', 'posicao', 'jogos', 'gols', 'assistencias', 'finalizacoes', 'duelos ganhos', 'duelos perdidos'];
+            let parsedData = parseCSV(event.target.result, required);
+
+            parsedData = parsedData.map(item => ({
+                ...item,
+                atleta_id: item.jogador,
+                posicao_grupo: item.posicao,
+            }));
+
+            await saveBatchData(scoutCollection, parsedData);
+            showToast(`${parsedData.length} registros de scout salvos com sucesso!`, 'success');
+        } catch (error) {
+             console.error("Error during scout processing/saving:", error);
+             showToast(`Erro: ${error.message}`);
+        } finally {
+            toggleLoading(false, 'scout');
+        }
+    };
+    reader.onerror = () => {
+        showToast("Erro ao ler o arquivo.");
+        toggleLoading(false, 'scout');
     };
     reader.readAsText(file);
 }
@@ -2178,6 +1845,7 @@ function sortWeeks(arr) {
     });
 }
 
+// --- PRONTIDÃO FUNCTIONS ---
 function renderFilterProntidao(data) {
     const weekIds = sortWeeks([...new Set(data.map(d => d.semana_id).filter(Boolean))]);
     if (weekIds.length === 0) {
@@ -2867,31 +2535,6 @@ function renderAthleteDailyChart(type, canvasId, data) {
 
 
 // --- CARGA DE TREINO FUNCTIONS ---
-function handleFileProcessingCarga() {
-    const file = csvFileInputCarga.files[0];
-    if (!file) return showToast("Por favor, selecione um arquivo de carga.");
-    toggleLoading(true, 'carga');
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-        try {
-            const required = ['equipe_id', 'atleta_id', 'posicao_grupo', 'data', 'microciclo_id', 'pse_sessao', 'duracao_sessao_min'];
-            const parsedData = parseCSV(event.target.result, required);
-            await saveBatchData(cargaCollection, parsedData);
-            showToast(`${parsedData.length} registros de carga salvos com sucesso!`, 'success');
-        } catch (error) {
-             console.error("Error during carga processing/saving:", error);
-             showToast(`Erro na análise: ${error.message}`);
-        } finally {
-            toggleLoading(false, 'carga');
-        }
-    };
-    reader.onerror = () => {
-        showToast("Erro ao ler o arquivo.");
-        toggleLoading(false, 'carga');
-    };
-    reader.readAsText(file);
-}
-
 function processAndStoreLoadData(dataToProcess) {
     const dataByAthlete = dataToProcess.reduce((acc, row) => {
         if (!acc[row.atleta_id]) acc[row.atleta_id] = [];
@@ -3210,6 +2853,48 @@ function renderAthleteChart(canvasId, chartData, label) {
     });
 }
 
+// --- SCOUT FUNCTIONS ---
+function renderScoutTable(data) {
+    const container = document.getElementById('resultsContainerScout');
+    const headers = ['Jogador', 'Posição', 'Média Geral', 'Jogos', 'Gols', 'Assist.', 'Finaliz.', 'Duelos Ganhos', 'Duelos Perdidos'];
+    const sortedData = data.sort((a, b) => (b.media_geral || 0) - (a.media_geral || 0));
+
+    const tableRows = sortedData.map(row => {
+        const mediaGeral = row.media_geral ? row.media_geral.toFixed(2) : 'N/A';
+        let mediaClass = 'text-gray-800';
+        if(row.media_geral >= 8) mediaClass = 'text-green-600 font-bold';
+        else if(row.media_geral >= 6) mediaClass = 'text-yellow-600';
+        else if(row.media_geral > 0) mediaClass = 'text-red-600';
+
+        return `
+            <tr class="border-b last:border-0 hover:bg-gray-50 text-sm">
+                <td class="p-3 font-semibold text-gray-900">${row.atleta_id || 'N/A'}</td>
+                <td class="p-3 text-gray-600">${row.posicao_grupo || 'N/A'}</td>
+                <td class="p-3 text-center ${mediaClass}">${mediaGeral}</td>
+                <td class="p-3 text-center text-gray-600">${row.jogos || 0}</td>
+                <td class="p-3 text-center text-gray-600">${row.gols || 0}</td>
+                <td class="p-3 text-center text-gray-600">${row.assistencias || 0}</td>
+                <td class="p-3 text-center text-gray-600">${row.finalizacoes || 0}</td>
+                <td class="p-3 text-center text-gray-600">${row.duelos_ganhos || 0}</td>
+                <td class="p-3 text-center text-gray-600">${row.duelos_perdidos || 0}</td>
+            </tr>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <table class="w-full text-left">
+            <thead class="bg-gray-50 sticky top-0">
+                <tr>
+                    ${headers.map(h => `<th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider ${h !== 'Jogador' && h !== 'Posição' ? 'text-center' : ''}">${h}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody class="bg-white">
+                ${tableRows}
+            </tbody>
+        </table>
+    `;
+}
+
 // --- PLANEJAMENTO FUNCTIONS ---
 function getSelectedOptions(selectElement) {
     return Array.from(selectElement.selectedOptions).map(option => option.value);
@@ -3233,7 +2918,7 @@ async function handleFormFisicoSubmit(e) {
         objSecundario: getSelectedOptions(document.getElementById('objSecundarioFisico')),
         local: document.getElementById('localTreinoFisico').value,
         carga: document.getElementById('cargaTreinoFisico').value,
-        cargaText: document.getElementById('cargaTreinoFisico').options[document.getElementById('cargaTreinoFisico').selectedIndex].text,
+cargaText: document.getElementById('cargaTreinoFisico').options[document.getElementById('cargaTreinoFisico').selectedIndex].text,
         createdAt: serverTimestamp()
     };
     try {
@@ -3648,7 +3333,7 @@ function createLesaoCard(lesao) {
 }
 
 function populateTeamFilter() {
-    const allData = [...fullProntidaoData, ...fullCargaData, ...lesoesData];
+    const allData = [...fullProntidaoData, ...fullCargaData, ...lesoesData, ...fullScoutData];
     const teams = [...new Set(allData.map(d => d.equipe_id).filter(Boolean))].sort();
     
     const currentSelectedTeam = teamFilterSelect.value;
@@ -3786,19 +3471,28 @@ function renderLegends(type) {
                 <p><strong class="text-red-600">< 0% (Pior)</strong></p>
             </div>
         `;
-     } else {
+     } else if (type === 'carga') {
         legendsCarga.innerHTML = `<div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Carga Aguda Média (u.a.)</h4><p>Média da carga total dos microciclos selecionados.</p><p><strong class="text-blue-600">< 2500 (Baixa)</strong></p><p><strong class="text-green-600">2500-5000 (Moderada)</strong></p><p><strong class="text-red-600">> 5000 (Alta)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">ACWR (Acute:Chronic Workload Ratio)</h4><p>Carga Aguda / Média das 4 semanas anteriores. <br><em>* <4 semanas de dados crônicos.</em></p><p><strong class="text-green-600">0.8-1.3 (Ideal)</strong></p><p><strong class="text-yellow-600"><0.8 ou 1.3-1.5 (Atenção)</strong></p><p><strong class="text-red-600">>1.5 (Perigo)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Monotonia</h4><p>Média da carga diária / Desvio Padrão. Variabilidade da carga semanal.</p><p><strong class="text-green-600">< 1.5 (Ideal)</strong></p><p><strong class="text-yellow-600">1.5-2.0 (Atenção)</strong></p><p><strong class="text-red-600">> 2.0 (Elevado)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Strain (Tensão)</h4><p>Carga total da semana x Monotonia. Estresse geral da semana.</p><p><strong class="text-green-600">< 6000 (Ideal)</strong></p><p><strong class="text-yellow-600">6000-10000 (Atenção)</strong></p><p><strong class="text-red-600">> 10000 (Elevado)</strong></p></div>`;
      }
 }
 
 function populateAthleteFilterOptions() {
     const individualOptionsContainer = document.getElementById('individualAthleteOptions');
-    let atletas = fullProntidaoData;
-    if (selectedTeam !== 'all') {
-        atletas = atletas.filter(d => d.equipe_id === selectedTeam);
+    let prontidaoAtletas = [];
+    let cargaAtletas = [];
+    let scoutAtletas = [];
+
+    if (selectedTeam === 'all') {
+        prontidaoAtletas = fullProntidaoData.map(d => d.atleta_id);
+        cargaAtletas = fullCargaData.map(d => d.atleta_id);
+        scoutAtletas = fullScoutData.map(d => d.atleta_id);
+    } else {
+        prontidaoAtletas = fullProntidaoData.filter(d => d.equipe_id === selectedTeam).map(d => d.atleta_id);
+        cargaAtletas = fullCargaData.filter(d => d.equipe_id === selectedTeam).map(d => d.atleta_id);
+        scoutAtletas = fullScoutData.filter(d => d.equipe_id === selectedTeam).map(d => d.atleta_id);
     }
     
-    const nomesUnicos = [...new Set(atletas.map(d => d.atleta_id))];
+    const nomesUnicos = [...new Set([...prontidaoAtletas, ...cargaAtletas, ...scoutAtletas])].filter(Boolean);
     
     individualOptionsContainer.innerHTML = ''; // Limpa opções antigas
     nomesUnicos.sort().forEach(atleta => {
@@ -3809,116 +3503,6 @@ function populateAthleteFilterOptions() {
     });
 }
 
-// --- FUNÇÕES DA NOVA ABA SCOUT ---
-
-function handleFileProcessingScout() {
-    const file = csvFileInputScout.files[0];
-    if (!file) return showToast("Por favor, selecione um arquivo de scout.");
-    
-    btnTextScout.classList.add('hidden');
-    btnLoaderScout.classList.remove('hidden');
-    processBtnScout.disabled = true;
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-        try {
-            const required = ['jogador', 'posicao', 'media_geral', 'jogos', 'gols', 'assistencias', 'finalizacoes', 'duelos_ganhos', 'duelos_perdidos'];
-            const parsedData = parseCSV(event.target.result, required);
-            await saveBatchData(scoutCollection, parsedData);
-            showToast(`${parsedData.length} registros de scout salvos com sucesso!`, 'success');
-        } catch (error) {
-             console.error("Error during scout processing/saving:", error);
-             showToast(`Erro na análise: ${error.message}`);
-        } finally {
-            btnTextScout.classList.remove('hidden');
-            btnLoaderScout.classList.add('hidden');
-        }
-    };
-    reader.onerror = () => {
-        showToast("Erro ao ler o arquivo.");
-        btnTextScout.classList.remove('hidden');
-        btnLoaderScout.classList.add('hidden');
-    };
-    reader.readAsText(file, 'UTF-8');
-}
-
-function clearScoutData() {
-    showConfirmationModal(
-        'Tem certeza que deseja apagar TODOS os dados de Scout? Esta ação não pode ser desfeita.',
-        async () => {
-            showToast('Limpando dados de scout...', 'success');
-            const snapshot = await getDocs(query(scoutCollection));
-            const batch = writeBatch(db);
-            snapshot.docs.forEach(d => batch.delete(d.ref));
-            await batch.commit();
-            showToast('Dados de scout removidos.', 'success');
-        }, 'Apagar Dados de Scout'
-    );
-}
-
-function renderScoutTab() {
-    let dataToRender = fullScoutData;
-
-    if (['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
-        dataToRender = dataToRender.filter(d => d.posicao && d.posicao.toLowerCase() === selectedAthleteGroup.toLowerCase());
-    } else if (selectedAthleteGroup !== 'all') {
-         dataToRender = dataToRender.filter(d => d.jogador === selectedAthleteGroup);
-    }
-    
-    if (selectedTeam !== 'all') {
-        dataToRender = dataToRender.filter(d => d.equipe_id === selectedTeam);
-    }
-
-    if (dataToRender.length === 0) {
-        placeholderSectionScout.classList.remove('hidden');
-        resultsSectionScout.classList.add('hidden');
-    } else {
-        placeholderSectionScout.classList.add('hidden');
-        resultsSectionScout.classList.remove('hidden');
-        
-        dataToRender.sort((a, b) => (b.media_geral || 0) - (a.media_geral || 0));
-
-        resultsContainerScout.innerHTML = `
-            <table class="w-full text-left">
-                <thead class="bg-gray-50 sticky top-0">
-                    <tr>
-                        <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Jogador</th>
-                        <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Posição</th>
-                        <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">Média Geral</th>
-                        <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">Jogos</th>
-                        <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">Gols</th>
-                        <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">Assist.</th>
-                        <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">Finaliz.</th>
-                        <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">Duelos Ganhos (%)</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    ${dataToRender.map(createScoutPlayerRow).join('')}
-                </tbody>
-            </table>
-        `;
-    }
-}
-
-function createScoutPlayerRow(player) {
-    const duelosGanhos = player.duelos_ganhos || 0;
-    const duelosPerdidos = player.duelos_perdidos || 0;
-    const totalDuelos = duelosGanhos + duelosPerdidos;
-    const percDuelosGanhos = totalDuelos > 0 ? ((duelosGanhos / totalDuelos) * 100).toFixed(1) : '0.0';
-
-    return `
-        <tr class="hover:bg-gray-50">
-            <td class="p-3 text-sm font-bold text-gray-900">${player.jogador || 'N/A'}</td>
-            <td class="p-3 text-sm text-gray-700">${player.posicao || 'N/A'}</td>
-            <td class="p-3 text-sm text-gray-800 font-bold text-center">${(player.media_geral || 0).toFixed(2)}</td>
-            <td class="p-3 text-sm text-gray-700 text-center">${player.jogos || 0}</td>
-            <td class="p-3 text-sm text-gray-700 text-center">${player.gols || 0}</td>
-            <td class="p-3 text-sm text-gray-700 text-center">${player.assistencias || 0}</td>
-            <td class="p-3 text-sm text-gray-700 text-center">${player.finalizacoes || 0}</td>
-            <td class="p-3 text-sm text-gray-700 text-center">${percDuelosGanhos}%</td>
-        </tr>
-    `;
-}
 
     </script>
 </body>
