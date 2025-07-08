@@ -862,56 +862,172 @@
 
         // --- MAIN RENDER FUNCTIONS ---
         function renderProntidaoTab() {
-            const dataToRender = selectedTeam === 'all' ? fullProntidaoData : fullProntidaoData.filter(d => d.equipe_id === selectedTeam);
-        ```javascript
-       // Filtra por grupo de atletas
-       let dataToRender = fullProntidaoData;
-        if (selectedTeam !== 'all') {
-            dataToRender = dataToRender.filter(d => d.equipe_id === selectedTeam);
+    // Aplica os filtros de equipe e grupo/atleta
+    let dataToRender = fullProntidaoData;
+    if (selectedTeam !== 'all') {
+        dataToRender = dataToRender.filter(d => d.equipe_id === selectedTeam);
+    }
+    if (selectedAthleteGroup !== 'all') {
+        if (['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
+            dataToRender = dataToRender.filter(d => d.posicao_grupo === selectedAthleteGroup);
+        } else {
+            dataToRender = dataToRender.filter(d => d.atleta_id === selectedAthleteGroup);
         }
+    }
+
+    if (dataToRender.length === 0) {
+        placeholderSectionProntidao.classList.remove('hidden');
+        resultsSection.classList.add('hidden');
+        latestProntidaoData = null;
+        filterContainerProntidao.innerHTML = '';
+    } else {
+        renderFilterProntidao(dataToRender); 
+        placeholderSectionProntidao.classList.add('hidden');
+        resultsSection.classList.remove('hidden');
+
+        const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
+        let selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+        if(selectedWeeks.length === 0 && document.querySelectorAll('.week-checkbox').length > 0) {
+                const lastWeekEl = document.querySelector('.week-checkbox:last-of-type');
+                if(lastWeekEl) {
+                    lastWeekEl.checked = true;
+                    selectedWeeks = [lastWeekEl.value];
+                }
+        }
+
+        selectedWeeks = sortWeeks(selectedWeeks);
+
+        const filteredDataForWeeks = dataToRender.filter(d => selectedWeeks.includes(d.semana_id));
+
+        if (filteredDataForWeeks.length > 0) {
+            displayFilteredProntidaoData(filteredDataForWeeks, selectedWeeks);
+        } else {
+            teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s) neste filtro.</p>';
+            resultsContainer.innerHTML = '';
+            latestProntidaoData = null;
+        }
+    }
+    updateDashboardView();
+}
+
+function renderCargaTab() {
+    // Aplica os filtros de equipe e grupo/atleta
+    let dataToRender = fullCargaData;
+    if (selectedTeam !== 'all') {
+        dataToRender = dataToRender.filter(d => d.equipe_id === selectedTeam);
+    }
+    if (selectedAthleteGroup !== 'all') {
+        if (['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
+            dataToRender = dataToRender.filter(d => d.posicao_grupo === selectedAthleteGroup);
+        } else {
+            dataToRender = dataToRender.filter(d => d.atleta_id === selectedAthleteGroup);
+        }
+    }
+
+    if (dataToRender.length === 0) {
+        placeholderSectionCarga.classList.remove('hidden');
+        resultsSectionCarga.classList.add('hidden');
+        latestCargaData = null;
+        filterContainer.innerHTML = '';
+    } else {
+        placeholderSectionCarga.classList.add('hidden');
+        resultsSectionCarga.classList.remove('hidden');
+
+        processAndStoreLoadData(dataToRender); 
+
+        const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
+        let selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+        if(selectedIds.length === 0 && document.querySelectorAll('.microciclo-checkbox').length > 0) {
+                const lastMcEl = document.querySelector('.microciclo-checkbox:last-of-type');
+                if(lastMcEl) {
+                    lastMcEl.checked = true;
+                    selectedIds = [lastMcEl.value];
+                }
+        }
+
+        selectedIds = sortWeeks(selectedIds);
+
+        if (selectedIds.length > 0) {
+            displayFilteredLoadData(selectedIds, dataToRender); 
+        } else {
+            teamDashboardCarga.innerHTML = '<p class="text-center text-gray-500">Nenhum microciclo selecionado para este filtro.</p>';
+            resultsContainerCarga.innerHTML = '';
+            latestCargaData = null;
+        }
+    }
+    updateDashboardView();
+}
+
+function renderLesoesTab() {
+    let dataToRender = lesoesData;
+    let atletasDoGrupo = [];
+
+    // Primeiro, define a lista de atletas a serem exibidos com base nos filtros
+    if (selectedTeam !== 'all' || selectedAthleteGroup !== 'all') {
+        let atletasFiltrados = [...new Set(fullProntidaoData.map(d => d.atleta_id))];
+
+        if (selectedTeam !== 'all') {
+            atletasFiltrados = [...new Set(
+                fullProntidaoData
+                    .filter(d => d.equipe_id === selectedTeam)
+                    .map(d => d.atleta_id)
+            )];
+        }
+
         if (selectedAthleteGroup !== 'all') {
             if (['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
-                dataToRender = dataToRender.filter(d => d.posicao_grupo === selectedAthleteGroup);
+                atletasFiltrados = [...new Set(
+                    fullProntidaoData
+                        .filter(d => d.posicao_grupo === selectedAthleteGroup && atletasFiltrados.includes(d.atleta_id))
+                        .map(d => d.atleta_id)
+                )];
             } else {
-                dataToRender = dataToRender.filter(d => d.atleta_id === selectedAthleteGroup);
+                atletasFiltrados = [selectedAthleteGroup];
             }
         }
-       const dataToRender = dataForGroup;
-       ```
+        atletasDoGrupo = atletasFiltrados;
+        dataToRender = dataToRender.filter(d => atletasDoGrupo.includes(d.atleta));
+    }
 
-            if (dataToRender.length === 0 && selectedTeam !== 'all') {
-                placeholderSectionProntidao.classList.remove('hidden');
-                resultsSection.classList.add('hidden');
-                latestProntidaoData = null;
-                filterContainerProntidao.innerHTML = '';
-            } else {
-                renderFilterProntidao(dataToRender); 
-                placeholderSectionProntidao.classList.add('hidden');
-                resultsSection.classList.remove('hidden');
-                
-                const selectedCheckboxes = document.querySelectorAll('.week-checkbox:checked');
-                let selectedWeeks = Array.from(selectedCheckboxes).map(cb => cb.value);
-                
-                if(selectedWeeks.length === 0 && document.querySelectorAll('.week-checkbox').length > 0) {
-                     const lastWeekEl = document.querySelector('.week-checkbox:last-of-type');
-                     if(lastWeekEl) {
-                         lastWeekEl.checked = true;
-                         selectedWeeks = [lastWeekEl.value];
-                     }
-                }
-                
-                selectedWeeks = sortWeeks(selectedWeeks);
-                
-                const filteredDataForWeeks = dataToRender.filter(d => selectedWeeks.includes(d.semana_id));
 
-                if (filteredDataForWeeks.length > 0) {
-                    displayFilteredProntidaoData(filteredDataForWeeks, selectedWeeks);
+    const activeLesoes = dataToRender.filter(l => l.status !== 'liberado');
+    if (activeLesoes.length === 0) {
+        lesoesList.innerHTML = `<div class="text-center py-10 px-6 bg-gray-50 rounded-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum atleta no departamento médico</h3>
+            <p class="mt-1 text-sm text-gray-500">Nenhum atleta deste grupo está lesionado ou em transição.</p>
+        </div>`;
+    } else {
+        lesoesList.innerHTML = activeLesoes.map(createLesaoCard).join('');
+    }
+
+    lesoesList.querySelectorAll('.btn-update-lesao').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = e.currentTarget.dataset.id;
+            const newStatus = e.currentTarget.dataset.status;
+            const atleta = e.currentTarget.dataset.atleta;
+            const text = newStatus === 'liberado' 
+                ? `Tem certeza que deseja marcar a lesão de ${atleta} como 'Liberado'?`
+                : `Tem certeza que deseja remover o registro de lesão de ${atleta}?`;
+            const title = newStatus === 'liberado' ? 'Liberar Atleta' : 'Remover Registro';
+
+            showConfirmationModal(text, async () => {
+                if (newStatus === 'delete') {
+                    await deleteDoc(doc(db, "lesoes", id));
+                    showToast(`${atleta} removido dos registros de lesão.`, 'success');
                 } else {
-                    teamDashboard.innerHTML = '<p class="text-center text-gray-500">Nenhum dado de prontidão para a(s) semana(s) selecionada(s) nesta equipe.</p>';
-                    resultsContainer.innerHTML = '';
-                    latestProntidaoData = null;
+                    const lesaoRef = doc(db, "lesoes", id);
+                    await updateDoc(lesaoRef, { status: newStatus });
+                    showToast(`${atleta} foi liberado.`, 'success');
                 }
-            }
+            }, title);
+        });
+    });
+}
             updateDashboardView();
         }
 
