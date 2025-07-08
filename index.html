@@ -94,12 +94,28 @@
             <p class="text-gray-600 mt-2 text-lg">Analise a prontidão, controle a carga, planeje os treinos e monitore lesões da sua equipe.</p>
         </header>
 
-        <div class="mb-6 max-w-sm mx-auto">
-             <label for="teamFilterSelect" class="block text-sm font-medium text-gray-700 mb-1 text-center">Selecione a Equipe</label>
-             <select id="teamFilterSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                <option value="all">Todas as Equipes</option>
-             </select>
-        </div>
+        <div class="mb-6 flex justify-center items-end gap-x-8">
+    <div class="w-64">
+        <label for="teamFilterSelect" class="block text-sm font-medium text-gray-700 mb-1 text-center">Selecione a Equipe</label>
+        <select id="teamFilterSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+        <option value="all">Todas as Equipes</option>
+        </select>
+    </div>
+
+    <div class="w-64">
+         <label for="athleteGroupFilterSelect" class="block text-sm font-medium text-gray-700 mb-1 text-center">Filtrar Atletas</label>
+         <select id="athleteGroupFilterSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            <option value="all" selected>Todos os Atletas</option>
+            <optgroup label="Posições">
+                <option value="Defesa">Defesa</option>
+                <option value="Meio">Meio-Campo</option>
+                <option value="Ataque">Ataque</option>
+            </optgroup>
+            <optgroup label="Atletas Individuais" id="individualAthleteOptions">
+                </optgroup>
+         </select>
+    </div>
+</div>
 
 
         <div class="mb-8">
@@ -118,8 +134,6 @@
                 </button>
                 <button id="tabLesoesBtn" class="tab-btn text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
                     Lesões
-                <button id="tabIndividualBtn" class="tab-btn text-lg font-semibold py-3 px-6 border-b-2 border-transparent text-gray-500 hover:text-blue-600">
-                    Dashboard Individual
                 </button>
             </div>
         </div>
@@ -425,49 +439,7 @@
             </div>
         </div>
 
-<div id="individualContent" class="hidden">
-    <div class="mb-8 bg-white p-6 rounded-2xl shadow-md border border-gray-200">
-        <div class="max-w-md mx-auto">
-            <label for="athleteFilterSelect" class="block text-lg font-semibold text-gray-800 mb-2 text-center">Selecione um Atleta para Análise</label>
-            <select id="athleteFilterSelect" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                <option value="">-- Selecione um atleta --</option>
-            </select>
-        </div>
-    </div>
 
-    <div id="individualDashboardContainer" class="hidden">
-        <div id="pdf-content-individual">
-            <div id="individualHeader" class="mb-6"></div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="space-y-8">
-                    <div id="individualProntidao" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200"></div>
-                    <div id="individualCarga" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200"></div>
-                </div>
-                <div class="space-y-8">
-                        <div id="individualLesoes" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200"></div>
-                        <div id="individualPlanejamento" class="bg-white p-6 rounded-2xl shadow-md border border-gray-200"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="text-center mt-8">
-            <button id="exportPdfBtnIndividual" class="btn bg-red-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-red-700 transition flex items-center mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
-                Exportar Dashboard Individual como PDF
-            </button>
-        </div>
-    </div>
-
-    <div id="placeholderSectionIndividual" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
-        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-2.305c.395-.453.743-1.011.962-1.623a5.523 5.523 0 01-1.232-2.323l-.155-.54-3.522 2.137-3.522-2.137-.155.54a5.523 5.523 0 01-1.232 2.323c.219.612.567 1.17.962 1.623a9.337 9.337 0 004.121 2.305zM15 19.128L15 15.5" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 9.5a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-        <h3 class="mt-4 text-xl font-semibold text-gray-800">Nenhum Atleta Selecionado</h3>
-        <p class="mt-1 text-gray-500">Use o filtro acima para carregar o dashboard de um atleta.</p>
-    </div>
-</div>
     </div>
 
     <footer class="text-center py-4 text-xs text-gray-400">
@@ -564,13 +536,15 @@
         let toastTimeout = null; 
         let selectedTeam = 'all';
         let teamLogos = {};
+        let selectedAthleteGroup = 'all'; // Nova variável para o filtro de atletas
 
         // --- DOM ELEMENTS ---
         const globalLoader = document.getElementById('globalLoader');
         const loaderText = document.getElementById('loaderText');
         const mainContent = document.getElementById('mainContent');
         const authStatus = document.getElementById('authStatus');
-        const teamFilterSelect = document.getElementById('teamFilterSelect'); 
+        const teamFilterSelect = document.getElementById('teamFilterSelect');
+        const athleteGroupFilterSelect = document.getElementById('athleteGroupFilterSelect'); // Novo filtro 
         const tabDashboardBtn = document.getElementById('tabDashboardBtn');
         const tabProntidaoBtn = document.getElementById('tabProntidaoBtn');
         const tabCargaBtn = document.getElementById('tabCargaBtn');
@@ -631,14 +605,6 @@
         const dashboardCarga = document.getElementById('dashboardCarga');
         const dashboardPlanejamento = document.getElementById('dashboardPlanejamento');
         const exportPdfBtnDashboard = document.getElementById('exportPdfBtnDashboard');
-        // --- NOVO CÓDIGO ---
-        const tabIndividualBtn = document.getElementById('tabIndividualBtn');
-        const individualContent = document.getElementById('individualContent');
-        const athleteFilterSelect = document.getElementById('athleteFilterSelect');
-        const individualDashboardContainer = document.getElementById('individualDashboardContainer');
-        const placeholderSectionIndividual = document.getElementById('placeholderSectionIndividual');
-        const exportPdfBtnIndividual = document.getElementById('exportPdfBtnIndividual');
-        // --- FIM DO NOVO CÓDIGO ---
 
 
         // --- SETUP ---
@@ -796,6 +762,13 @@
             selectedTeam = e.target.value;
             handleTeamChange();
             renderAllTabs();
+            populateAthleteFilterOptions(); // ATUALIZA O FILTRO DE ATLETAS
+        });
+
+        // Listener para o novo filtro de atletas
+        athleteGroupFilterSelect.addEventListener('change', (e) => {
+           selectedAthleteGroup = e.target.value;
+           renderAllTabs();
         });
 
         function handleTeamChange() {
@@ -870,14 +843,6 @@
         });
         
         exportPdfBtnDashboard.addEventListener('click', () => exportToPDF('dashboard'));
-        // --- NOVO CÓDIGO ---
-        tabIndividualBtn.addEventListener('click', () => {
-               switchTab('individual');
-               populateIndividualAthleteFilter(); // Popula o filtro ao abrir a aba
-    });
-        athleteFilterSelect.addEventListener('change', renderIndividualDashboard);
-               exportPdfBtnIndividual.addEventListener('click', () => exportToPDF('individual'));
-    // --- FIM DO NOVO CÓDIGO ---
         
         // --- INITIALIZATION ---
         document.getElementById('dataTreinoFisico').valueAsDate = new Date();
@@ -898,14 +863,29 @@
         // --- MAIN RENDER FUNCTIONS ---
         function renderProntidaoTab() {
             const dataForTeam = selectedTeam === 'all' ? fullProntidaoData : fullProntidaoData.filter(d => d.equipe_id === selectedTeam);
+        ```javascript
+       // Filtra por grupo de atletas
+       let dataToRender = fullProntidaoData;
+        if (selectedTeam !== 'all') {
+            dataToRender = dataToRender.filter(d => d.equipe_id === selectedTeam);
+        }
+        if (selectedAthleteGroup !== 'all') {
+            if (['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
+                dataToRender = dataToRender.filter(d => d.posicao_grupo === selectedAthleteGroup);
+            } else {
+                dataToRender = dataToRender.filter(d => d.atleta_id === selectedAthleteGroup);
+            }
+        }
+       const dataToRender = dataForGroup;
+       ```
 
-            if (dataForTeam.length === 0 && selectedTeam !== 'all') {
+            if (dataToRender.length === 0 && selectedTeam !== 'all') {
                 placeholderSectionProntidao.classList.remove('hidden');
                 resultsSection.classList.add('hidden');
                 latestProntidaoData = null;
                 filterContainerProntidao.innerHTML = '';
             } else {
-                renderFilterProntidao(dataForTeam); 
+                renderFilterProntidao(dataToRender); 
                 placeholderSectionProntidao.classList.add('hidden');
                 resultsSection.classList.remove('hidden');
                 
@@ -922,7 +902,7 @@
                 
                 selectedWeeks = sortWeeks(selectedWeeks);
                 
-                const filteredDataForWeeks = dataForTeam.filter(d => selectedWeeks.includes(d.semana_id));
+                const filteredDataForWeeks = dataToRender.filter(d => selectedWeeks.includes(d.semana_id));
 
                 if (filteredDataForWeeks.length > 0) {
                     displayFilteredProntidaoData(filteredDataForWeeks, selectedWeeks);
@@ -936,29 +916,17 @@
         }
 
         function renderCargaTab() {
-            const dataForTeam = selectedTeam === 'all' ? fullCargaData : fullCargaData.filter(d => d.equipe_id === selectedTeam);
-            
-            if (dataForTeam.length === 0 && selectedTeam !== 'all') {
-                placeholderSectionCarga.classList.remove('hidden');
-                resultsSectionCarga.classList.add('hidden');
-                latestCargaData = null;
-                filterContainer.innerHTML = '';
+            let dataToRender = fullCargaData;
+        if (selectedTeam !== 'all') {
+            dataToRender = dataToRender.filter(d => d.equipe_id === selectedTeam);
+        }
+        if (selectedAthleteGroup !== 'all') {
+            if (['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
+                dataToRender = dataToRender.filter(d => d.posicao_grupo === selectedAthleteGroup);
             } else {
-                placeholderSectionCarga.classList.add('hidden');
-                resultsSectionCarga.classList.remove('hidden');
-                
-                processAndStoreLoadData(dataForTeam);
-                
-                const selectedCheckboxes = document.querySelectorAll('.microciclo-checkbox:checked');
-                let selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-                
-                if(selectedIds.length === 0 && document.querySelectorAll('.microciclo-checkbox').length > 0) {
-                     const lastMcEl = document.querySelector('.microciclo-checkbox:last-of-type');
-                     if(lastMcEl) {
-                         lastMcEl.checked = true;
-                         selectedIds = [lastMcEl.value];
-                     }
-                }
+                dataToRender = dataToRender.filter(d => d.atleta_id === selectedAthleteGroup);
+            }
+        }
 
                 selectedIds = sortWeeks(selectedIds);
                 
@@ -974,21 +942,20 @@
         }
 
         function renderLesoesTab() {
-            const dataForTeam = selectedTeam === 'all' ? lesoesData : lesoesData.filter(d => d.equipe_id === selectedTeam);
-
-            const activeLesoes = dataForTeam.filter(l => l.status !== 'liberado');
-            if (activeLesoes.length === 0) {
-                lesoesList.innerHTML = `<div class="text-center py-10 px-6 bg-gray-50 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 class="mt-2 text-lg font-medium text-gray-900">Nenhum atleta no departamento médico</h3>
-                    <p class="mt-1 text-sm text-gray-500">Todos os atletas desta equipe estão liberados.</p>
-                </div>`;
+            let dataToRender = lesoesData;
+        if (selectedTeam !== 'all') {
+            dataToRender = dataToRender.filter(d => d.equipe_id === selectedTeam);
+        }
+        if (selectedAthleteGroup !== 'all') {
+             // Lesões não têm `posicao_grupo`, então só filtramos por atleta individual
+            if (!['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
+                dataToRender = dataToRender.filter(d => d.atleta === selectedAthleteGroup);
             } else {
-                lesoesList.innerHTML = activeLesoes.map(createLesaoCard).join('');
+                // Se um grupo for selecionado, precisamos achar os atletas desse grupo em outros dados
+                const atletasDoGrupo = [...new Set(fullProntidaoData.filter(p => p.posicao_grupo === selectedAthleteGroup).map(p => p.atleta_id))];
+                dataToRender = dataToRender.filter(d => atletasDoGrupo.includes(d.atleta));
             }
-
+        }
             lesoesList.querySelectorAll('.btn-update-lesao').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const id = e.currentTarget.dataset.id;
@@ -1397,17 +1364,6 @@
             cargaContent.classList.toggle('hidden', tab !== 'carga');
             planejamentoContent.classList.toggle('hidden', tab !== 'planejamento');
             lesoesContent.classList.toggle('hidden', tab !== 'lesoes');
-            individualContent.classList.toggle('hidden', tab !== 'individual');
-
-
-            tabDashboardBtn.classList.toggle('active', tab === 'dashboard');
-            tabProntidaoBtn.classList.toggle('active', tab === 'prontidao');
-            tabCargaBtn.classList.toggle('active', tab === 'carga');
-    // ADICIONE AQUI
-            tabIndividualBtn.classList.toggle('active', tab === 'individual');
-            tabPlanejamentoBtn.classList.toggle('active', tab === 'planejamento');
-            tabLesoesBtn.classList.toggle('active', tab === 'lesoes');
-        }
 
 
             tabDashboardBtn.classList.toggle('active', tab === 'dashboard');
@@ -1523,7 +1479,7 @@
             reader.onload = async (event) => {
                 try {
                     const csvText = event.target.result;
-                    const required = ['equipe_id', 'atleta_id', 'data', 'semana_id', 'hooper_score'];
+                    const required = ['equipe_id', 'atleta_id', 'posicao_grupo', 'data', 'semana_id', 'hooper_score'];
                     const parsedData = parseCSV(csvText, required);
                     await saveBatchData(prontidaoCollection, parsedData);
                     showToast(`${parsedData.length} registros de prontidão salvos com sucesso!`, 'success');
@@ -2263,7 +2219,7 @@
             const reader = new FileReader();
             reader.onload = async (event) => {
                 try {
-                    const required = ['equipe_id', 'atleta_id', 'data', 'microciclo_id', 'pse_sessao', 'duracao_sessao_min'];
+                    const required = ['equipe_id', 'atleta_id', 'posicao_grupo', 'data', 'microciclo_id', 'pse_sessao', 'duracao_sessao_min'];
                     const parsedData = parseCSV(event.target.result, required);
                     await saveBatchData(cargaCollection, parsedData);
                     showToast(`${parsedData.length} registros de carga salvos com sucesso!`, 'success');
@@ -3180,269 +3136,55 @@
                 legendsCarga.innerHTML = `<div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Carga Aguda Média (u.a.)</h4><p>Média da carga total dos microciclos selecionados.</p><p><strong class="text-blue-600">< 2500 (Baixa)</strong></p><p><strong class="text-green-600">2500-5000 (Moderada)</strong></p><p><strong class="text-red-600">> 5000 (Alta)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">ACWR (Acute:Chronic Workload Ratio)</h4><p>Carga Aguda / Média das 4 semanas anteriores. <br><em>* <4 semanas de dados crônicos.</em></p><p><strong class="text-green-600">0.8-1.3 (Ideal)</strong></p><p><strong class="text-yellow-600"><0.8 ou 1.3-1.5 (Atenção)</strong></p><p><strong class="text-red-600">>1.5 (Perigo)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Monotonia</h4><p>Média da carga diária / Desvio Padrão. Variabilidade da carga semanal.</p><p><strong class="text-green-600">< 1.5 (Ideal)</strong></p><p><strong class="text-yellow-600">1.5-2.0 (Atenção)</strong></p><p><strong class="text-red-600">> 2.0 (Elevado)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Strain (Tensão)</h4><p>Carga total da semana x Monotonia. Estresse geral da semana.</p><p><strong class="text-green-600">< 6000 (Ideal)</strong></p><p><strong class="text-yellow-600">6000-10000 (Atenção)</strong></p><p><strong class="text-red-600">> 10000 (Elevado)</strong></p></div>`;
              }
         }
-              // =======================================================
-// ### INÍCIO DAS FUNÇÕES DO DASHBOARD INDIVIDUAL ###
-// =======================================================
+        // Função auxiliar para obter os dados já filtrados por equipe e grupo de atletas
+    function getFilteredData(fullDataSet) {
+        // 1. Filtra por equipe
+        const dataForTeam = selectedTeam === 'all' 
+            ? fullDataSet 
+            : fullDataSet.filter(d => d.equipe_id === selectedTeam);
 
-function populateIndividualAthleteFilter() {
-    // Usa a mesma lógica do datalist de lesões para encontrar todos os atletas
-    const dataForTeamProntidao = selectedTeam === 'all' ? fullProntidaoData : fullProntidaoData.filter(d => d.equipe_id === selectedTeam);
-    const dataForTeamCarga = selectedTeam === 'all' ? fullCargaData : fullCargaData.filter(d => d.equipe_id === selectedTeam);
-
-    const athleteNamesFromProntidao = dataForTeamProntidao.map(d => d.atleta_id);
-    const athleteNamesFromCarga = dataForTeamCarga.map(d => d.atleta_id);
-    const allNames = [...new Set([...athleteNamesFromProntidao, ...athleteNamesFromCarga])].sort();
-
-    const currentSelectedAthlete = athleteFilterSelect.value;
-    athleteFilterSelect.innerHTML = `<option value="">-- Selecione um atleta --</option>`;
-    allNames.forEach(name => {
-        const option = document.createElement('option');
-        option.value = name;
-        option.textContent = name;
-        athleteFilterSelect.appendChild(option);
-    });
-
-    // Mantém a seleção se o atleta ainda existir na lista filtrada
-    if (allNames.includes(currentSelectedAthlete)) {
-        athleteFilterSelect.value = currentSelectedAthlete;
-    }
-}
-
-function renderIndividualDashboard() {
-    const athleteId = athleteFilterSelect.value;
-    if (!athleteId) {
-        individualDashboardContainer.classList.add('hidden');
-        placeholderSectionIndividual.classList.remove('hidden');
-        return;
-    }
-
-    individualDashboardContainer.classList.remove('hidden');
-    placeholderSectionIndividual.classList.add('hidden');
-
-    // Limpa containers antigos
-    Object.values(activeCharts).forEach(chart => chart.destroy());
-    activeCharts = {};
-
-    // Renderiza cada seção do dashboard
-    renderIndividualHeader(athleteId);
-    renderIndividualProntidao(athleteId);
-    renderIndividualCarga(athleteId);
-    renderIndividualLesoes(athleteId);
-    renderIndividualPlanejamento(athleteId);
-}
-
-function renderIndividualHeader(athleteId) {
-    const container = document.getElementById('individualHeader');
-    // Acha a equipe mais recente do atleta
-    const lastEntry = [...fullProntidaoData, ...fullCargaData]
-        .filter(d => d.atleta_id === athleteId)
-        .sort((a,b) => new Date(b.data) - new Date(a.data))[0];
-    const teamId = lastEntry ? lastEntry.equipe_id : 'Equipe não encontrada';
-
-    container.innerHTML = `
-        <div class="text-center bg-white p-4 rounded-lg shadow-sm border">
-            <h2 class="text-3xl font-bold text-gray-900">${athleteId}</h2>
-            <p class="text-lg text-gray-600">${teamId}</p>
-        </div>
-    `;
-}
-
-function renderIndividualProntidao(athleteId) {
-    const container = document.getElementById('individualProntidao');
-    const data = fullProntidaoData.filter(d => d.atleta_id === athleteId).sort((a, b) => new Date(a.data) - new Date(b.data));
-
-    if (data.length === 0) {
-        container.innerHTML = `<h3 class="text-xl font-bold text-gray-800 mb-4">Prontidão</h3><p class="text-gray-500">Nenhum dado de prontidão encontrado para este atleta.</p>`;
-        return;
-    }
-
-    const latestEntry = data[data.length - 1];
-    const historicalEntries = data.slice(0, data.length - 1);
-    const readiness = calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, latestEntry.data);
-
-    const zoneClass = getIndexClassification(readiness.index).class;
-    const hooperClass = getHooperClassification(readiness.hooperScore.latest).class;
-    const saltoClass = readiness.saltoPercentDiff >= 0 ? 'text-green-600' : 'text-red-600';
-
-    container.innerHTML = `
-        <h3 class="text-xl font-bold text-gray-800 mb-4">Prontidão (Último Registro)</h3>
-        <div class="grid grid-cols-3 gap-4 text-center mb-6">
-            <div>
-                <p class="text-sm text-gray-500">Índice Geral</p>
-                <p class="text-3xl font-bold ${zoneClass}">${readiness.index || '--'}</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500">Hooper Score</p>
-                <p class="text-3xl font-bold ${hooperClass}">${readiness.hooperScore.latest || '--'}</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500">% Rec. Muscular</p>
-                <p class="text-3xl font-bold ${saltoClass}">${readiness.saltoPercentDiff ? readiness.saltoPercentDiff.toFixed(1)+'%' : '--'}</p>
-            </div>
-        </div>
-        <h4 class="text-md font-semibold text-gray-700 mb-2">Evolução do Hooper Score</h4>
-        <div class="h-48"><canvas id="individualHooperChart"></canvas></div>
-    `;
-
-    renderAthleteDailyChart('hooper', 'individualHooperChart', data.map(d => ({ date: d.data, value: d.hooper_score })));
-}
-
-function renderIndividualCarga(athleteId) {
-    const container = document.getElementById('individualCarga');
-    const data = athleteMicrocycleData[athleteId];
-
-    if (!data || data.length === 0) {
-        container.innerHTML = `<h3 class="text-xl font-bold text-gray-800 mb-4">Controle de Carga</h3><p class="text-gray-500">Nenhum dado de carga encontrado para este atleta.</p>`;
-        return;
-    }
-
-    // Calcular ACWR para cada microciclo
-    const evolutionData = data.map((cycle, index) => {
-         const acuteLoad = cycle.totalLoad;
-         const chronicCycles = data.slice(Math.max(0, index - 3), index + 1);
-         const chronicLoad = getStats(chronicCycles.map(c => c.totalLoad)).mean;
-         const acwr = chronicLoad > 0 ? acuteLoad / chronicLoad : null;
-         return {
-            microciclo_id: cycle.microciclo_id,
-            totalLoad: cycle.totalLoad,
-            acwr: acwr,
-         };
-    });
-
-    const lastCycle = evolutionData[evolutionData.length - 1];
-    const acwrClass = getAwcrClassification(lastCycle.acwr).class;
-
-    container.innerHTML = `
-        <h3 class="text-xl font-bold text-gray-800 mb-4">Controle de Carga (Último Microciclo)</h3>
-         <div class="grid grid-cols-2 gap-4 text-center mb-6">
-            <div>
-                <p class="text-sm text-gray-500">Carga Aguda</p>
-                <p class="text-3xl font-bold">${Math.round(lastCycle.totalLoad)}</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500">ACWR</p>
-                <p class="text-3xl font-bold ${acwrClass}">${lastCycle.acwr ? lastCycle.acwr.toFixed(2) : '--'}</p>
-            </div>
-        </div>
-        <h4 class="text-md font-semibold text-gray-700 mb-2">Evolução da Carga e ACWR</h4>
-        <div class="h-48"><canvas id="individualAcwrChart"></canvas></div>
-    `;
-
-    // Renderizar gráfico combinado
-    const ctx = document.getElementById('individualAcwrChart');
-    if (!ctx) return;
-    if (activeCharts['individualAcwrChart']) activeCharts['individualAcwrChart'].destroy();
-
-    activeCharts['individualAcwrChart'] = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: evolutionData.map(d => d.microciclo_id),
-            datasets: [
-                {
-                    label: 'Carga Aguda',
-                    data: evolutionData.map(d => d.totalLoad),
-                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                    yAxisID: 'y'
-                },
-                {
-                    label: 'ACWR',
-                    data: evolutionData.map(d => d.acwr),
-                    borderColor: 'rgba(245, 158, 11, 1)',
-                    type: 'line',
-                    fill: false,
-                    yAxisID: 'y1'
-                }
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            scales: {
-                y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Carga (u.a.)'} },
-                y1: { type: 'linear', display: true, position: 'right', min: 0, max: 2.5, grid: { drawOnChartArea: false }, title: {display: true, text: 'ACWR'} }
-            },
-            plugins: { datalabels: { display: false } }
+        // 2. Filtra por grupo de atletas
+        if (selectedAthleteGroup === 'all') {
+            return dataForTeam;
         }
-    });
-}
-
-function renderIndividualLesoes(athleteId) {
-    const container = document.getElementById('individualLesoes');
-    const data = lesoesData.filter(l => l.atleta === athleteId).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-
-    if (data.length === 0) {
-        container.innerHTML = `<h3 class="text-xl font-bold text-gray-800 mb-4">Histórico de Lesões</h3><p class="text-gray-500">Nenhum registro de lesão para este atleta.</p>`;
-        return;
+        if (['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
+            return dataForTeam.filter(d => d.posicao_grupo === selectedAthleteGroup);
+        }
+        // Se não for um grupo, é um atleta individual
+        return dataForTeam.filter(d => d.atleta_id === selectedAthleteGroup);
     }
 
-    const activeInjury = data.find(l => l.status !== 'liberado');
-    let activeInjuryHtml = `
-        <div class="text-center py-4 bg-green-50 text-green-800 rounded-lg">
-            <p class="font-semibold">Atleta liberado para treinar.</p>
-        </div>
-    `;
-
-    if(activeInjury) {
-         const statusClass = activeInjury.status === 'nao-liberado' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800';
-         activeInjuryHtml = `
-            <div class="p-3 rounded-lg ${statusClass}">
-                <p class="font-bold">Status Atual: ${activeInjury.lesao}</p>
-                <p class="text-sm">${activeInjury.tratamento}</p>
-            </div>
-         `;
+    // Função para popular a lista de atletas individuais no filtro
+    function populateAthleteFilterOptions() {
+        const individualOptionsContainer = document.getElementById('individualAthleteOptions');
+        const atletas = [...new Set(getFilteredData(fullProntidaoData).map(d => d.atleta_id))];
+        
+        individualOptionsContainer.innerHTML = ''; // Limpa opções antigas
+        atletas.sort().forEach(atleta => {
+            const option = document.createElement('option');
+            option.value = atleta;
+            option.textContent = atleta;
+            individualOptionsContainer.appendChild(option);
+        });
     }
 
-    const historyHtml = data.map(l => `
-        <li class="py-1 border-b last:border-0 text-sm">
-            <span class="font-semibold">${l.lesao}</span> - <span class="text-gray-500">Status: ${l.status}</span>
-        </li>
-    `).join('');
-
-    container.innerHTML = `
-        <h3 class="text-xl font-bold text-gray-800 mb-4">Histórico de Lesões</h3>
-        ${activeInjuryHtml}
-        <h4 class="text-md font-semibold text-gray-700 mt-6 mb-2">Todos os Registros</h4>
-        <ul class="space-y-1">${historyHtml}</ul>
-    `;
-}
-
-function renderIndividualPlanejamento(athleteId) {
-    const container = document.getElementById('individualPlanejamento');
-
-    // Planejamento é por equipe, então pegamos a equipe do atleta
-    const lastEntry = [...fullProntidaoData, ...fullCargaData]
-        .filter(d => d.atleta_id === athleteId)
-        .sort((a,b) => new Date(b.data) - new Date(a.data))[0];
-
-    if (!lastEntry) {
-        container.innerHTML = `<h3 class="text-xl font-bold text-gray-800 mb-4">Planejamento da Equipe</h3><p class="text-gray-500">Não foi possível determinar a equipe do atleta.</p>`;
-        return;
+    function populateAthleteFilterOptions() {
+        const individualOptionsContainer = document.getElementById('individualAthleteOptions');
+        let atletas = fullProntidaoData;
+        if (selectedTeam !== 'all') {
+            atletas = atletas.filter(d => d.equipe_id === selectedTeam);
+        }
+        
+        const nomesUnicos = [...new Set(atletas.map(d => d.atleta_id))];
+        
+        individualOptionsContainer.innerHTML = ''; // Limpa opções antigas
+        nomesUnicos.sort().forEach(atleta => {
+            const option = document.createElement('option');
+            option.value = atleta;
+            option.textContent = atleta;
+            individualOptionsContainer.appendChild(option);
+        });
     }
-
-    const teamId = lastEntry.equipe_id;
-    const semanaId = getWeekId(new Date()); // Mostra o planejamento da semana atual
-
-    const treinosFisicosDaSemana = treinosFisicos.filter(t => t.equipe_id === teamId && t.semana_id === semanaId);
-    const treinosCampoDaSemana = treinosCampo.filter(t => t.equipe_id === teamId && t.semana_id === semanaId);
-    const allTrainings = [...treinosFisicosDaSemana, ...treinosCampoDaSemana];
-
-    container.innerHTML = `<h3 class="text-xl font-bold text-gray-800 mb-4">Planejamento da Equipe (${semanaId})</h3>`;
-
-    if(allTrainings.length === 0) {
-        container.innerHTML += `<p class="text-gray-500">Nenhum treino planejado para a equipe nesta semana.</p>`;
-        return;
-    }
-
-    const timelineContainer = document.createElement('div');
-    timelineContainer.id = "timelineIndividualPlanejamento";
-    container.appendChild(timelineContainer);
-
-    // Reutiliza a função de timeline existente
-    renderTimeline('timelineIndividualPlanejamento', allTrainings, 'Nenhum treino planejado.');
-}
-
-// =======================================================
-// ### FIM DAS FUNÇÕES DO DASHBOARD INDIVIDUAL ###
-// =======================================================
     </script>
 </body>
 </html>
