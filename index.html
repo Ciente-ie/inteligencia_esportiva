@@ -541,8 +541,7 @@
     </div>
 
 
-    <script type="module">
-        // --- Firebase v9+ modular imports ---
+    // --- Firebase v9+ modular imports ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch, getDocs, where, updateDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
@@ -1170,174 +1169,6 @@ function renderLesoesTab() {
     }
 }
 
-function renderScoutTab() {
-    let dataToRender = fullScoutData;
-
-    if (selectedTeam !== 'all') {
-        dataToRender = dataToRender.filter(d => d.equipe_id === selectedTeam);
-    }
-
-    if (selectedAthleteGroup !== 'all') {
-        if (['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
-            dataToRender = dataToRender.filter(d => d.posicao_grupo === selectedAthleteGroup);
-        } else {
-            dataToRender = dataToRender.filter(d => d.atleta_id === selectedAthleteGroup);
-        }
-    }
-
-    if (dataToRender.length === 0) {
-        placeholderSectionScout.classList.remove('hidden');
-        resultsSectionScout.classList.add('hidden');
-    } else {
-        placeholderSectionScout.classList.add('hidden');
-        resultsSectionScout.classList.remove('hidden');
-        renderScoutTable(dataToRender);
-    }
-}
-
-function analyzeScoutData(data) {
-    // Agrupa todos os jogos por atleta
-    const gamesByAthlete = data.reduce((acc, game) => {
-        const athleteId = game.atleta_id || game.jogador;
-        if (!acc[athleteId]) {
-            acc[athleteId] = {
-                details: [],
-                posicao: game.posicao || game.posicao_grupo
-            };
-        }
-        acc[athleteId].details.push(game);
-        return acc;
-    }, {});
-
-    // Calcula os totais e as médias para cada atleta
-    const aggregatedData = Object.keys(gamesByAthlete).map(athleteId => {
-        const athleteData = gamesByAthlete[athleteId];
-        const games = athleteData.details;
-        const totalJogos = games.length;
-
-        const totals = games.reduce((acc, game) => {
-            acc.gols += game.gols || 0;
-            acc.assistencias += game.assistencias || 0;
-            acc.finalizacoes += game.finalizacoes || 0;
-            acc.duelos_ganhos += game.duelos_ganhos || 0;
-            acc.duelos_perdidos += game.duelos_perdidos || 0;
-            acc.media_geral_sum += game.media_geral || 0;
-            return acc;
-        }, { gols: 0, assistencias: 0, finalizacoes: 0, duelos_ganhos: 0, duelos_perdidos: 0, media_geral_sum: 0 });
-
-        const mediaGeral = totalJogos > 0 ? totals.media_geral_sum / totalJogos : 0;
-        
-        return {
-            athleteId: athleteId,
-            posicao: athleteData.posicao,
-            mediaGeral: mediaGeral,
-            jogos: totalJogos,
-            gols: totals.gols,
-            assistencias: totals.assistencias,
-            // Campos calculados
-            golsPorJogo: totalJogos > 0 ? totals.gols / totalJogos : 0,
-            finalizacoesPorJogo: totalJogos > 0 ? totals.finalizacoes / totalJogos : 0,
-            duelosGanhosPorJogo: totalJogos > 0 ? totals.duelos_ganhos / totalJogos : 0,
-            duelosPerdidosPorJogo: totalJogos > 0 ? totals.duelos_perdidos / totalJogos : 0,
-            // Detalhes para a aba oculta
-            gameDetails: games.sort((a,b) => (a.adversario || "").localeCompare(b.adversario || ""))
-        };
-    });
-
-    return aggregatedData.sort((a, b) => b.mediaGeral - a.mediaGeral);
-}
-
-function renderScoutTable(aggregatedData) {
-    const container = document.getElementById('resultsContainerScout');
-    const headers = ['Jogador', 'Posição', 'Média Geral', 'Jogos', 'Gols', 'Gols/Jogo', 'Assist.', 'Fin./Jogo', 'Duelos Ganhos/J', 'Duelos Perdidos/J', ''];
-
-    const tableRows = aggregatedData.map(player => {
-        const mediaGeral = player.mediaGeral.toFixed(2);
-        let mediaClass = 'text-gray-800';
-        if(player.mediaGeral >= 8) mediaClass = 'text-green-600 font-bold';
-        else if(player.mediaGeral >= 6.5) mediaClass = 'text-yellow-600';
-        else if(player.mediaGeral > 0) mediaClass = 'text-red-600';
-
-        const uniqueId = player.athleteId.replace(/[^a-zA-Z0-9]/g, "");
-
-        const gameDetailsHtml = player.gameDetails.map(game => `
-            <tr class="text-xs bg-gray-100">
-                <td class="p-2 pl-6 border-b border-gray-200" colspan="2">vs. ${game.adversario}</td>
-                <td class="p-2 text-center border-b border-gray-200">${(game.media_geral || 0).toFixed(1)}</td>
-                <td class="p-2 text-center border-b border-gray-200">-</td>
-                <td class="p-2 text-center border-b border-gray-200">${game.gols || 0}</td>
-                <td class="p-2 text-center border-b border-gray-200">-</td>
-                <td class="p-2 text-center border-b border-gray-200">${game.assistencias || 0}</td>
-                <td class="p-2 text-center border-b border-gray-200">${game.finalizacoes || 0}</td>
-                <td class="p-2 text-center border-b border-gray-200">${game.duelos_ganhos || 0}</td>
-                <td class="p-2 text-center border-b border-gray-200">${game.duelos_perdidos || 0}</td>
-                <td class="p-2 border-b border-gray-200"></td>
-            </tr>
-        `).join('');
-
-        return `
-            <tbody class="border-b last:border-0">
-                <tr class="hover:bg-gray-50 text-sm">
-                    <td class="p-3 font-semibold text-gray-900">${player.athleteId}</td>
-                    <td class="p-3 text-gray-600">${player.posicao}</td>
-                    <td class="p-3 text-center ${mediaClass}">${mediaGeral}</td>
-                    <td class="p-3 text-center text-gray-600">${player.jogos}</td>
-                    <td class="p-3 text-center text-gray-600">${player.gols}</td>
-                    <td class="p-3 text-center text-gray-600 font-semibold">${player.golsPorJogo.toFixed(2)}</td>
-                    <td class="p-3 text-center text-gray-600">${player.assistencias}</td>
-                    <td class="p-3 text-center text-gray-600 font-semibold">${player.finalizacoesPorJogo.toFixed(2)}</td>
-                    <td class="p-3 text-center text-gray-600 font-semibold">${player.duelosGanhosPorJogo.toFixed(2)}</td>
-                    <td class="p-3 text-center text-gray-600 font-semibold">${player.duelosPerdidosPorJogo.toFixed(2)}</td>
-                    <td class="p-3 text-center">
-                        <button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-scout-${uniqueId}">
-                            <svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                        </button>
-                    </td>
-                </tr>
-                <tr class="details-section" id="details-scout-${uniqueId}">
-                    <td colspan="${headers.length}">
-                        <table class="w-full">
-                           <thead class="text-xs text-gray-500 bg-gray-100">
-                                <tr>
-                                    <th class="p-2 pl-6 font-semibold text-left" colspan="2">Adversário</th>
-                                    <th class="p-2 font-semibold">Nota</th>
-                                    <th class="p-2 font-semibold"></th>
-                                    <th class="p-2 font-semibold">Gols</th>
-                                    <th class="p-2 font-semibold"></th>
-                                    <th class="p-2 font-semibold">Assist.</th>
-                                    <th class="p-2 font-semibold">Fin.</th>
-                                    <th class="p-2 font-semibold">Duelos Ganhos</th>
-                                    <th class="p-2 font-semibold">Duelos Perdidos</th>
-                                    <th class="p-2 font-semibold"></th>
-                                </tr>
-                           </thead>
-                           <tbody>
-                                ${gameDetailsHtml}
-                           </tbody>
-                        </table>
-                    </td>
-                </tr>
-            </tbody>
-        `;
-    }).join('');
-
-    container.innerHTML = `
-        <table class="w-full text-left">
-            <thead class="bg-gray-50 sticky top-0 z-10">
-                <tr>
-                    ${headers.map(h => `<th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider ${h !== 'Jogador' && h !== 'Posição' ? 'text-center' : ''}">${h}</th>`).join('')}
-                </tr>
-            </thead>
-            ${tableRows}
-        </table>
-    `;
-    
-    // Adiciona o listener para os botões de expandir
-    container.querySelectorAll('.toggle-details-btn').forEach(button => {
-        button.addEventListener('click', (e) => toggleDetails(e, 'scout'));
-    });
-}
-
 function updateDashboardView() {
     renderDashboardLesoes();
     renderDashboardProntidao();
@@ -1637,7 +1468,8 @@ function toggleDetails(event, type) {
     const isOpen = detailsSection.classList.toggle('open');
     button.querySelector('.arrow-icon').classList.toggle('rotate-180');
     
-    if (isOpen) {
+    // A lógica de renderização de gráficos só é acionada se não for do tipo 'scout'
+    if (isOpen && type !== 'scout') {
         if (type === 'carga' && button.dataset.chartdata) {
             const athleteId = button.dataset.athlete;
             const canvasId = `chart-${athleteId}`;
@@ -1664,6 +1496,7 @@ function toggleDetails(event, type) {
     }
 }
 
+
 async function exportToPDF(type) {
     let pdfButtonId;
     if (type === 'prontidao') {
@@ -1689,11 +1522,10 @@ async function exportToPDF(type) {
     pdfButton.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Exportando...`;
     pdfButton.disabled = true;
     
-    if (type !== 'prontidao') {
-        const detailsSections = contentToPrint.querySelectorAll('.details-section');
-        detailsSections.forEach(el => el.classList.add('open'));
-    }
-
+    // Força a abertura de todas as abas de detalhes antes de imprimir
+    const detailsSections = contentToPrint.querySelectorAll('.details-section');
+    detailsSections.forEach(el => el.classList.add('open'));
+    
     await new Promise(resolve => setTimeout(resolve, 500)); 
 
     try {
@@ -1726,10 +1558,8 @@ async function exportToPDF(type) {
     } finally {
         pdfButton.innerHTML = originalText;
         pdfButton.disabled = false;
-         if (type !== 'prontidao') {
-            const detailsSections = contentToPrint.querySelectorAll('.details-section');
-            detailsSections.forEach(el => el.classList.remove('open')); 
-        }
+        // Fecha as abas de detalhes novamente
+        detailsSections.forEach(el => el.classList.remove('open')); 
     }
 }
 
@@ -1927,70 +1757,6 @@ function handleFileProcessingCarga() {
         toggleLoading(false, 'carga');
     };
     reader.readAsText(file);
-}
-
-function handleFileProcessingScout() {
-    const file = csvFileInputScout.files[0];
-    if (!file) return showToast("Por favor, selecione um arquivo de scout.");
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-        try {
-            // Adiciona 'adversario' como campo obrigatório
-            const required = ['equipe_id', 'Jogador', 'Posicao', 'Adversario', 'Media Geral'];
-            let parsedData = parseCSV(event.target.result, required);
-            
-            if (parsedData.length === 0) {
-                showToast("Nenhum dado válido encontrado no arquivo.", "error");
-                toggleLoading(false, 'scout');
-                return;
-            }
-
-            const uniqueTeamIds = [...new Set(parsedData.map(d => d.equipe_id))];
-
-            showConfirmationModal(
-                `Isso substituirá TODOS os dados de Scout existentes para a(s) equipe(s): ${uniqueTeamIds.join(', ')}. Esta ação não pode ser desfeita. Deseja continuar?`,
-                async () => {
-                    toggleLoading(true, 'scout');
-                    try {
-                        const q = query(scoutCollection, where("equipe_id", "in", uniqueTeamIds));
-                        const snapshot = await getDocs(q);
-                        
-                        const batch = writeBatch(db);
-                        snapshot.docs.forEach(doc => batch.delete(doc.ref));
-
-                        parsedData.forEach(item => {
-                            const docRef = doc(scoutCollection);
-                            batch.set(docRef, {
-                                ...item,
-                                atleta_id: item.jogador, // Mantém a consistência interna
-                                posicao_grupo: item.posicao 
-                            });
-                        });
-
-                        await batch.commit();
-                        showToast(`Dados de scout para ${uniqueTeamIds.join(', ')} foram atualizados com sucesso!`, 'success');
-                    } catch (e) {
-                        console.error("Erro ao substituir dados de scout:", e);
-                        showToast("Ocorreu um erro ao atualizar os dados.");
-                    } finally {
-                        toggleLoading(false, 'scout');
-                    }
-                },
-                'Confirmar Substituição de Dados'
-            );
-
-        } catch (error) {
-             console.error("Error during scout processing/saving:", error);
-             showToast(`Erro na análise do arquivo: ${error.message}`);
-             toggleLoading(false, 'scout');
-        }
-    };
-    reader.onerror = () => {
-        showToast("Erro ao ler o arquivo.");
-        toggleLoading(false, 'scout');
-    };
-    reader.readAsText(file, 'UTF-8');
 }
 
 function getWeekId(date) {
@@ -3027,7 +2793,119 @@ function renderAthleteChart(canvasId, chartData, label) {
     });
 }
 
-// --- SCOUT FUNCTIONS ---
+// --- SCOUT FUNCTIONS (NOVA VERSÃO) ---
+
+function handleFileProcessingScout() {
+    const file = csvFileInputScout.files[0];
+    if (!file) return showToast("Por favor, selecione um arquivo de scout.");
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        try {
+            const required = ['equipe_id', 'Jogador', 'Posicao', 'Adversario', 'Media Geral'];
+            let parsedData = parseCSV(event.target.result, required);
+            
+            if (parsedData.length === 0) {
+                showToast("Nenhum dado válido encontrado no arquivo.", "error");
+                toggleLoading(false, 'scout');
+                return;
+            }
+
+            const uniqueTeamIds = [...new Set(parsedData.map(d => d.equipe_id))];
+
+            showConfirmationModal(
+                `Isso substituirá TODOS os dados de Scout existentes para a(s) equipe(s): ${uniqueTeamIds.join(', ')}. Esta ação não pode ser desfeita. Deseja continuar?`,
+                async () => {
+                    toggleLoading(true, 'scout');
+                    try {
+                        const q = query(scoutCollection, where("equipe_id", "in", uniqueTeamIds));
+                        const snapshot = await getDocs(q);
+                        
+                        const batch = writeBatch(db);
+                        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+                        parsedData.forEach(item => {
+                            const docRef = doc(scoutCollection);
+                            batch.set(docRef, {
+                                ...item,
+                                atleta_id: item.jogador,
+                                posicao_grupo: item.posicao 
+                            });
+                        });
+
+                        await batch.commit();
+                        showToast(`Dados de scout para ${uniqueTeamIds.join(', ')} foram atualizados com sucesso!`, 'success');
+                    } catch (e) {
+                        console.error("Erro ao substituir dados de scout:", e);
+                        showToast("Ocorreu um erro ao atualizar os dados.");
+                    } finally {
+                        toggleLoading(false, 'scout');
+                    }
+                },
+                'Confirmar Substituição de Dados'
+            );
+
+        } catch (error) {
+             console.error("Error during scout processing/saving:", error);
+             showToast(`Erro na análise do arquivo: ${error.message}`);
+             toggleLoading(false, 'scout');
+        }
+    };
+    reader.onerror = () => {
+        showToast("Erro ao ler o arquivo.");
+        toggleLoading(false, 'scout');
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+function analyzeScoutData(data) {
+    const gamesByAthlete = data.reduce((acc, game) => {
+        const athleteId = game.atleta_id || game.jogador;
+        if (!acc[athleteId]) {
+            acc[athleteId] = {
+                details: [],
+                posicao: game.posicao || game.posicao_grupo
+            };
+        }
+        acc[athleteId].details.push(game);
+        return acc;
+    }, {});
+
+    const aggregatedData = Object.keys(gamesByAthlete).map(athleteId => {
+        const athleteData = gamesByAthlete[athleteId];
+        const games = athleteData.details;
+        const totalJogos = games.length;
+
+        const totals = games.reduce((acc, game) => {
+            acc.gols += game.gols || 0;
+            acc.assistencias += game.assistencias || 0;
+            acc.finalizacoes += game.finalizacoes || 0;
+            acc.duelos_ganhos += game.duelos_ganhos || 0;
+            acc.duelos_perdidos += game.duelos_perdidos || 0;
+            acc.media_geral_sum += game.media_geral || 0;
+            return acc;
+        }, { gols: 0, assistencias: 0, finalizacoes: 0, duelos_ganhos: 0, duelos_perdidos: 0, media_geral_sum: 0 });
+
+        const mediaGeral = totalJogos > 0 ? totals.media_geral_sum / totalJogos : 0;
+        
+        return {
+            athleteId: athleteId,
+            posicao: athleteData.posicao,
+            mediaGeral: mediaGeral,
+            jogos: totalJogos,
+            gols: totals.gols,
+            assistencias: totals.assistencias,
+            golsPorJogo: totalJogos > 0 ? totals.gols / totalJogos : 0,
+            finalizacoesPorJogo: totalJogos > 0 ? totals.finalizacoes / totalJogos : 0,
+            duelosGanhosPorJogo: totalJogos > 0 ? totals.duelos_ganhos / totalJogos : 0,
+            duelosPerdidosPorJogo: totalJogos > 0 ? totals.duelos_perdidos / totalJogos : 0,
+            gameDetails: games.sort((a,b) => (a.adversario || "").localeCompare(b.adversario || ""))
+        };
+    });
+
+    return aggregatedData.sort((a, b) => b.mediaGeral - a.mediaGeral);
+}
+
 function renderScoutTab() {
     let dataToRender = fullScoutData;
 
@@ -3054,6 +2932,97 @@ function renderScoutTab() {
     }
 }
 
+function renderScoutTable(aggregatedData) {
+    const container = document.getElementById('resultsContainerScout');
+    const headers = ['Jogador', 'Posição', 'Média Geral', 'Jogos', 'Gols', 'Gols/Jogo', 'Assist.', 'Fin./Jogo', 'Duelos Ganhos/J', 'Duelos Perdidos/J', ''];
+
+    const tableRows = aggregatedData.map(player => {
+        const mediaGeral = player.mediaGeral.toFixed(2);
+        let mediaClass = 'text-gray-800';
+        if(player.mediaGeral >= 8) mediaClass = 'text-green-600 font-bold';
+        else if(player.mediaGeral >= 6.5) mediaClass = 'text-yellow-600';
+        else if(player.mediaGeral > 0) mediaClass = 'text-red-600';
+
+        const uniqueId = player.athleteId.replace(/[^a-zA-Z0-9]/g, "");
+
+        const gameDetailsHtml = player.gameDetails.map(game => `
+            <tr class="text-xs bg-gray-100">
+                <td class="p-2 pl-6 border-b border-gray-200" colspan="2">vs. ${game.adversario}</td>
+                <td class="p-2 text-center border-b border-gray-200">${(game.media_geral || 0).toFixed(1)}</td>
+                <td class="p-2 text-center border-b border-gray-200">-</td>
+                <td class="p-2 text-center border-b border-gray-200">${game.gols || 0}</td>
+                <td class="p-2 text-center border-b border-gray-200">-</td>
+                <td class="p-2 text-center border-b border-gray-200">${game.assistencias || 0}</td>
+                <td class="p-2 text-center border-b border-gray-200">${game.finalizacoes || 0}</td>
+                <td class="p-2 text-center border-b border-gray-200">${game.duelos_ganhos || 0}</td>
+                <td class="p-2 text-center border-b border-gray-200">${game.duelos_perdidos || 0}</td>
+                <td class="p-2 border-b border-gray-200"></td>
+            </tr>
+        `).join('');
+
+        return `
+            <tbody class="border-b last:border-0">
+                <tr class="hover:bg-gray-50 text-sm">
+                    <td class="p-3 font-semibold text-gray-900">${player.athleteId}</td>
+                    <td class="p-3 text-gray-600">${player.posicao}</td>
+                    <td class="p-3 text-center ${mediaClass}">${mediaGeral}</td>
+                    <td class="p-3 text-center text-gray-600">${player.jogos}</td>
+                    <td class="p-3 text-center text-gray-600">${player.gols}</td>
+                    <td class="p-3 text-center text-gray-600 font-semibold">${player.golsPorJogo.toFixed(2)}</td>
+                    <td class="p-3 text-center text-gray-600">${player.assistencias}</td>
+                    <td class="p-3 text-center text-gray-600 font-semibold">${player.finalizacoesPorJogo.toFixed(2)}</td>
+                    <td class="p-3 text-center text-gray-600 font-semibold">${player.duelosGanhosPorJogo.toFixed(2)}</td>
+                    <td class="p-3 text-center text-gray-600 font-semibold">${player.duelosPerdidosPorJogo.toFixed(2)}</td>
+                    <td class="p-3 text-center">
+                        <button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-scout-${uniqueId}">
+                            <svg class="arrow-icon w-5 h-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </td>
+                </tr>
+                <tr class="details-section" id="details-scout-${uniqueId}">
+                    <td colspan="${headers.length}">
+                        <table class="w-full">
+                           <thead class="text-xs text-gray-500 bg-gray-100">
+                                <tr>
+                                    <th class="p-2 pl-6 font-semibold text-left" colspan="2">Adversário</th>
+                                    <th class="p-2 font-semibold">Nota</th>
+                                    <th class="p-2 font-semibold"></th>
+                                    <th class="p-2 font-semibold">Gols</th>
+                                    <th class="p-2 font-semibold"></th>
+                                    <th class="p-2 font-semibold">Assist.</th>
+                                    <th class="p-2 font-semibold">Fin.</th>
+                                    <th class="p-2 font-semibold">Duelos Ganhos</th>
+                                    <th class="p-2 font-semibold">Duelos Perdidos</th>
+                                    <th class="p-2 font-semibold"></th>
+                                </tr>
+                           </thead>
+                           <tbody>
+                                ${gameDetailsHtml}
+                           </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <table class="w-full text-left">
+            <thead class="bg-gray-50 sticky top-0 z-10">
+                <tr>
+                    ${headers.map(h => `<th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider ${h !== 'Jogador' && h !== 'Posição' ? 'text-center' : ''}">${h}</th>`).join('')}
+                </tr>
+            </thead>
+            ${tableRows}
+        </table>
+    `;
+    
+    container.querySelectorAll('.toggle-details-btn').forEach(button => {
+        button.addEventListener('click', (e) => toggleDetails(e, 'scout'));
+    });
+}
+
+
 // --- PLANEJAMENTO FUNCTIONS ---
 function getSelectedOptions(selectElement) {
     return Array.from(selectElement.selectedOptions).map(option => option.value);
@@ -3077,7 +3046,7 @@ async function handleFormFisicoSubmit(e) {
         objSecundario: getSelectedOptions(document.getElementById('objSecundarioFisico')),
         local: document.getElementById('localTreinoFisico').value,
         carga: document.getElementById('cargaTreinoFisico').value,
-cargaText: document.getElementById('cargaTreinoFisico').options[document.getElementById('cargaTreinoFisico').selectedIndex].text,
+        cargaText: document.getElementById('cargaTreinoFisico').options[document.getElementById('cargaTreinoFisico').selectedIndex].text,
         createdAt: serverTimestamp()
     };
     try {
@@ -3135,7 +3104,8 @@ function renderAllLogos() {
         'pdf-content-dashboard',
         'pdf-content-prontidao',
         'pdf-content-carga',
-        'pdf-content-planejamento'
+        'pdf-content-planejamento',
+        'pdf-content-scout'
     ];
 
     let logoHtml = '';
@@ -3481,187 +3451,454 @@ function createLesaoCard(lesao) {
                 <span class="text-xs font-semibold px-2 py-1 rounded-full ${statusClass}">${statusText}</span>
             </div>
             <div class="mt-2 pt-2 border-t">
-                <p class="text-sm text-gray-700 whitespace-pre-wrap">${lesao.tratamento || 'Nenhum tratamento especificado.'}</p>
+                <p class="text-sm text-gray-700 whitespace-pre8l-3 3m3-3v12"></path></svg>
+                                    <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Clique para carregar</span> ou arraste</p>
+                                    <p class="text-xs text-gray-500">Arquivo de Prontidão (.CSV)</p>
+                                </div>
+                                <input id="csvFileInput" type="file" class="hidden" accept=".csv" />
+                            </label>
+                            <p id="fileName" class="mt-2 text-sm text-gray-500"></p>
+                        </div>
+                        <button id="processBtn" class="btn mt-4 w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center text-lg" disabled>
+                            <span id="btnText">Processar e Salvar Prontidão</span>
+                            <div id="btnLoader" class="loader hidden ml-3"></div>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="flex justify-end gap-x-2 mt-3">
-                <button class="btn-update-lesao text-xs bg-green-100 text-green-700 hover:bg-green-200 px-3 py-1 rounded-md" data-id="${lesao.id}" data-status="liberado" data-atleta="${lesao.atleta}">Marcar como Liberado</button>
-                <button class="btn-update-lesao text-xs bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 rounded-md" data-id="${lesao.id}" data-status="delete" data-atleta="${lesao.atleta}">Remover</button>
+            <div id="resultsSection" class="mt-10 hidden">
+                <div id="pdf-content-prontidao">
+                    <div id="filterContainerProntidao" class="mb-6"></div>
+                    <div id="teamDashboard" class="mb-8"></div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Resultados Individuais de Prontidão</h2>
+                         <div class="flex gap-x-2">
+                             <button id="clearProntidaoDataBtn" class="btn bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition flex items-center text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                                Limpar Dados de Prontidão
+                            </button>
+                            <button id="exportPdfBtnProntidao" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
+                                Exportar PDF
+                            </button>
+                         </div>
+                    </div>
+                    <div id="resultsContainer" class="bg-white rounded-lg shadow-md border overflow-hidden"></div>
+                    <div id="legendsProntidao" class="mt-6 text-xs text-gray-500 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+                </div>
+            </div>
+            <div id="placeholderSectionProntidao" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <h3 class="mt-4 text-xl font-semibold text-gray-800">Aguardando dados de Prontidão</h3>
+                <p class="mt-1 text-gray-500">Selecione uma equipe ou importe um novo arquivo para começar.</p>
             </div>
         </div>
-    `;
-}
 
-function populateTeamFilter() {
-    const allData = [...fullProntidaoData, ...fullCargaData, ...lesoesData, ...fullScoutData];
-    const teams = [...new Set(allData.map(d => d.equipe_id).filter(Boolean))].sort();
-    
-    const currentSelectedTeam = teamFilterSelect.value;
-    
-    teamFilterSelect.innerHTML = `<option value="all">Todas as Equipes</option>`;
-    teams.forEach(team => {
-        const option = document.createElement('option');
-        option.value = team;
-        option.textContent = team;
-        teamFilterSelect.appendChild(option);
-    });
+        <div id="cargaContent" class="hidden">
+           <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-3">1. Prepare seu arquivo de Carga</h2>
+                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo, incluindo `equipe_id`, `microciclo_id` e a nova coluna `posicao_grupo`.</p>
+                        <div class="bg-gray-100 p-4 rounded-lg text-sm text-gray-700 font-mono border">
+                            <p><strong class="text-blue-600">equipe_id</strong>,atleta_id,<strong class="text-red-600">posicao_grupo</strong>,data,<strong class="text-blue-600">microciclo_id</strong>,pse_sessao,...</p>
+                        </div>
+                        <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
+                            <li>O `microciclo_id` deve ser consistente (ex: "Sem25", "S26").</li>
+                            <li>Para o cálculo do ACWR, forneça dados de pelo menos <strong>4 microciclos</strong> anteriores.</li>
+                        </ul>
+                    </div>
 
-    if(teams.includes(currentSelectedTeam)){
-        teamFilterSelect.value = currentSelectedTeam;
-    } else {
-         teamFilterSelect.value = 'all';
-         selectedTeam = 'all';
-    }
-}
-
-
-function populateAthleteDatalist() {
-    const dataForTeamProntidao = selectedTeam === 'all' ? fullProntidaoData : fullProntidaoData.filter(d => d.equipe_id === selectedTeam);
-    const dataForTeamCarga = selectedTeam === 'all' ? fullCargaData : fullCargaData.filter(d => d.equipe_id === selectedTeam);
-
-    const athleteNamesFromProntidao = dataForTeamProntidao.map(d => d.atleta_id);
-    const athleteNamesFromCarga = dataForTeamCarga.map(d => d.atleta_id);
-    const allNames = [...new Set([...athleteNamesFromProntidao, ...athleteNamesFromCarga])].sort();
-    
-    const datalist = document.getElementById('atleta-list-options');
-    datalist.innerHTML = allNames.map(name => `<option value="${name}"></option>`).join('');
-}
-
-function showConfirmationModal(text, onConfirm, title = "Confirmar Ação") {
-    document.getElementById('modalTitle').textContent = title;
-    document.getElementById('modalText').textContent = text;
-    confirmModal.classList.remove('hidden');
-
-    const confirmBtn = document.getElementById('confirmButton');
-    const cancelBtn = document.getElementById('cancelButton');
-
-    const confirmHandler = () => {
-        onConfirm();
-        hideModal();
-    };
-    
-    const cancelHandler = () => {
-        hideModal();
-    };
-
-    const hideModal = () => {
-        confirmModal.classList.add('hidden');
-        confirmBtn.removeEventListener('click', confirmHandler);
-        cancelBtn.removeEventListener('click', cancelHandler);
-    };
-
-    confirmBtn.addEventListener('click', confirmHandler);
-    cancelBtn.addEventListener('click', cancelHandler);
-}
-
-async function removeTraining(id, type) {
-    showToast(`Removendo treino...`, 'success');
-    try {
-        const collectionName = type === 'fisico' ? 'treinosFisicos' : 'treinosCampo';
-        await deleteDoc(doc(db, collectionName, id));
-    } catch (error) {
-        showToast("Erro ao remover o treino.");
-    }
-};
-
-// --- CLASSIFICATION & LEGENDS ---
-const getHooperClassification = score => {
-    if (score == null) return { class: 'text-gray-700', bg: 'bg-gray-100', border: 'border-gray-200' };
-    if (score <= 9) return { class: 'text-green-700', bg: 'bg-green-100', border: 'border-green-200' };
-    if (score <= 17) return { class: 'text-yellow-700', bg: 'bg-yellow-100', border: 'border-yellow-200' };
-    return { class: 'text-red-700', bg: 'bg-red-100', border: 'border-red-200' };
-};
-const getIndexClassification = index => {
-    if (index == null) return { class: 'text-gray-700' };
-    if (index < -1.5) return { class: 'text-red-600' };
-    if (index < -0.5) return { class: 'text-yellow-600' };
-    return { class: 'text-green-600' };
-};
-const getCargaAgudaClassification = load => {
-    if (load == null) return { class: 'text-gray-700' };
-    if (load <= 2500) return { class: 'text-blue-600' };
-    if (load <= 5000) return { class: 'text-green-600' };
-    return { class: 'text-red-600' };
-};
-const getCargaAgudaChartColor = load => {
-    if (load == null || load === 0) return '#cbd5e1'; 
-    if (load <= 2500) return 'rgba(59, 130, 246, 0.7)'; 
-    if (load <= 5000) return 'rgba(34, 197, 94, 0.7)'; 
-    return 'rgba(239, 68, 68, 0.7)';
-}
-const getStrainClassification = strain => {
-    if (strain == null) return { class: 'text-gray-700' };
-    if (strain > 10000) return { class: 'text-red-600' };
-    if (strain > 6000) return { class: 'text-yellow-600' };
-    return { class: 'text-green-600' };
-};
-const getMonotonyClassification = monotony => {
-    if (monotony == null) return { class: 'text-gray-700' };
-    if (monotony > 2.0) return { class: 'text-red-600' };
-    if (monotony > 1.5) return { class: 'text-yellow-600' };
-    return { class: 'text-green-600' };
-};
-const getAwcrClassification = acwr => {
-    if (acwr == null) return { class: 'text-gray-700' };
-    if (acwr > 1.5) return { class: 'text-red-600' };
-    if (acwr >= 0.8 && acwr <= 1.3) return { class: 'text-green-600' };
-    return { class: 'text-yellow-600' };
-};
-
-function renderLegends(type) {
-     if (type === 'prontidao') {
-        legendsProntidao.innerHTML = `
-            <div class="bg-white p-3 rounded-lg border">
-                <h4 class="font-bold text-sm mb-1 text-gray-700">Índice Geral</h4>
-                <p>Calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p>
-                <p><strong class="text-green-600">> -0.5 (Ótimo)</strong></p>
-                <p><strong class="text-yellow-600">-0.5 a -1.5 (Atenção)</strong></p>
-                <p><strong class="text-red-600">< -1.5 (Crítico)</strong></p>
+                    <div class="mt-6 md:mt-0">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-3">2. Importe o arquivo e analise</h2>
+                         <div class="flex flex-col items-center justify-center w-full">
+                             <label for="csvFileInputCarga" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <svg class="w-10 h-10 mb-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                    <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Clique para carregar</span> ou arraste</p>
+                                    <p class="text-xs text-gray-500">Arquivo de Carga (.CSV)</p>
+                                </div>
+                                <input id="csvFileInputCarga" type="file" class="hidden" accept=".csv" />
+                            </label>
+                            <p id="fileNameCarga" class="mt-2 text-sm text-gray-500"></p>
+                        </div>
+                        <button id="processBtnCarga" class="btn mt-4 w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center text-lg" disabled>
+                            <span id="btnTextCarga">Processar e Salvar Carga</span>
+                            <div id="btnLoaderCarga" class="loader hidden ml-3"></div>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="bg-white p-3 rounded-lg border">
-                <h4 class="font-bold text-sm mb-1 text-gray-700">Fadiga (Hooper)</h4>
-                <p><strong class="text-green-700">4-9 (Bom)</strong></p>
-                <p><strong class="text-yellow-700">10-17 (Regular)</strong></p>
-                <p><strong class="text-red-700">18-28 (Ruim)</strong></p>
+            <div id="resultsSectionCarga" class="mt-10 hidden">
+                 <div id="pdf-content-carga">
+                    <div id="filterContainer" class="mb-6"></div>
+                    <div id="teamDashboardCarga" class="mb-8"></div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Resultados Individuais de Carga</h2>
+                         <div class="flex gap-x-2">
+                            <button id="clearCargaDataBtn" class="btn bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition flex items-center text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                                Limpar Dados de Carga
+                            </button>
+                            <button id="exportPdfBtnCarga" class="btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
+                                Exportar PDF
+                            </button>
+                         </div>
+                    </div>
+                    <div id="resultsContainerCarga" class="bg-white rounded-lg shadow-md border overflow-hidden"></div>
+                    <div id="legendsCarga" class="mt-6 text-xs text-gray-500 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+                </div>
             </div>
-            <div class="bg-white p-3 rounded-lg border">
-                <h4 class="font-bold text-sm mb-1 text-gray-700">% Recuperação Muscular</h4>
-                <p>Variação do Salto Horizontal em relação à média histórica do atleta.</p>
-                <p><strong class="text-green-600">> 0% (Melhor)</strong></p>
-                <p><strong class="text-red-600">< 0% (Pior)</strong></p>
+             <div id="placeholderSectionCarga" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <h3 class="mt-4 text-xl font-semibold text-gray-800">Aguardando dados de Carga</h3>
+                <p class="mt-1 text-gray-500">Selecione uma equipe ou importe um novo arquivo para começar.</p>
             </div>
-        `;
-     } else if (type === 'carga') {
-        legendsCarga.innerHTML = `<div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Carga Aguda Média (u.a.)</h4><p>Média da carga total dos microciclos selecionados.</p><p><strong class="text-blue-600">< 2500 (Baixa)</strong></p><p><strong class="text-green-600">2500-5000 (Moderada)</strong></p><p><strong class="text-red-600">> 5000 (Alta)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">ACWR (Acute:Chronic Workload Ratio)</h4><p>Carga Aguda / Média das 4 semanas anteriores. <br><em>* <4 semanas de dados crônicos.</em></p><p><strong class="text-green-600">0.8-1.3 (Ideal)</strong></p><p><strong class="text-yellow-600"><0.8 ou 1.3-1.5 (Atenção)</strong></p><p><strong class="text-red-600">>1.5 (Perigo)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Monotonia</h4><p>Média da carga diária / Desvio Padrão. Variabilidade da carga semanal.</p><p><strong class="text-green-600">< 1.5 (Ideal)</strong></p><p><strong class="text-yellow-600">1.5-2.0 (Atenção)</strong></p><p><strong class="text-red-600">> 2.0 (Elevado)</strong></p></div><div class="bg-white p-3 rounded-lg border"><h4 class="font-bold text-sm mb-1 text-gray-700">Strain (Tensão)</h4><p>Carga total da semana x Monotonia. Estresse geral da semana.</p><p><strong class="text-green-600">< 6000 (Ideal)</strong></p><p><strong class="text-yellow-600">6000-10000 (Atenção)</strong></p><p><strong class="text-red-600">> 10000 (Elevado)</strong></p></div>`;
-     }
-}
+        </div>
 
-function populateAthleteFilterOptions() {
-    const individualOptionsContainer = document.getElementById('individualAthleteOptions');
-    let prontidaoAtletas = [];
-    let cargaAtletas = [];
-    let scoutAtletas = [];
+        <div id="planejamentoContent" class="hidden">
+             </div>
+        
+        <div id="lesoesContent" class="hidden">
+            </div>
 
-    if (selectedTeam === 'all') {
-        prontidaoAtletas = fullProntidaoData.map(d => d.atleta_id);
-        cargaAtletas = fullCargaData.map(d => d.atleta_id);
-        scoutAtletas = fullScoutData.map(d => d.atleta_id);
-    } else {
-        prontidaoAtletas = fullProntidaoData.filter(d => d.equipe_id === selectedTeam).map(d => d.atleta_id);
-        cargaAtletas = fullCargaData.filter(d => d.equipe_id === selectedTeam).map(d => d.atleta_id);
-        scoutAtletas = fullScoutData.filter(d => d.equipe_id === selectedTeam).map(d => d.atleta_id);
-    }
-    
-    const nomesUnicos = [...new Set([...prontidaoAtletas, ...cargaAtletas, ...scoutAtletas])].filter(Boolean);
-    
-    individualOptionsContainer.innerHTML = ''; // Limpa opções antigas
-    nomesUnicos.sort().forEach(atleta => {
-        const option = document.createElement('option');
-        option.value = atleta;
-        option.textContent = atleta;
-        individualOptionsContainer.appendChild(option);
-    });
-}
+        <div id="scoutContent" class="hidden">
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-3">1. Prepare seu arquivo de Scout</h2>
+                        <p class="text-gray-600 mb-4">O arquivo CSV deve ter as colunas abaixo, incluindo o novo campo `Adversario` e o `equipe_id` para o filtro de equipe.</p>
+                        <div class="bg-gray-100 p-4 rounded-lg text-sm text-gray-700 font-mono border">
+                            <p><strong class="text-blue-600">equipe_id</strong>,Jogador,<strong class="text-green-600">Adversario</strong>,Media Geral,Posicao,Gols,Assistencias,...</p>
+                        </div>
+                         <ul class="mt-4 space-y-2 text-gray-600 text-sm list-disc list-inside">
+                             <li>O sistema agrupará os dados por `Jogador`.</li>
+                             <li>As estatísticas serão somadas e as médias calculadas automaticamente.</li>
+                             <li>A coluna `Adversario` será exibida nos detalhes de cada jogo.</li>
+                        </ul>
+                    </div>
 
+                    <div class="mt-6 md:mt-0">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-3">2. Importe o arquivo e analise</h2>
+                        <div class="flex flex-col items-center justify-center w-full">
+                             <label for="csvFileInputScout" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <svg class="w-10 h-10 mb-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                    <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Clique para carregar</span> ou arraste</p>
+                                    <p class="text-xs text-gray-500">Arquivo de Scout (.CSV)</p>
+                                </div>
+                                <input id="csvFileInputScout" type="file" class="hidden" accept=".csv" />
+                            </label>
+                            <p id="fileNameScout" class="mt-2 text-sm text-gray-500"></p>
+                        </div>
+                        <button id="processBtnScout" class="btn mt-4 w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center text-lg" disabled>
+                            <span id="btnTextScout">Processar e Salvar Scout</span>
+                            <div id="btnLoaderScout" class="loader hidden ml-3"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="resultsSectionScout" class="mt-10 hidden">
+                 <div id="pdf-content-scout">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Resultados do Scout</h2>
+                         <div class="flex gap-x-2">
+                            <button id="clearScoutDataBtn" class="btn bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition flex items-center text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                                Limpar Dados de Scout
+                            </button>
+                         </div>
+                    </div>
+                    <div id="resultsContainerScout" class="bg-white rounded-lg shadow-md border overflow-x-auto"></div>
+                </div>
+            </div>
+             <div id="placeholderSectionScout" class="mt-10 text-center py-16 px-6 bg-white rounded-lg shadow-md border">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="mt-4 text-xl font-semibold text-gray-800">Aguardando dados de Scout</h3>
+                <p class="mt-1 text-gray-500">Selecione uma equipe ou importe um novo arquivo para começar.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <footer class="text-center py-4 text-xs text-gray-400">
+        Powered by Ciente - Inteligência Esportiva
+    </footer>
+
+    <script type="module">
+        // --- Firebase v9+ modular imports ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, where, getDocs, writeBatch, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+        // --- FIREBASE CONFIG (Ocultado por segurança) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCSxaH-QFQbhrCttS-J8KmVN1MXmjXqY1s",
+            authDomain: "meu-scout-pro.firebaseapp.com",
+            projectId: "meu-scout-pro",
+            storageBucket: "meu-scout-pro.appspot.com",
+            messagingSenderId: "303977649743",
+            appId: "1:303977649743:web:4e81e55c7180390ec97c3a"
+        };
+        
+        // O resto do seu código JavaScript permanece o mesmo...
+        // ... (todo o código JS que já funcionava)
+
+        // --- FUNÇÕES DO SCOUT (FINALIZADAS) ---
+
+        function handleFileProcessingScout() {
+            const file = csvFileInputScout.files[0];
+            if (!file) {
+                showToast("Por favor, selecione um arquivo de scout.");
+                return;
+            }
+            toggleLoading(true, 'scout');
+            const reader = new FileReader();
+
+            reader.onload = async (event) => {
+                try {
+                    const requiredHeaders = ['equipe_id', 'jogador', 'posicao', 'adversario'];
+                    const parsedData = parseCSV(event.target.result, requiredHeaders);
+
+                    if (parsedData.length === 0) {
+                        throw new Error("Nenhum dado válido encontrado no arquivo CSV.");
+                    }
+
+                    const uniqueTeamIdsInFile = [...new Set(parsedData.map(d => d.equipe_id))];
+
+                    // Deletar os dados antigos SOMENTE das equipes presentes no arquivo
+                    const q = query(scoutCollection, where("equipe_id", "in", uniqueTeamIdsInFile));
+                    const snapshot = await getDocs(q);
+                    const batch = writeBatch(db);
+                    snapshot.docs.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    
+                    // Adicionar os novos dados
+                    parsedData.forEach(item => {
+                        const docRef = doc(scoutCollection); // Cria um novo documento com ID automático
+                        batch.set(docRef, {
+                            ...item,
+                            atleta_id: item.jogador, // Padroniza o ID do atleta
+                            posicao_grupo: item.posicao // Padroniza o grupo da posição
+                        });
+                    });
+
+                    await batch.commit();
+                    showToast(`Dados de Scout para a(s) equipe(s) ${uniqueTeamIdsInFile.join(', ')} foram substituídos com sucesso!`, 'success');
+
+                } catch (error) {
+                    console.error("Error during scout processing:", error);
+                    showToast(`Erro: ${error.message}`);
+                } finally {
+                    toggleLoading(false, 'scout');
+                }
+            };
+
+            reader.onerror = () => {
+                showToast("Erro ao ler o arquivo.");
+                toggleLoading(false, 'scout');
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function analyzeScoutData(data) {
+            const gamesByAthlete = data.reduce((acc, game) => {
+                const athleteId = game.atleta_id || game.jogador;
+                if (!acc[athleteId]) {
+                    acc[athleteId] = {
+                        gameDetails: [],
+                        posicao: game.posicao || game.posicao_grupo
+                    };
+                }
+                acc[athleteId].gameDetails.push(game);
+                return acc;
+            }, {});
+
+            const aggregatedData = Object.keys(gamesByAthlete).map(athleteId => {
+                const athleteInfo = gamesByAthlete[athleteId];
+                const games = athleteInfo.gameDetails;
+                const totalJogos = games.length;
+
+                const totals = games.reduce((acc, game) => {
+                    Object.keys(game).forEach(key => {
+                        if (typeof game[key] === 'number') {
+                            acc[key] = (acc[key] || 0) + game[key];
+                        }
+                    });
+                    return acc;
+                }, {});
+
+                const mediaGeral = totalJogos > 0 ? (totals.media_geral || 0) / totalJogos : 0;
+                
+                return {
+                    athleteId: athleteId,
+                    posicao: athleteInfo.posicao,
+                    mediaGeral: mediaGeral,
+                    jogos: totalJogos,
+                    gols: totals.gols || 0,
+                    assistencias: totals.assistencias || 0,
+                    finalizacoes: totals.finalizacoes || 0,
+                    duelos_ganhos: totals.duelos_ganhos || 0,
+                    duelos_perdidos: totals.duelos_perdidos || 0,
+                    golsPorJogo: totalJogos > 0 ? (totals.gols || 0) / totalJogos : 0,
+                    finalizacoesPorJogo: totalJogos > 0 ? (totals.finalizacoes || 0) / totalJogos : 0,
+                    gameDetails: games.sort((a,b) => (a.adversario || "").localeCompare(b.adversario || ""))
+                };
+            });
+
+            return aggregatedData.sort((a, b) => b.mediaGeral - a.mediaGeral);
+        }
+
+        function renderScoutTab() {
+            let dataToRender = fullScoutData;
+            if (selectedTeam !== 'all') {
+                dataToRender = dataToRender.filter(d => d.equipe_id === selectedTeam);
+            }
+            if (selectedAthleteGroup !== 'all') {
+                 if (['Defesa', 'Meio', 'Ataque'].includes(selectedAthleteGroup)) {
+                    dataToRender = dataToRender.filter(d => (d.posicao_grupo || d.posicao) === selectedAthleteGroup);
+                } else {
+                    dataToRender = dataToRender.filter(d => (d.atleta_id || d.jogador) === selectedAthleteGroup);
+                }
+            }
+
+            if (dataToRender.length === 0) {
+                placeholderSectionScout.classList.remove('hidden');
+                resultsSectionScout.classList.add('hidden');
+            } else {
+                placeholderSectionScout.classList.add('hidden');
+                resultsSectionScout.classList.remove('hidden');
+                const aggregatedData = analyzeScoutData(dataToRender);
+                renderScoutTable(aggregatedData);
+            }
+        }
+
+        function renderScoutTable(aggregatedData) {
+            const container = document.getElementById('resultsContainerScout');
+            const headers = ['Jogador', 'Posição', 'Média Geral', 'Jogos', 'Gols', 'Gols/Jogo', 'Assist.', 'Fin./Jogo', ''];
+
+            const tableRows = aggregatedData.map(player => {
+                const mediaGeral = player.mediaGeral.toFixed(2);
+                let mediaClass = 'text-gray-800';
+                if (player.mediaGeral >= 8) mediaClass = 'text-green-600 font-bold';
+                else if (player.mediaGeral >= 6.5) mediaClass = 'text-yellow-600';
+                else if (player.mediaGeral > 0) mediaClass = 'text-red-600';
+
+                const uniqueId = player.athleteId.replace(/[^a-zA-Z0-9]/g, "");
+
+                const gameDetailsHtml = player.gameDetails.map(game => `
+                    <tr class="text-xs bg-gray-100 hover:bg-gray-200">
+                        <td class="p-2 pl-6 border-b border-gray-200 font-medium" colspan="2">vs. ${game.adversario}</td>
+                        <td class="p-2 text-center border-b border-gray-200">${(game.media_geral || 0).toFixed(1)}</td>
+                        <td class="p-2 text-center border-b border-gray-200">-</td>
+                        <td class="p-2 text-center border-b border-gray-200">${game.gols || 0}</td>
+                        <td class="p-2 text-center border-b border-gray-200">-</td>
+                        <td class="p-2 text-center border-b border-gray-200">${game.assistencias || 0}</td>
+                        <td class="p-2 text-center border-b border-gray-200">${game.finalizacoes || 0}</td>
+                        <td class="p-2 border-b border-gray-200"></td>
+                    </tr>
+                `).join('');
+
+                return `
+                    <tbody class="border-b last:border-0">
+                        <tr class="hover:bg-blue-50 text-sm align-middle">
+                            <td class="p-3 font-semibold text-gray-900">${player.athleteId}</td>
+                            <td class="p-3 text-gray-600">${player.posicao}</td>
+                            <td class="p-3 text-center text-xl font-bold ${mediaClass}">${mediaGeral}</td>
+                            <td class="p-3 text-center text-gray-600">${player.jogos}</td>
+                            <td class="p-3 text-center text-gray-600">${player.gols}</td>
+                            <td class="p-3 text-center text-gray-600 font-semibold">${player.golsPorJogo.toFixed(2)}</td>
+                            <td class="p-3 text-center text-gray-600">${player.assistencias}</td>
+                            <td class="p-3 text-center text-gray-600 font-semibold">${player.finalizacoesPorJogo.toFixed(2)}</td>
+                            <td class="p-3 text-center">
+                                <button class="toggle-details-btn p-1 rounded-full hover:bg-gray-200" data-target="details-scout-${uniqueId}">
+                                    <svg class="arrow-icon w-5 h-5 text-gray-500 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr class="details-section" id="details-scout-${uniqueId}">
+                            <td colspan="${headers.length}">
+                                <div class="p-2 bg-gray-50">
+                                    <table class="w-full">
+                                       <thead class="text-xs text-gray-500">
+                                            <tr>
+                                                <th class="p-2 pl-6 font-semibold text-left" colspan="2">Adversário</th>
+                                                <th class="p-2 font-semibold text-center">Nota</th>
+                                                <th class="p-2 font-semibold text-center"></th>
+                                                <th class="p-2 font-semibold text-center">Gols</th>
+                                                <th class="p-2 font-semibold text-center"></th>
+                                                <th class="p-2 font-semibold text-center">Assist.</th>
+                                                <th class="p-2 font-semibold text-center">Fin.</th>
+                                                <th class="p-2 font-semibold"></th>
+                                            </tr>
+                                       </thead>
+                                       <tbody>
+                                            ${gameDetailsHtml}
+                                       </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <table class="w-full text-left">
+                    <thead class="bg-gray-100 sticky top-0 z-10">
+                        <tr>
+                            ${headers.map(h => `<th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider ${h !== 'Jogador' && h !== 'Posição' ? 'text-center' : ''}">${h}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    ${tableRows}
+                </table>
+            `;
+            
+            container.querySelectorAll('.toggle-details-btn').forEach(button => {
+                button.addEventListener('click', (e) => toggleDetails(e, 'scout'));
+            });
+        }
+        
+        function toggleDetails(event, type) {
+            const button = event.target.closest('.toggle-details-btn');
+            if (!button) return;
+            const targetId = button.dataset.target;
+            const detailsSection = document.getElementById(targetId);
+            if (!detailsSection) return;
+
+            detailsSection.classList.toggle('open');
+            button.querySelector('.arrow-icon').classList.toggle('rotate-180');
+        }
+
+        // Adicionar os listeners aos botões
+        processBtnScout.addEventListener('click', handleFileProcessingScout);
+        clearScoutDataBtn.addEventListener('click', () => {
+             showConfirmationModal(
+                'Tem certeza que deseja apagar TODOS os dados de Scout? Esta ação não pode ser desfeita.',
+                async () => {
+                    showToast('Limpando dados de scout...', 'success');
+                    const snapshot = await getDocs(query(scoutCollection));
+                    const batch = writeBatch(db);
+                    snapshot.docs.forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                    showToast('Dados de scout removidos.', 'success');
+                }, 'Apagar Dados de Scout'
+            );
+        });
+        csvFileInputScout.addEventListener('change', () => handleFileSelect(csvFileInputScout, fileNameScout, processBtnScout));
+
+        // Inicializar a aba de scout e outras ao carregar
+        // ... (resto do seu código de inicialização)
 
     </script>
 </body>
