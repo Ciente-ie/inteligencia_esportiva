@@ -2412,7 +2412,6 @@ function processAndStoreLoadData(dataToProcess) {
     const sortedMicrocycles = sortWeeks([...allMicrocyclesForTeam]);
     renderFilter(sortedMicrocycles);
 }
-
 function renderFilter(microcycles) {
     if (microcycles.length === 0) {
         filterContainer.innerHTML = '';
