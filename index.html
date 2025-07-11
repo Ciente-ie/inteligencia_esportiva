@@ -2465,8 +2465,7 @@ function displayFilteredLoadData(selectedIds, dataForTeam) {
         
         const selectedCycles = allAthleteCycles.filter(c => selectedIds.includes(c.microciclo_id));
         if(selectedCycles.length === 0) return;
-
-        const avgWeeklyLoad = getStats(selectedCycles.map(c => c.totalLoad)).mean;
+        
         const avgMonotony = getStats(selectedCycles.map(c => c.monotony)).mean;
         const avgStrain = getStats(selectedCycles.map(c => c.strain)).mean;
         
@@ -2474,11 +2473,16 @@ function displayFilteredLoadData(selectedIds, dataForTeam) {
         
         const lastSelectedCycleId = sortedSelectedIds[sortedSelectedIds.length - 1];
         const lastCycleIndex = allAthleteCycles.findIndex(c => c.microciclo_id === lastSelectedCycleId);
+        
         let acwrForTable = null;
         let hasEnoughDataForAcwr = false;
+        let totalLoadForTable = null; // Variável para a carga da última semana
 
         if (lastCycleIndex > -1) {
-            const acuteLoad = allAthleteCycles[lastCycleIndex].totalLoad;
+            const lastCycleData = allAthleteCycles[lastCycleIndex];
+            totalLoadForTable = lastCycleData.totalLoad; // Pega a carga total da última semana selecionada
+
+            const acuteLoad = lastCycleData.totalLoad;
             const chronicCycles = allAthleteCycles.slice(Math.max(0, lastCycleIndex - 3), lastCycleIndex + 1);
             const chronicLoad = getStats(chronicCycles.map(c => c.totalLoad)).mean;
             
@@ -2490,7 +2494,7 @@ function displayFilteredLoadData(selectedIds, dataForTeam) {
         
         individualResults.push({
             athleteId,
-            totalLoad: avgWeeklyLoad, 
+            totalLoad: totalLoadForTable, // Usa o novo valor específico para a tabela
             monotony: avgMonotony,
             strain: avgStrain, 
             acwr: acwrForTable,
@@ -2543,7 +2547,6 @@ function displayFilteredLoadData(selectedIds, dataForTeam) {
          renderTeamDailyLoadChart(teamStats.dailyAverages);
     }
 }
-
 function renderTeamDashboardCarga(stats, isForDashboard = false) {
      if(!stats) return '';
     const avgAcwr = stats.avgAcwr ? stats.avgAcwr.toFixed(2) : '--';
@@ -2649,9 +2652,8 @@ function renderTeamStrainChart(evolutionData, prefix = '') {
 }
 
 function renderLoadTable(results) {
-     resultsContainerCarga.innerHTML = `<div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0"><div class="w-2/6">Atleta</div><div class="w-1/6 text-center">ACWR</div><div class="w-1/6 text-center">Carga Aguda Média</div><div class="w-1/6 text-center">Monotonia</div><div class="w-1/6 text-center">Strain</div><div class="w-12"></div></div><div>${results.map(createLoadResultRow).join('')}</div>`;
+     resultsContainerCarga.innerHTML = `<div class="flex items-center p-4 bg-gray-50 border-b font-semibold text-gray-600 text-sm sticky top-0"><div class="w-2/6">Atleta</div><div class="w-1/6 text-center">ACWR</div><div class="w-1/6 text-center">Carga Aguda (Semana)</div><div class="w-1/6 text-center">Monotonia</div><div class="w-1/6 text-center">Strain</div><div class="w-12"></div></div><div>${results.map(createLoadResultRow).join('')}</div>`;
 }
-
 function createLoadResultRow(result) {
     const cleanAthleteId = result.athleteId.replace(/\s+/g, '-');
     const acwrText = result.acwr != null ? result.acwr.toFixed(2) : '--';
