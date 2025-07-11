@@ -1007,6 +1007,8 @@ function renderLesoesTab() {
             const id = e.currentTarget.dataset.id;
             const newStatus = e.currentTarget.dataset.status;
             const atleta = e.currentTarget.dataset.atleta;
+            const createdAtStr = e.currentTarget.dataset.createdat; // Captura a data de criação
+
             const text = newStatus === 'liberado' 
                 ? `Tem certeza que deseja marcar a lesão de ${atleta} como 'Liberado'?`
                 : `Tem certeza que deseja remover o registro de lesão de ${atleta}?`;
@@ -1016,14 +1018,23 @@ function renderLesoesTab() {
                 if (newStatus === 'delete') {
                     await deleteDoc(doc(db, "lesoes", id));
                     showToast(`${atleta} removido dos registros de lesão.`, 'success');
-                } else {
+                } else if (newStatus === 'liberado') {
                     const lesaoRef = doc(db, "lesoes", id);
-                    // AJUSTE 1: Salva a data de liberação junto com o novo status
                     await updateDoc(lesaoRef, { 
                         status: newStatus,
-                        liberadoAt: serverTimestamp() // Adiciona o timestamp de quando foi liberado
+                        liberadoAt: serverTimestamp()
                     });
-                    showToast(`${atleta} foi liberado.`, 'success');
+
+                    // Calcula a duração e exibe na notificação
+                    if (createdAtStr) {
+                        const startDate = new Date(createdAtStr);
+                        const endDate = new Date(); // Data atual é a data de liberação
+                        const diffTime = Math.abs(endDate - startDate);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        showToast(`${atleta} foi liberado após ${diffDays} dias afastado.`, 'success');
+                    } else {
+                        showToast(`${atleta} foi liberado.`, 'success'); // Mensagem padrão caso a data não seja encontrada
+                    }
                 }
             }, title);
         });
@@ -1047,7 +1058,6 @@ function renderLesoesTab() {
                 default: statusClass = 'bg-gray-100 text-gray-800'; statusText = l.status;
             }
 
-            // AJUSTE 2: Lógica para calcular e exibir os dias de afastamento
             let diasAfastadoHtml = `<td class="p-3 text-sm text-center text-gray-500">-</td>`;
             if (l.status === 'liberado' && l.createdAt && l.liberadoAt) {
                 const startDate = l.createdAt.toDate();
@@ -1056,7 +1066,6 @@ function renderLesoesTab() {
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 diasAfastadoHtml = `<td class="p-3 text-sm text-center font-semibold text-gray-800">${diffDays}</td>`;
             } else if (l.status !== 'liberado' && l.createdAt) {
-                // Para atletas ainda não liberados, calcula os dias até hoje
                 const startDate = l.createdAt.toDate();
                 const diffTime = Math.abs(new Date() - startDate);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -1092,7 +1101,6 @@ function renderLesoesTab() {
         `;
     }
 }
-
 function updateDashboardView() {
     renderDashboardLesoes();
     renderDashboardProntidao();
@@ -3110,6 +3118,9 @@ function createLesaoCard(lesao) {
             break;
     }
 
+    // Adiciona a data de criação como uma string ISO para ser usada no cálculo
+    const createdAtISO = lesao.createdAt ? lesao.createdAt.toDate().toISOString() : '';
+
     return `
          <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 ${lesao.status === 'nao-liberado' ? 'border-red-500' : 'border-yellow-500'}">
             <div class="flex justify-between items-start">
@@ -3123,13 +3134,12 @@ function createLesaoCard(lesao) {
                 <p class="text-sm text-gray-700 whitespace-pre-wrap">${lesao.tratamento || 'Nenhum tratamento especificado.'}</p>
             </div>
             <div class="flex justify-end gap-x-2 mt-3">
-                <button class="btn-update-lesao text-xs bg-green-100 text-green-700 hover:bg-green-200 px-3 py-1 rounded-md" data-id="${lesao.id}" data-status="liberado" data-atleta="${lesao.atleta}">Marcar como Liberado</button>
+                <button class="btn-update-lesao text-xs bg-green-100 text-green-700 hover:bg-green-200 px-3 py-1 rounded-md" data-id="${lesao.id}" data-status="liberado" data-atleta="${lesao.atleta}" data-createdat="${createdAtISO}">Marcar como Liberado</button>
                 <button class="btn-update-lesao text-xs bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 rounded-md" data-id="${lesao.id}" data-status="delete" data-atleta="${lesao.atleta}">Remover</button>
             </div>
         </div>
     `;
 }
-
 function populateTeamFilter() {
     const allData = [...fullProntidaoData, ...fullCargaData, ...lesoesData];
     const teams = [...new Set(allData.map(d => d.equipe_id).filter(Boolean))].sort();
