@@ -1018,7 +1018,11 @@ function renderLesoesTab() {
                     showToast(`${atleta} removido dos registros de lesão.`, 'success');
                 } else {
                     const lesaoRef = doc(db, "lesoes", id);
-                    await updateDoc(lesaoRef, { status: newStatus });
+                    // AJUSTE 1: Salva a data de liberação junto com o novo status
+                    await updateDoc(lesaoRef, { 
+                        status: newStatus,
+                        liberadoAt: serverTimestamp() // Adiciona o timestamp de quando foi liberado
+                    });
                     showToast(`${atleta} foi liberado.`, 'success');
                 }
             }, title);
@@ -1030,7 +1034,6 @@ function renderLesoesTab() {
     if (todasLesoes.length === 0) {
         historyContainer.innerHTML = `<p class="text-center text-gray-500 p-6">Nenhum histórico de lesão encontrado para este filtro.</p>`;
     } else {
-        // Ordena da mais recente para a mais antiga
         const sortedHistory = todasLesoes.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
         
         const tableRows = sortedHistory.map(l => {
@@ -1044,12 +1047,29 @@ function renderLesoesTab() {
                 default: statusClass = 'bg-gray-100 text-gray-800'; statusText = l.status;
             }
 
+            // AJUSTE 2: Lógica para calcular e exibir os dias de afastamento
+            let diasAfastadoHtml = `<td class="p-3 text-sm text-center text-gray-500">-</td>`;
+            if (l.status === 'liberado' && l.createdAt && l.liberadoAt) {
+                const startDate = l.createdAt.toDate();
+                const endDate = l.liberadoAt.toDate();
+                const diffTime = Math.abs(endDate - startDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                diasAfastadoHtml = `<td class="p-3 text-sm text-center font-semibold text-gray-800">${diffDays}</td>`;
+            } else if (l.status !== 'liberado' && l.createdAt) {
+                // Para atletas ainda não liberados, calcula os dias até hoje
+                const startDate = l.createdAt.toDate();
+                const diffTime = Math.abs(new Date() - startDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                diasAfastadoHtml = `<td class="p-3 text-sm text-center text-gray-500 italic">(${diffDays} dias)</td>`;
+            }
+
             return `
                 <tr class="border-b last:border-0 hover:bg-gray-50">
                     <td class="p-3 text-sm text-gray-700">${dataRegistro}</td>
                     <td class="p-3 text-sm font-semibold text-gray-900">${l.atleta}</td>
                     <td class="p-3 text-sm text-gray-700">${l.lesao}</td>
                     <td class="p-3 text-sm text-gray-700"><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusClass}">${statusText}</span></td>
+                    ${diasAfastadoHtml}
                 </tr>
             `;
         }).join('');
@@ -1058,10 +1078,11 @@ function renderLesoesTab() {
             <table class="w-full text-left">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Data</th>
+                        <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Data Início</th>
                         <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Atleta</th>
                         <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Lesão</th>
                         <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                        <th class="p-3 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">Dias Afastado</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1071,7 +1092,6 @@ function renderLesoesTab() {
         `;
     }
 }
-
 
 function updateDashboardView() {
     renderDashboardLesoes();
