@@ -1823,16 +1823,22 @@ function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, di
 
         let hooperAdjustment = 0;
         if (latestEntry.hooper_score != null) {
-            if (latestEntry.hooper_score <= 9) hooperAdjustment = 0.25;
-            else if (latestEntry.hooper_score <= 17) hooperAdjustment = -0.25;
-            else hooperAdjustment = -0.50;
+            // Ajuste para +0.5 se Hooper for menor que 10
+            if (latestEntry.hooper_score < 10) {
+                hooperAdjustment = 0.5;
+            }
         }
 
         readinessIndex = performancePillar + hooperAdjustment;
 
-        if (readinessIndex < -1.5) zone = 'red';
-        else if (readinessIndex < -0.5) zone = 'yellow';
-        else zone = 'green';
+        // Novos limites para as zonas de prontidão
+        if (readinessIndex < -1.99) { // De -2.0 em diante é crítico
+            zone = 'red';
+        } else if (readinessIndex < -0.90) { // De -0.90 até -1.99 é atenção
+            zone = 'yellow';
+        } else { // Acima de -0.90 é ótimo
+            zone = 'green';
+        }
     }
 
     const metricsDetail = Object.keys(METRIC_NAMES).reduce((acc, key) => {
@@ -1962,13 +1968,12 @@ function renderTeamDashboardProntidaoWithDailyCharts(dailyStats, teamStats, week
             <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
                 <h4 class="font-bold text-sm mb-1 text-gray-700">Legenda: Índice Geral</h4>
                 <p>O <strong>Índice Geral</strong> é calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p>
-                <p class="mt-1"><strong class="text-green-600">> -0.5: Ótimo</strong> | <strong class="text-yellow-600">-0.5 a -1.5: Atenção</strong> | <strong class="text-red-600">< -1.5: Crítico</strong></p>
+                <p class="mt-1"><strong class="text-green-600">> -0.90: Ótimo</strong> | <strong class="text-yellow-600">-0.90 a -1.99: Atenção</strong> | <strong class="text-red-600">< -2.0: Crítico</strong></p>
             </div>
         </div>
         ` : ''}
         `;
 }
-
 function renderTeamDailyIndexChart(canvasId, dailyData) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
@@ -2038,7 +2043,7 @@ function renderTeamDashboardProntidaoWithCards(stats, latestDate) {
                 <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
                     <h4 class="font-bold text-sm mb-1 text-gray-700">Legenda: Índice Geral</h4>
                     <p>O <strong>Índice Geral</strong> é calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p>
-                    <p class="mt-1"><strong class="text-green-600">> -0.5: Ótimo</strong> | <strong class="text-yellow-600">-0.5 a -1.5: Atenção</strong> | <strong class="text-red-600">< -1.5: Crítico</strong></p>
+                    <p class="mt-1"><strong class="text-green-600">> -0.90: Ótimo</strong> | <strong class="text-yellow-600">-0.90 a -1.99: Atenção</strong> | <strong class="text-red-600">< -2.0: Crítico</strong></p>
                 </div>
             </div>
             `;
@@ -2092,7 +2097,7 @@ function renderTeamDashboardProntidaoWithCharts(stats, latestDate, isForDashboar
             <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
                 <h4 class="font-bold text-sm mb-1 text-gray-700">Legenda: Índice Geral</h4>
                 <p>O <strong>Índice Geral</strong> é calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p>
-                <p class="mt-1"><strong class="text-green-600">> -0.5: Ótimo</strong> | <strong class="text-yellow-600">-0.5 a -1.5: Atenção</strong> | <strong class="text-red-600">< -1.5: Crítico</strong></p>
+                <p class="mt-1"><strong class="text-green-600">> -0.90: Ótimo</strong> | <strong class="text-yellow-600">-0.90 a -1.99: Atenção</strong> | <strong class="text-red-600">< -2.0: Crítico</strong></p>
             </div>
         </div>
         ` : ''}
@@ -2630,7 +2635,6 @@ function renderTeamWeeklyLoadChart(evolutionData, prefix = '') {
         options: { maintainAspectRatio: false, scales: { y: { display: true, beginAtZero: true, min: 0, max: 5000 }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, datalabels: { display: evolutionData.length <= 12, anchor: 'center', align: 'center', color: 'white', formatter: (v) => v > 0 ? Math.round(v) : null } } }
     });
 }
-
 function renderTeamAcwrChart(evolutionData, prefix = '') {
     const canvasId = `${prefix}team-acwr-chart`;
     const ctx = document.getElementById(canvasId);
@@ -3262,9 +3266,9 @@ function renderLegends(type) {
             <div class="bg-white p-3 rounded-lg border">
                 <h4 class="font-bold text-sm mb-1 text-gray-700">Índice Geral</h4>
                 <p>Calculado pela performance (Salto/VFC) e ajustado pela fadiga (Hooper).</p>
-                <p><strong class="text-green-600">> -0.5 (Ótimo)</strong></p>
-                <p><strong class="text-yellow-600">-0.5 a -1.5 (Atenção)</strong></p>
-                <p><strong class="text-red-600">< -1.5 (Crítico)</strong></p>
+                <p><strong class="text-green-600">> -0.90 (Ótimo)</strong></p>
+                <p><strong class="text-yellow-600">-0.90 a -1.99 (Atenção)</strong></p>
+                <p><strong class="text-red-600">< -2.0 (Crítico)</strong></p>
             </div>
             <div class="bg-white p-3 rounded-lg border">
                 <h4 class="font-bold text-sm mb-1 text-gray-700">Fadiga (Hooper)</h4>
