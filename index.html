@@ -2185,21 +2185,20 @@ function renderTeamIndexChart(canvasId, evolutionData) {
     if (!ctx) return;
     if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
-    // Formata os dados para o gráfico de dispersão (pontos)
+    // CORREÇÃO 1: Garante que 'y' seja um NÚMERO, não uma string.
     const scatterData = evolutionData.map(d => ({
         x: d.weekId,
-        y: parseFloat(d.averageIndex).toFixed(2)
+        y: parseFloat(d.averageIndex) 
     }));
 
     activeCharts[canvasId] = new Chart(ctx, {
-        type: 'scatter', // <-- TIPO DE GRÁFICO ALTERADO
+        type: 'scatter',
         data: {
-            // labels não são mais necessários aqui, pois os dados x,y já contêm a informação
             datasets: [{
                 label: 'Índice Geral',
-                data: scatterData, // <-- USA OS DADOS FORMATADOS
-                backgroundColor: 'rgba(59, 130, 246, 1)', // Cor dos pontos
-                pointRadius: 6, // Tamanho dos pontos
+                data: scatterData,
+                backgroundColor: 'rgba(59, 130, 246, 1)',
+                pointRadius: 6,
                 pointHoverRadius: 8
             }]
         },
@@ -2211,7 +2210,7 @@ function renderTeamIndexChart(canvasId, evolutionData) {
                     max: 2.5 
                 },
                 x: {
-                    type: 'category', // Trata as semanas como categorias no eixo X
+                    type: 'category',
                     ticks: {
                         autoSkip: true,
                         maxRotation: 45,
@@ -2224,7 +2223,12 @@ function renderTeamIndexChart(canvasId, evolutionData) {
                 datalabels: { 
                     display: evolutionData.length <= 12,
                     align: 'top', 
-                    color: '#374151' 
+                    color: '#374151',
+                    // CORREÇÃO 2: Adiciona o 'formatter' para buscar o valor 'y' do ponto.
+                    formatter: (value) => {
+                        // value aqui é o objeto {x: 'SemXX', y: -0.55}
+                        return value.y.toFixed(2);
+                    }
                 } 
             }
         }
