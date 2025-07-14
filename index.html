@@ -620,16 +620,20 @@ const readinessZonePlugin = {
     id: 'readinessZonePlugin',
     beforeDraw: (chart) => {
         const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
-        if (chart.config.type !== 'line' || !y || !y.getPixelForValue) return;
+        // ALTERAÇÃO: Permite que o plugin funcione em gráficos de linha E de pontos.
+        if (!['line', 'scatter'].includes(chart.config.type) || !y || !y.getPixelForValue) return;
 
-        const greenZone = y.getPixelForValue(-0.5);
-        const yellowZone = y.getPixelForValue(-1.5);
+        const greenZone = y.getPixelForValue(-0.90);
+        const yellowZone = y.getPixelForValue(-2.0);
 
         ctx.save();
+        // Zona Verde (Ótima)
         ctx.fillStyle = 'rgba(34, 197, 94, 0.1)';
         ctx.fillRect(left, top, right - left, greenZone - top);
+        // Zona Amarela (Atenção)
         ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
         ctx.fillRect(left, greenZone, right - left, yellowZone - greenZone);
+        // Zona Vermelha (Crítica)
         ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
         ctx.fillRect(left, yellowZone, right - left, bottom - yellowZone);
         ctx.restore();
@@ -2260,7 +2264,8 @@ function renderTeamHooperChart(canvasId, evolutionData) {
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            scales: { y: { min: 4, max: 22 } },
+            // ALTERAÇÃO: Eixo Y agora começa em 0.
+            scales: { y: { min: 0, max: 28 } },
             plugins: { 
                 legend: { display: false }, 
                 datalabels: { 
