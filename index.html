@@ -2185,25 +2185,40 @@ function renderTeamIndexChart(canvasId, evolutionData) {
     if (!ctx) return;
     if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
 
-    const labels = evolutionData.map(d => d.weekId);
-    const data = evolutionData.map(d => d.averageIndex.toFixed(2));
+    // Formata os dados para o gráfico de dispersão (pontos)
+    const scatterData = evolutionData.map(d => ({
+        x: d.weekId,
+        y: parseFloat(d.averageIndex).toFixed(2)
+    }));
 
     activeCharts[canvasId] = new Chart(ctx, {
-        type: 'line',
+        type: 'scatter', // <-- TIPO DE GRÁFICO ALTERADO
         data: {
-            labels: labels,
+            // labels não são mais necessários aqui, pois os dados x,y já contêm a informação
             datasets: [{
                 label: 'Índice Geral',
-                data: data,
-                borderColor: 'rgba(59, 130, 246, 1)',
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                fill: true,
-                tension: 0.3
+                data: scatterData, // <-- USA OS DADOS FORMATADOS
+                backgroundColor: 'rgba(59, 130, 246, 1)', // Cor dos pontos
+                pointRadius: 6, // Tamanho dos pontos
+                pointHoverRadius: 8
             }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            scales: { y: { min: -2.5, max: 2.5 } },
+            scales: { 
+                y: { 
+                    min: -2.5, 
+                    max: 2.5 
+                },
+                x: {
+                    type: 'category', // Trata as semanas como categorias no eixo X
+                    ticks: {
+                        autoSkip: true,
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            },
             plugins: { 
                 legend: { display: false }, 
                 datalabels: { 
@@ -2258,18 +2273,24 @@ function renderTeamSaltoChart(canvasId, evolutionData) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
     if (activeCharts[canvasId]) activeCharts[canvasId].destroy();
-
-    const labels = evolutionData.map(d => d.weekId);
-    const data = evolutionData.map(d => d.averageSaltoDiff.toFixed(1));
+    
+    // Formata os dados para o gráfico de dispersão e define a cor de cada ponto
+    const scatterData = evolutionData.map(d => ({
+        x: d.weekId,
+        y: parseFloat(d.averageSaltoDiff).toFixed(1)
+    }));
+    
+    const pointColors = scatterData.map(point => point.y >= 0 ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)');
 
     activeCharts[canvasId] = new Chart(ctx, {
-        type: 'bar',
+        type: 'scatter', // <-- TIPO DE GRÁFICO ALTERADO
         data: {
-            labels: labels,
             datasets: [{
                 label: '% Recuperação Muscular',
-                data: data,
-                backgroundColor: data.map(val => val >= 0 ? 'rgba(34, 197, 94, 0.7)' : 'rgba(239, 68, 68, 0.7)'),
+                data: scatterData, // <-- USA OS DADOS FORMATADOS
+                backgroundColor: pointColors, // <-- USA A LISTA DE CORES
+                pointRadius: 6,
+                pointHoverRadius: 8
             }]
         },
         options: {
@@ -2278,16 +2299,23 @@ function renderTeamSaltoChart(canvasId, evolutionData) {
                 y: {
                     min: -20, max: 30,
                     ticks: { callback: (value) => value + '%' }
+                },
+                x: {
+                    type: 'category',
+                    ticks: {
+                        autoSkip: true,
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
                 }
             },
             plugins: {
                 legend: { display: false },
                 datalabels: {
                     display: evolutionData.length <= 12,
-                    formatter: (value) => value + '%',
-                    anchor: 'end',
-                    align: (context) => context.dataset.data[context.dataIndex] >= 0 ? 'top' : 'bottom',
-                    color: (context) => context.dataset.data[context.dataIndex] >= 0 ? '#166534' : '#991b1b'
+                    formatter: (value) => value.y + '%', // Ajusta o formatter para ler o valor y do ponto
+                    align: (context) => context.dataset.data[context.dataIndex].y >= 0 ? 'top' : 'bottom',
+                    color: (context) => context.dataset.data[context.dataIndex].y >= 0 ? '#166534' : '#991b1b'
                 }
             }
         }
