@@ -72,6 +72,113 @@
         }
 
     </style>
+
+<!-- ==== INTEGRAÇÃO FIREBASE (APP NOMEADO PARA NÃO CONFLITAR) ==== -->
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+<script>
+  (function(){
+    if (!window.__APP_INTEGRADO__) {
+      const firebaseConfigIntegrado = {
+        apiKey: "AIzaSyDsoutLk5gmxq5zlu548HWFrox37u1zrxk",
+        authDomain: "appintegrado-ciente.firebaseapp.com",
+        projectId: "appintegrado-ciente",
+        storageBucket: "appintegrado-ciente.appspot.com",
+        messagingSenderId: "487559108410",
+        appId: "1:487559108410:web:08868011454e609ee52203"
+      };
+      try {
+        window.__APP_INTEGRADO__ = firebase.initializeApp(firebaseConfigIntegrado, "appIntegrado");
+        window.__DB_INTEGRADO__ = window.__APP_INTEGRADO__.firestore();
+      } catch(e) {
+        // Se já existe app com o mesmo nome, reaproveita
+        window.__APP_INTEGRADO__ = firebase.app("appIntegrado");
+        window.__DB_INTEGRADO__ = window.__APP_INTEGRADO__.firestore();
+      }
+    }
+
+    // Utilitário: simula o upload de CSV e aciona o fluxo nativo
+    window.__simularUploadCSV = function(inputId, processHandlerName, fallbackBtnId, file){
+      const input = document.getElementById(inputId);
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      if (input) {
+        input.files = dt.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      const handler = window[processHandlerName];
+      if (typeof handler === 'function') {
+        handler();
+      } else {
+        const btn = document.getElementById(fallbackBtnId);
+        if (btn) btn.click();
+      }
+    };
+
+    // PRONTIDÃO
+    window.carregarFirebaseProntidao = async function(){
+      try {
+        const db = window.__DB_INTEGRADO__;
+        const snap = await db.collection("prontidao").orderBy("data", "desc").get();
+        const linhas = [];
+        snap.forEach(doc => {
+          const d = doc.data() || {};
+          const linha = [
+            d.equipe_id ?? "",
+            (d.atleta_id ?? d.nome_atleta ?? ""),
+            (d.posicao_grupo ?? ""),
+            (d.data ?? ""),
+            (d.semana_id ?? ""),
+            (d.qualidade_sono ?? d.sono ?? ""),
+            (d.niveis_stress ?? d.estresse ?? ""),
+            (d.fadiga_geral ?? d.fadiga ?? ""),
+            (d.dor_muscular ?? d.dor ?? ""),
+            (d.hooper_score ?? "")
+          ].join(",");
+          linhas.push(linha);
+        });
+        const header = "equipe_id,atleta_id,posicao_grupo,data,semana_id,qualidade_sono,niveis_stress,fadiga_geral,dor_muscular,hooper_score";
+        const csv = header + "\n" + linhas.join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const file = new File([blob], "prontidao_firebase.csv", { type: "text/csv" });
+        window.__simularUploadCSV("csvFileInput", "handleFileProcessing", "processBtn", file);
+      } catch (e) {
+        console.error("Erro carregarFirebaseProntidao:", e);
+        alert("Erro ao carregar Prontidão do Firebase. Veja o console.");
+      }
+    };
+
+    // CARGA
+    window.carregarFirebaseCarga = async function(){
+      try {
+        const db = window.__DB_INTEGRADO__;
+        const snap = await db.collection("carga").orderBy("data", "desc").get();
+        const linhas = [];
+        snap.forEach(doc => {
+          const d = doc.data() || {};
+          const linha = [
+            d.equipe_id ?? "",
+            (d.atleta_id ?? d.nome_atleta ?? ""),
+            (d.posicao_grupo ?? ""),
+            (d.data ?? ""),
+            (d.microciclo_id ?? d.semana_id ?? ""),
+            (d.pse_sessao ?? d.pse ?? ""), (d.duracao_sessao_min ?? d.duracao_sessao ?? d.tempo ?? d.duracao_min ?? d.duracao ?? "")].join(",");
+          linhas.push(linha);
+        });
+        const header = "equipe_id,atleta_id,posicao_grupo,data,microciclo_id,pse_sessao,duracao_sessao_min";
+        const csv = header + "\n" + linhas.join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const file = new File([blob], "carga_firebase.csv", { type: "text/csv" });
+        window.__simularUploadCSV("csvFileInputCarga", "handleFileProcessingCarga", "processBtnCarga", file);
+      } catch (e) {
+        console.error("Erro carregarFirebaseCarga:", e);
+        alert("Erro ao carregar Carga do Firebase. Veja o console.");
+      }
+    };
+  })();
+</script>
+<!-- ==== /FIM INTEGRAÇÃO FIREBASE ==== -->
+
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
 
@@ -186,6 +293,9 @@
                             <span id="btnText">Processar e Salvar Prontidão</span>
                             <div id="btnLoader" class="loader hidden ml-3"></div>
                         </button>
+<button type="button" onclick="carregarFirebaseProntidao()" class="btn mt-2 w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 flex items-center justify-center text-lg">
+  🔄 Atualizar do Firebase
+</button>
                     </div>
                 </div>
             </div>
@@ -251,6 +361,9 @@
                             <span id="btnTextCarga">Processar e Salvar Carga</span>
                             <div id="btnLoaderCarga" class="loader hidden ml-3"></div>
                         </button>
+<button type="button" onclick="carregarFirebaseCarga()" class="btn mt-2 w-full bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-emerald-700 transition duration-300 flex items-center justify-center text-lg">
+  🔄 Atualizar do Firebase
+</button>
                     </div>
                 </div>
             </div>
@@ -1577,11 +1690,22 @@ function toggleLoading(isLoading, type = 'prontidao') {
 }
 
 async function saveBatchData(collectionRef, data) {
+    // Usa IDs determinísticos para evitar duplicatas ao clicar em "Atualizar do Firebase" várias vezes
+    // Chave composta: equipe_id + atleta_id + data + microciclo_id
     const batch = writeBatch(db);
-    data.forEach(item => {
-        const docRef = doc(collectionRef); 
-        batch.set(docRef, item);
-    });
+    for (const item of data) {
+        const equipe = (item.equipe_id ?? '').toString().trim();
+        const atleta = (item.atleta_id ?? '').toString().trim();
+        const dataStr = (item.data ?? '').toString().trim(); // já vem normalizada (YYYY-MM-DD) pelo parseCSV quando possível
+        const micro = (item.microciclo_id ?? '').toString().trim();
+        const compositeKey = `${equipe}__${atleta}__${dataStr}__${micro}`
+            .replace(/[\s/\\.#$\[\]]+/g, '_')  // sanitiza caracteres inválidos do Firestore ID
+            .toLowerCase();
+
+        const docRef = doc(collectionRef, compositeKey);
+        // merge: true garante atualização sem duplicar
+        batch.set(docRef, item, { merge: true });
+    }
     await batch.commit();
 }
 
