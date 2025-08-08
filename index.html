@@ -123,21 +123,10 @@
         const linhas = [];
         snap.forEach(doc => {
           const d = doc.data() || {};
-          const linha = [
-            d.equipe_id ?? "",
-            (d.atleta_id ?? d.nome_atleta ?? ""),
-            (d.posicao_grupo ?? ""),
-            (d.data ?? ""),
-            (d.semana_id ?? ""),
-            (d.qualidade_sono ?? d.sono ?? ""),
-            (d.niveis_stress ?? d.estresse ?? ""),
-            (d.fadiga_geral ?? d.fadiga ?? ""),
-            (d.dor_muscular ?? d.dor ?? ""),
-            (d.hooper_score ?? "")
-          ].join(",");
+          const linha = [d.equipe_id ?? "",(d.atleta_id ?? d.nome_atleta ?? ""),(d.posicao_grupo ?? ""),(d.data ?? ""),(d.semana_id ?? ""),(d.qualidade_sono ?? d.sono ?? ""),(d.niveis_stress ?? d.estresse ?? ""),(d.fadiga_geral ?? d.fadiga ?? ""),(d.dor_muscular ?? d.dor ?? ""),(d.hooper_score ?? ""),(d.salto_horizontal_cm ?? d.salto ?? ""),(d.vfc_rmssd ?? d.vfc ?? "")].join(",");
           linhas.push(linha);
         });
-        const header = "equipe_id,atleta_id,posicao_grupo,data,semana_id,qualidade_sono,niveis_stress,fadiga_geral,dor_muscular,hooper_score";
+        const header = "equipe_id,atleta_id,posicao_grupo,data,semana_id,qualidade_sono,niveis_stress,fadiga_geral,dor_muscular,hooper_score,salto_horizontal_cm,vfc_rmssd";
         const csv = header + "\n" + linhas.join("\n");
         const blob = new Blob([csv], { type: "text/csv" });
         const file = new File([blob], "prontidao_firebase.csv", { type: "text/csv" });
@@ -204,14 +193,14 @@
         <div class="mb-6 flex justify-center items-end gap-x-8">
             <div class="w-64">
                 <label for="teamFilterSelect" class="block text-sm font-medium text-gray-700 mb-1 text-center">Selecione a Equipe</label>
-                <select id="teamFilterSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <div class="flex items-center gap-2"><select id="teamFilterSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                 <option value="all">Todas as Equipes</option>
-                </select>
+                </select><button id="btnOcultarEquipe" title="Ocultar equipe" class="h-10 w-10 rounded-md bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 flex items-center justify-center">🗑️</button></div>
             </div>
             
             <div class="w-64">
                  <label for="athleteGroupFilterSelect" class="block text-sm font-medium text-gray-700 mb-1 text-center">Filtrar Atletas</label>
-                 <select id="athleteGroupFilterSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                 <div class="flex items-center gap-2"><select id="athleteGroupFilterSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                     <option value="all" selected>Todos os Atletas</option>
                     <optgroup label="Posições">
                         <option value="Defesa">Defesa</option>
@@ -220,7 +209,7 @@
                     </optgroup>
                     <optgroup label="Atletas Individuais" id="individualAthleteOptions">
                         </optgroup>
-                 </select>
+                 </select><button id="btnOcultarAtleta" title="Ocultar atleta" class="h-10 w-10 rounded-md bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 flex items-center justify-center">🗑️</button></div>
             </div>
         </div>
 
@@ -3107,7 +3096,13 @@ async function deleteSelectedPlanningWeeks() {
 
             await batch.commit();
             showToast('Semanas e treinos associados removidos.', 'success');
-        },
+        
+            // Atualiza dados locais e UI sem reload
+            treinosFisicos = treinosFisicos.filter(t => !weeksToDelete.includes(t.semana_id));
+            treinosCampo = treinosCampo.filter(t => !weeksToDelete.includes(t.semana_id));
+            selectedPlanningWeeks = selectedPlanningWeeks.filter(w => !weeksToDelete.includes(w));
+            renderPlanningView();
+    },
         'Excluir Semanas de Planejamento'
     );
 }
@@ -3472,5 +3467,317 @@ function populateAthleteFilterOptions() {
 }
 
     </script>
+
+<script type="module">
+import { getFirestore, doc, updateDoc, query, collection, where, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+async function excluirEquipe(equipeId) {
+    if (!equipeId || equipeId === "all") {
+        alert("Selecione uma equipe para ocultar.");
+        return;
+    }
+    if (!confirm(`Tem certeza que deseja ocultar a equipe ${equipeId}?`)) return;
+    try {
+        const db = getFirestore();
+        const equipesRef = collection(db, "equipes");
+        const q = query(equipesRef, where("equipe_id", "==", equipeId));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+            for (const docSnap of snap.docs) {
+                await updateDoc(docSnap.ref, { ativo: false });
+            }
+            showToast("Equipe ocultada com sucesso.", "success");
+            // Atualiza o seletor removendo a equipe atual
+            const select = document.getElementById("teamFilterSelect");
+            const option = select.querySelector(`option[value="${equipeId}"]`);
+            if (option) option.remove();
+            select.value = "all";
+            // Dispara mudança para recarregar dashboards
+            select.dispatchEvent(new Event('change'));
+        } else {
+            alert("Equipe não encontrada na coleção 'equipes'.");
+        }
+    } catch (e) {
+        console.error("Erro ao ocultar equipe:", e);
+        alert("Erro ao ocultar equipe. Veja o console.");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("btnExcluirEquipe");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const equipeId = document.getElementById("teamFilterSelect").value;
+      excluirEquipe(equipeId);
+    });
+  }
+});
+</script>
+
+
+<script type="module">
+import { getFirestore, collection, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+// ---- Ocultar equipe (marca ativo:false em 'equipes' e remove do select) ----
+async function ocultarEquipeAtual() {
+  try {
+    const select = document.getElementById("teamFilterSelect");
+    const equipeId = select?.value;
+    if (!equipeId || equipeId === "all") {
+      alert("Selecione uma equipe para ocultar.");
+      return;
+    }
+    if (!confirm(`Ocultar a equipe ${equipeId} da lista?`)) return;
+
+    const db = getFirestore();
+    const q = query(collection(db, "equipes"), where("equipe_id", "==", equipeId));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      for (const docSnap of snap.docs) {
+        await updateDoc(docSnap.ref, { ativo: false });
+      }
+    }
+    // Remove do select e reseta
+    const opt = select.querySelector(`option[value="${equipeId}"]`);
+    if (opt) opt.remove();
+    select.value = "all";
+    select.dispatchEvent(new Event('change'));
+  } catch (e) {
+    console.error("Erro ao ocultar equipe:", e);
+    alert("Erro ao ocultar equipe. Veja o console.");
+  }
+}
+
+// ---- Ocultar atleta (apenas na interface via localStorage) ----
+const HIDDEN_ATHLETES_KEY = "hiddenAthletes";
+function getHiddenAthletes() { try { return JSON.parse(localStorage.getItem(HIDDEN_ATHLETES_KEY)) || []; } catch { return []; } }
+function setHiddenAthletes(list) { localStorage.setItem(HIDDEN_ATHLETES_KEY, JSON.stringify(list)); }
+
+function applyHiddenAthletes() {
+  const hidden = new Set(getHiddenAthletes());
+  const group = document.getElementById("individualAthleteOptions");
+  if (!group) return;
+  Array.from(group.children).forEach(opt => {
+    if (hidden.has(opt.value)) { opt.remove(); }
+  });
+  const select = document.getElementById("athleteGroupFilterSelect");
+  if (select && hidden.has(select.value)) {
+    select.value = "all";
+    select.dispatchEvent(new Event('change'));
+  }
+}
+function ocultarAtletaAtual() {
+  const select = document.getElementById("athleteGroupFilterSelect");
+  const val = select?.value;
+  if (!val || val === "all" || val === "Defesa" || val === "Meio" || val === "Ataque") {
+    alert("Selecione um atleta individual para ocultar.");
+    return;
+  }
+  const list = getHiddenAthletes();
+  if (!list.includes(val)) { list.push(val); setHiddenAthletes(list); }
+  applyHiddenAthletes();
+  // feedback discreto
+  console.log(`Atleta ocultado: ${val}`);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btnEq = document.getElementById("btnOcultarEquipe");
+  if (btnEq) btnEq.addEventListener("click", ocultarEquipeAtual);
+
+  const btnAt = document.getElementById("btnOcultarAtleta");
+  if (btnAt) btnAt.addEventListener("click", ocultarAtletaAtual);
+
+  // Reaplica sempre que a lista for reconstruída
+  const target = document.getElementById("individualAthleteOptions");
+  if (target) {
+    const observer = new MutationObserver(() => applyHiddenAthletes());
+    observer.observe(target, { childList: true });
+  }
+  applyHiddenAthletes();
+});
+</script>
+
+
+<script type="module">
+// ===== 1) Ocultar equipes localmente (Sub15/Sub17) via localStorage =====
+const HIDDEN_TEAMS_KEY = "hiddenTeams";
+const DEFAULT_HIDDEN_TEAMS = ["Sub15","Sub-15","sub 15","SUB15","Sub17","Sub-17","sub 17","SUB17"];
+
+function getHiddenTeams() {
+  try { return JSON.parse(localStorage.getItem(HIDDEN_TEAMS_KEY)) || []; } catch { return []; }
+}
+function setHiddenTeams(list) {
+  localStorage.setItem(HIDDEN_TEAMS_KEY, JSON.stringify(list));
+}
+function ensureDefaultHiddenTeams() {
+  const cur = new Set(getHiddenTeams());
+  for (const t of DEFAULT_HIDDEN_TEAMS) cur.add(t);
+  setHiddenTeams([...cur]);
+}
+function applyHiddenTeams() {
+  const select = document.getElementById("teamFilterSelect");
+  if (!select) return;
+  const hidden = new Set(getHiddenTeams().map(s => (s || "").toLowerCase().replace(/\s+/g, "")));
+  Array.from(select.options).forEach(opt => {
+    const key = String(opt.value || "").toLowerCase().replace(/\s+/g, "");
+    if (hidden.has(key)) opt.remove();
+  });
+  // se equipe selecionada foi removida, volta para "all"
+  if (!select.querySelector(`option[value="${select.value}"]`)) {
+    select.value = "all";
+    select.dispatchEvent(new Event("change"));
+  }
+}
+
+// Ao carregar DOM, garante defaults e aplica ocultação local
+document.addEventListener("DOMContentLoaded", () => {
+  ensureDefaultHiddenTeams();
+  applyHiddenTeams();
+  // Observa mudanças no select de equipes (repopulação dinâmica)
+  const teamSel = document.getElementById("teamFilterSelect");
+  if (teamSel) {
+    const observer = new MutationObserver(() => applyHiddenTeams());
+    observer.observe(teamSel, { childList: true });
+  }
+});
+
+// ===== 2) Override: Excluir todas as semanas no Planejamento =====
+function deleteSelectedPlanningWeeks() {
+  openConfirmModal("Remover todas as semanas", "Isso vai excluir TODAS as semanas e treinos associados. Deseja continuar?", async () => {
+    try {
+      const allWeeksFis = Array.from(new Set((window.treinosFisicos || []).map(t => t.semana_id).filter(Boolean)));
+      const allWeeksCampo = Array.from(new Set((window.treinosCampo || []).map(t => t.semana_id).filter(Boolean)));
+      const weeksToDelete = Array.from(new Set([...allWeeksFis, ...allWeeksCampo]));
+      if (weeksToDelete.length === 0) {
+        showToast('Não há semanas para excluir.', 'warning');
+        return;
+      }
+      // Usa objetos globais já importados no app
+      const batch = writeBatch(db);
+      for (const t of (window.treinosFisicos || [])) {
+        if (t.semana_id && weeksToDelete.includes(t.semana_id) && t.__ref) batch.delete(t.__ref);
+      }
+      for (const t of (window.treinosCampo || [])) {
+        if (t.semana_id && weeksToDelete.includes(t.semana_id) && t.__ref) batch.delete(t.__ref);
+      }
+      await batch.commit();
+      // Atualiza estado local e UI
+      window.treinosFisicos = (window.treinosFisicos || []).filter(t => !weeksToDelete.includes(t.semana_id));
+      window.treinosCampo = (window.treinosCampo || []).filter(t => !weeksToDelete.includes(t.semana_id));
+      window.selectedPlanningWeeks = [];
+      if (typeof renderPlanningView === "function") renderPlanningView();
+      showToast('Todas as semanas e treinos foram removidos.', 'success');
+    } catch (e) {
+      console.error("Erro ao excluir semanas:", e);
+      showToast('Erro ao excluir semanas. Veja o console.', 'error');
+    }
+  });
+}
+
+// ===== 3) Fallback do Loader: se demorar demais, mostra a UI assim mesmo =====
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    const globalLoader = document.getElementById('globalLoader');
+    const mainContent = document.getElementById('mainContent');
+    const loaderText = document.getElementById('loaderText');
+    setTimeout(() => {
+      // Se passados 7s e ainda está "Conectando...", libera a UI
+      if (globalLoader && !globalLoader.classList.contains('hidden')) {
+        if (loaderText) loaderText.textContent = "Conexão lenta. Carregando interface local...";
+        globalLoader.classList.add('hidden');
+        if (mainContent) mainContent.classList.remove('hidden');
+        if (typeof showToast === "function") showToast("Conexão lenta: exibindo UI", "warning");
+      }
+    }, 7000);
+  } catch (e) {
+    console.warn("Falha no fallback do loader", e);
+  }
+});
+</script>
+
+
+
+<script>
+// ==== Rebuild weeks in Planejamento strictly from data (treinosFisicos/treinosCampo) ====
+(function(){
+  function getExistingWeeksSorted() {
+    const fmt = w => String(w||"").trim();
+    const fis = (window.treinosFisicos || []).map(t => fmt(t.semana_id)).filter(Boolean);
+    const cam = (window.treinosCampo || []).map(t => fmt(t.semana_id)).filter(Boolean);
+    const set = new Set([...fis, ...cam]);
+    // simple sort: natural by SemXX numbers if present
+    const arr = [...set];
+    arr.sort((a,b) => {
+      const na = parseInt((a.match(/\d+/)||[])[0] || "0", 10);
+      const nb = parseInt((b.match(/\d+/)||[])[0] || "0", 10);
+      if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+      return a.localeCompare(b);
+    });
+    return arr;
+  }
+
+  function rebuildWeekSelects() {
+    const container = document.getElementById("filterContainerPlanejamento");
+    if (!container) return;
+    const weeks = getExistingWeeksSorted();
+
+    const selects = container.querySelectorAll("select");
+    selects.forEach(sel => {
+      const current = sel.value;
+      // Preserve placeholder (first option) if present
+      const firstOptLabel = sel.options.length ? sel.options[0].textContent : "Selecione";
+      // Reset options
+      sel.innerHTML = "";
+      // Add placeholder
+      const ph = document.createElement("option");
+      ph.value = "";
+      ph.textContent = firstOptLabel || "Selecione";
+      sel.appendChild(ph);
+      // Add weeks
+      weeks.forEach(w => {
+        const opt = document.createElement("option");
+        opt.value = w;
+        opt.textContent = w;
+        sel.appendChild(opt);
+      });
+      // Reset selection if previous is gone
+      if (!weeks.includes(current)) {
+        sel.value = "";
+        sel.dispatchEvent(new Event("change"));
+      } else {
+        sel.value = current;
+      }
+    });
+
+    // If there is a global selection array, sync it
+    if (Array.isArray(window.selectedPlanningWeeks)) {
+      window.selectedPlanningWeeks = window.selectedPlanningWeeks.filter(w => weeks.includes(w));
+    }
+  }
+
+  // Rebuild on initial load and whenever the filter UI mutates
+  let rebuildTimer;
+  function scheduleRebuild(){ clearTimeout(rebuildTimer); rebuildTimer = setTimeout(rebuildWeekSelects, 50); }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const container = document.getElementById("filterContainerPlanejamento");
+    if (container) {
+      const obs = new MutationObserver(scheduleRebuild);
+      obs.observe(container, { childList: true, subtree: true });
+    }
+    scheduleRebuild();
+  });
+
+  // After deletions, rebuild again
+  const _oldDeleteWeeks = window.deleteSelectedPlanningWeeks;
+  window.deleteSelectedPlanningWeeks = function(){
+    if (typeof _oldDeleteWeeks === "function") {
+      _oldDeleteWeeks();
+      setTimeout(scheduleRebuild, 300);
+    }
+  };
+})();
+</script>
+
 </body>
 </html>
