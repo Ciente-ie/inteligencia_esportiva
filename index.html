@@ -1898,101 +1898,136 @@ function analyzeProntidaoData(data, selectedWeeks) {
 }
 
 function calculateAthleteReadiness(athleteId, latestEntry, historicalEntries, displayDate) {
-    const getZScore = (key, value) => {
-        let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
-        if (dataPoints.length === 0) {
-             dataPoints = fullProntidaoData
-                .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
-                .map(e => e[key]).filter(v => v != null && !isNaN(v) && v > 0);
-        }
+  // --- helpers locais (usam getStats global) ---
+  const cap = (val) => Math.max(-2.5, Math.min(2.5, val));
 
-        if (value == null || dataPoints.length < 2) return null;
-        const { mean, stdDev } = getStats(dataPoints);
-        return stdDev === 0 ? null : (value - mean) / stdDev;
-    };
+  const getZScore = (key, value) => {
+    if (value == null || isNaN(value)) return null;
 
-    const cap = (val) => Math.max(-2.5, Math.min(2.5, val));
-    
-    const saltoValue = latestEntry['salto_horizontal_cm'];
-    const vfcValue = latestEntry['vfc_rmssd'];
+    // histórico do atleta (exclui a data atual)
+    let dataPoints = (historicalEntries || [])
+      .map(e => e?.[key])
+      .filter(v => v != null && !isNaN(v) && Number(v) > 0);
 
-    const performanceScores = [
-        (saltoValue != null && saltoValue > 0) ? getZScore('salto_horizontal_cm', saltoValue) : null,
-        (vfcValue != null && vfcValue > 0) ? getZScore('vfc_rmssd', vfcValue) : null
-    ].filter(s => s != null);
-    
-    let readinessIndex;
-    let zone;
-
-    if (performanceScores.length === 0 && latestEntry.hooper_score != null) {
-        const hooper = latestEntry.hooper_score;
-        if (hooper <= 9) {
-            zone = 'green';
-        } else if (hooper <= 17) {
-            zone = 'yellow';
-        } else {
-            zone = 'red';
-        }
-        readinessIndex = null;
-
-    } else {
-        const performancePillar = performanceScores.length > 0 ? cap(getStats(performanceScores).mean) : null;
-
-// multiplicativo: fator do Hooper
-let hooperFactor = 1.0;
-if (latestEntry.hooper_score != null) {
-    const h = Number(latestEntry.hooper_score);
-    if (isFinite(h)) {
-        hooperFactor = Math.max(0.6, Math.min(1.2, 1.4 - 0.04 * h));
+    // fallback: busca no dataset completo, exceto a data atual
+    if (dataPoints.length === 0 && Array.isArray(window.fullProntidaoData)) {
+      dataPoints = window.fullProntidaoData
+        .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
+        .map(e => e?.[key])
+        .filter(v => v != null && !isNaN(v) && Number(v) > 0);
     }
-}
 
-// índice: só calcula se houver performance válida (z-scores)
-if (performancePillar === null) {
+    // ✅ usa histórico + valor do dia (2 pontos já possibilitam DP)
+    const combined = [...dataPoints, Number(value)].filter(v => isFinite(v) && v > 0);
+    if (combined.length < 2) return null;
+
+    const { mean, stdDev } = getStats(combined);
+    if (!isFinite(stdDev) || stdDev === 0) return null;
+
+    let z = (Number(value) - mean) / stdDev;
+    if (!isFinite(z)) return null;
+    return cap(z);
+  };
+
+  const hooperFactor = (H) => {
+    const h = Number(H);
+    if (!isFinite(h)) return 1.0;
+    // H=4≈1.24 | H=10=1.0 | H=20=0.6
+    return Math.max(0.6, Math.min(1.2, 1.4 - 0.04 * h));
+  };
+
+  // --- valores do dia ---
+  const saltoValue = latestEntry?.salto_horizontal_cm ?? latestEntry?.salto ?? null;
+  const vfcValue   = latestEntry?.vfc_rmssd ?? latestEntry?.vfc ?? null;
+
+  // pilar de performance: z-scores válidos
+  const performanceScores = [
+    (saltoValue != null && Number(saltoValue) > 0) ? getZScore('salto_horizontal_cm', saltoValue) : null,
+    (vfcValue   != null && Number(vfcValue)   > 0) ? getZScore('vfc_rmssd',        vfcValue)   : null
+  ].filter(s => s != null);
+
+  let readinessIndex;
+  let zone;
+
+  // Hooper do dia (pronto ou somado)
+  let hooper = latestEntry?.hooper_score;
+  if (hooper == null || hooper === '') {
+    const qs = Number(latestEntry?.qualidade_sono || 0);
+    const ns = Number(latestEntry?.niveis_stress  || 0);
+    const fg = Number(latestEntry?.fadiga_geral   || 0);
+    const dm = Number(latestEntry?.dor_muscular   || 0);
+    const sum = qs + ns + fg + dm;
+    hooper = isFinite(sum) ? sum : null;
+  }
+
+  if (performanceScores.length === 0) {
+    // sem dados de performance válidos → índice nulo; zona pela fadiga (compatível com UI)
+    if (hooper != null) {
+      if (hooper <= 9) zone = 'green';
+      else if (hooper <= 17) zone = 'yellow';
+      else zone = 'red';
+    } else {
+      zone = 'collecting';
+    }
     readinessIndex = null;
-} else {
-    readinessIndex = cap(performancePillar * hooperFactor);
-}
+  } else {
+    const performancePillar = cap(getStats(performanceScores).mean);
+    const fH = hooperFactor(hooper);
+    readinessIndex = cap(performancePillar * fH);
 
-// Zonas com os mesmos limites
-if (readinessIndex === null) {
-    // Sem índice: zona será definida mais adiante/por Hooper na UI
-    zone = 'collecting';
-} else if (readinessIndex < -1.99) {
-    zone = 'red';
-} else if (readinessIndex < -0.90) {
-    zone = 'yellow';
-} else {
-    zone = 'green';
-}
-}
+    // limites das zonas (mantidos)
+    if (readinessIndex < -1.99) zone = 'red';
+    else if (readinessIndex < -0.90) zone = 'yellow';
+    else zone = 'green';
+  }
 
-    const metricsDetail = Object.keys(METRIC_NAMES).reduce((acc, key) => {
-         let dataPoints = historicalEntries.map(e => e[key]).filter(v => v != null && !isNaN(v));
-         let mean = getStats(dataPoints).mean;
+  // --- metricsDetail (mantém estrutura esperada) ---
+  const metricKeys = (typeof METRIC_NAMES !== 'undefined' && METRIC_NAMES)
+    ? Object.keys(METRIC_NAMES)
+    : ['salto_horizontal_cm','vfc_rmssd','qualidade_sono','niveis_stress','fadiga_geral','dor_muscular','hooper_score'];
 
-         if (dataPoints.length === 0) {
-             const allOtherEntries = fullProntidaoData
-                .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
-                .map(e => e[key])
-                .filter(v => v != null && !isNaN(v));
-            mean = getStats(allOtherEntries).mean;
-         }
-        acc[key] = { latest: latestEntry[key], mean: mean };
-        return acc;
-    }, {});
-    
-    const saltoMeanHistorical = metricsDetail.salto_horizontal_cm?.mean || 0;
-    const saltoLatest = latestEntry.salto_horizontal_cm;
-    const saltoDiff = (saltoLatest && saltoMeanHistorical > 0) ? ((saltoLatest - saltoMeanHistorical) / saltoMeanHistorical) * 100 : null;
+  const metricsDetail = metricKeys.reduce((acc, key) => {
+    // histórico para este metric
+    let pts = (historicalEntries || [])
+      .map(e => e?.[key])
+      .filter(v => v != null && !isNaN(v));
 
-    return { 
-        athleteId, status: 'ready', 
-        index: readinessIndex !== null ? readinessIndex.toFixed(2) : null, 
-        zone, 
-        metricsDetail, hooperScore: { latest: latestEntry.hooper_score }, 
-        saltoPercentDiff: saltoDiff, latestDate: displayDate 
+    if (pts.length === 0 && Array.isArray(window.fullProntidaoData)) {
+      pts = window.fullProntidaoData
+        .filter(d => d.atleta_id === athleteId && d.data !== displayDate)
+        .map(e => e?.[key])
+        .filter(v => v != null && !isNaN(v));
+    }
+
+    const { mean, stdDev, min, max, count } = getStats(pts);
+    acc[key] = {
+      mean, stdDev, min, max, count,
+      latest: latestEntry?.[key] ?? null
     };
+    return acc;
+  }, {});
+
+  // --- % de salto vs. média histórica ---
+  let saltoPercentDiff = null;
+  const saltoHist = (historicalEntries || [])
+    .map(e => e?.salto_horizontal_cm ?? e?.salto)
+    .filter(v => v != null && !isNaN(v) && Number(v) > 0);
+
+  const saltoHistMean = getStats(saltoHist).mean;
+  if (isFinite(saltoHistMean) && saltoHistMean > 0 && saltoValue != null && !isNaN(saltoValue)) {
+    saltoPercentDiff = ((Number(saltoValue) - saltoHistMean) / saltoHistMean) * 100;
+  }
+
+  return {
+    athleteId,
+    status: 'ready',
+    index: readinessIndex !== null ? readinessIndex.toFixed(2) : null,
+    zone,
+    metricsDetail,
+    hooperScore: { latest: hooper },
+    saltoPercentDiff,
+    latestDate: displayDate
+  };
 }
 
 function renderProntidaoResults(individualResults, teamStats, latestDate, selectedWeeks, dailyStats) {
