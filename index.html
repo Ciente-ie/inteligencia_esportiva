@@ -3575,10 +3575,6 @@ function applyHiddenTeams() {
   }
 }
 
-// Ao carregar DOM, garante defaults e aplica ocultação local
-document.addEventListener("DOMContentLoaded", () => {
-  ensureDefaultHiddenTeams();
-  applyHiddenTeams();
   // Observa mudanças no select de equipes (repopulação dinâmica)
   const teamSel = document.getElementById("teamFilterSelect");
   if (teamSel) {
