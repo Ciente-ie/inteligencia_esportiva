@@ -3541,19 +3541,6 @@ function ocultarAtletaAtual() {
   console.log(`Atleta ocultado: ${val}`);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  
-  const btnAt = document.getElementById("btnOcultarAtleta");
-  if (btnAt) btnAt.addEventListener("click", ocultarAtletaAtual);
-
-  // Reaplica sempre que a lista for reconstruída
-  const target = document.getElementById("individualAthleteOptions");
-  if (target) {
-    const observer = new MutationObserver(() => applyHiddenAthletes());
-    observer.observe(target, { childList: true });
-  }
-  applyHiddenAthletes();
-});
 </script>
 
 
