@@ -597,7 +597,7 @@ const firebaseConfig = {
 // Initialize Firebase and services
 let db, auth;
 try {
-    const app = initializeApp(firebaseConfig);
+    const db = window.__DB_INTEGRADO__;
     db = getFirestore(app);
     auth = getAuth(app);
 } catch (e) {
