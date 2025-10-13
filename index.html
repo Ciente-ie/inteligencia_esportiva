@@ -55,13 +55,11 @@
       .then(() => console.log("✅ Autenticado anonimamente"))
       .catch(err => console.error("Erro de autenticação:", err));
 
-    // 🌐 Corrige bloqueio no GitHub Pages (HTTPS)
-    try {
-      await enableNetwork(db);
-      console.log("🌍 Conexão Firestore ativada com sucesso!");
-    } catch (e) {
-      console.error("⚠️ Erro ao ativar rede do Firestore:", e);
-    }
+     // 🌐 Corrige bloqueio no GitHub Pages (HTTPS)
+enableNetwork(db)
+  .then(() => console.log("🌍 Conexão Firestore ativada com sucesso!"))
+  .catch((e) => console.error("⚠️ Erro ao ativar rede do Firestore:", e));
+
 
     /* =============================
        🔹 ESTRUTURA VISUAL
