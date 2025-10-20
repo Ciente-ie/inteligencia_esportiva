@@ -38,23 +38,16 @@
   </div>
 
   <script>
-    // 🔑 Senha de acesso
-    const senhaCorreta = "america2025";
-    // 🔁 Página para redirecionar após login
-    const paginaDestino = "index.html";
+    const senhaCorreta = "ciente2025"; // 🔑 troque aqui
+    const paginaDestino = "index.html"; // redireciona após login
 
-    // Se já logou antes, pula direto para o index
-    if (localStorage.getItem("acessoCiente") === "ok") {
-      window.location.href = paginaDestino;
-    }
-
-    // Função chamada ao clicar no botão
     function entrar() {
       const senha = document.getElementById("senha").value;
       const erro = document.getElementById("erro");
 
       if (senha === senhaCorreta) {
-        localStorage.setItem("acessoCiente", "ok");
+        // Redireciona e marca que veio do login
+        sessionStorage.setItem("acessoCiente", "ok");
         window.location.href = paginaDestino;
       } else {
         erro.classList.remove("hidden");
