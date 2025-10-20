@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Acesso - Ciente IE</title>
+  <title>Plataforma de Inteligência Esportiva</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -13,8 +13,7 @@
 
 <body class="bg-gradient-to-br from-blue-800 to-blue-600 flex items-center justify-center min-h-screen">
   <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
-    <img src="https://i.imgur.com/HK0MZsU.png" alt="Logo Ciente IE" class="mx-auto mb-5 w-28">
-    <h1 class="text-2xl font-bold mb-6 text-gray-800">Acesso Restrito</h1>
+    <h1 class="text-2xl font-bold mb-6 text-gray-800">Plataforma de Inteligência Esportiva</h1>
 
     <input 
       type="password" 
@@ -47,7 +46,7 @@
       const erro = document.getElementById("erro");
 
       if (senha === senhaCorreta) {
-        // Guarda o acesso apenas enquanto o navegador estiver aberto
+        // Guarda o acesso apenas durante a sessão (fecha ao encerrar o navegador)
         sessionStorage.setItem("acessoCiente", "ok");
         window.location.href = paginaDestino;
       } else {
