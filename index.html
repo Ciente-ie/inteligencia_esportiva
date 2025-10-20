@@ -2,12 +2,10 @@
 <html lang="pt-BR">
 <head>
   <script>
-  // Verifica se o usuário veio do login e tem acesso ativo
-  const referrer = document.referrer || "";
+  // 🔒 Verifica se o acesso foi liberado na sessão
   const acesso = sessionStorage.getItem("acessoCiente");
 
-  if (!referrer.includes("login.html") || acesso !== "ok") {
-    // Se não veio do login ou não tem permissão, volta pro login
+  if (acesso !== "ok") {
     window.location.href = "login.html";
   }
 </script>
