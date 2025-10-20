@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <script>
+  // Verifica se o usuário veio do login e tem acesso ativo
+  const referrer = document.referrer || "";
+  const acesso = sessionStorage.getItem("acessoCiente");
+
+  if (!referrer.includes("login.html") || acesso !== "ok") {
+    // Se não veio do login ou não tem permissão, volta pro login
+    window.location.href = "login.html";
+  }
+</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ciente IE - Plataforma Integrada</title>
