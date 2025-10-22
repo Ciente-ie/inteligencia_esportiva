@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <script>
-  // 🔒 Verifica se o acesso foi liberado na sessão
-  const acesso = sessionStorage.getItem("acessoCiente");
-
-  if (acesso !== "ok") {
-    window.location.href = "login.html";
-  }
-</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ciente IE - Plataforma Integrada</title>
@@ -56,7 +48,7 @@ async function carregarProntidao() {
     const snap = await getDocs(collection(db, "prontidao"));
     const dados = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    // 🔹 Normaliza os campos (igual à aba Prontidão)
+    // 🔹 Normaliza os campos (garante nomes e formatos padronizados)
     dados.forEach(d => {
       d.atleta = d.nome_atleta || d.atleta_id || "Sem nome";
       d.equipe = d.equipe_id || d.equipe || "Sem equipe";
@@ -71,18 +63,21 @@ async function carregarProntidao() {
       d.hooper = d.sono + d.estresse + d.fadiga + d.dor;
     });
 
-    // 🔹 Agrupa por atleta e calcula variações
+    // 🔹 Agrupa os registros por atleta
     const atletas = {};
     dados.forEach(d => {
       if (!atletas[d.atleta]) atletas[d.atleta] = [];
       atletas[d.atleta].push(d);
     });
 
+    // 🔹 Para cada atleta, seleciona o último registro (data mais recente)
     const resumo = [];
     for (const atleta in atletas) {
-      const registros = atletas[atleta];
+      const registros = atletas[atleta].sort(
+        (a, b) => new Date(b.data) - new Date(a.data)
+      );
+      const ultimo = registros[0]; // último registro (mais recente)
       const medias = calcularMedias(registros);
-      const ultimo = registros[0];
       const variacoes = calcularVariacoes(ultimo, medias);
       resumo.push({
         atleta,
@@ -97,11 +92,13 @@ async function carregarProntidao() {
     // 🔹 Salva globalmente para o Dashboard
     window.__dadosProntidao = dados;
     window.__dadosResumo = resumo;
-    console.log("✅ Prontidão carregada com sucesso:", resumo.length, "atletas");
+
+    console.log("✅ Prontidão carregada (último registro por atleta):", resumo.length);
   } catch (e) {
     console.error("Erro ao carregar Prontidão:", e);
   }
 }
+
 
 function calcularMedias(registros) {
   const n = registros.length;
@@ -128,26 +125,28 @@ function calcularVariacoes(ultimo, medias) {
 }
 
 
-    // =====================================================
-    // 🏋️ CARREGAR DADOS CARGA
-    // =====================================================
-    async function carregarCarga() {
-      const snap = await getDocs(collection(db, "carga"));
-      const dados = snap.docs.map(doc => doc.data());
+    // =================================================
+// 🏋️ CARREGAR DADOS CARGA
+// =================================================
+async function carregarCarga() {
+  const snap = await getDocs(collection(db, "carga"));
+  const dados = snap.docs.map(doc => doc.data());
 
-      const normalizados = dados.map(d => ({
-        atleta: d.atleta_id,
-        equipe: d.equipe_id,
-        posicao: d.posicao_grupo,
-        data: d.data,
-        pse: Number(d.pse_sessao) || 0,
-        tempo: Number(d.duracao_sessao_min) || 0,
-        micro: d.microciclo_id || ""
-      }));
+  const normalizados = dados.map(d => ({
+    atleta: d.atleta_id,
+    equipe: d.equipe_id,
+    posicao: d.posicao_grupo,
+    data: d.data,
+    pse: Number(d.pse_sessao) || 0,
+    tempo: Number(d.duracao_sessao_min) || 0,
+    micro: d.microciclo_id || ""
+  }));
 
-      renderTabelaCarga(normalizados);
-      renderCardsCarga(normalizados);
-    }
+  renderTabelaCarga(normalizados);
+  
+  // 🔹 Torna os dados acessíveis globalmente para o dashboard
+  window.__dadosCarga = normalizados;
+}
 
     // =====================================================
     // 🔢 CÁLCULOS CARGA
@@ -242,14 +241,13 @@ function calcularVariacoes(ultimo, medias) {
 
   <!-- 🧭 Navegação de Abas -->
   <nav class="flex justify-center space-x-4 mb-8">
-<button data-aba="abaDashboard" class="tab-btn px-5 py-2 rounded-lg bg-gray-200 text-gray-800">Dashboard</button>
-      <button data-aba="abaProntidao" class="tab-btn px-5 py-2 rounded-lg bg-blue-600 text-white shadow">Prontidão</button>
-    <button data-aba="abaCarga" class="tab-btn px-5 py-2 rounded-lg bg-gray-200 text-gray-800">Carga</button>
-    <button data-aba="abaPlanejamento" class="tab-btn px-5 py-2 rounded-lg bg-gray-200 text-gray-800">
-  Planejamento</button>
-<button data-aba="abaMedico" class="tab-btn px-5 py-2 rounded-lg bg-gray-200 text-gray-800">
-  Departamento Médico</button>
+  <button data-aba="abaDashboard" class="tab-btn px-5 py-2 rounded-lg bg-gray-200 text-gray-800">Dashboard</button>
+  <button data-aba="abaProntidao" class="tab-btn px-5 py-2 rounded-lg bg-gray-200 text-gray-800">Prontidão</button>
+  <button data-aba="abaCarga" class="tab-btn px-5 py-2 rounded-lg bg-gray-200 text-gray-800">Carga</button>
+  <button data-aba="abaPlanejamento" class="tab-btn px-5 py-2 rounded-lg bg-gray-200 text-gray-800">Planejamento</button>
+  <button data-aba="abaMedico" class="tab-btn px-5 py-2 rounded-lg bg-gray-200 text-gray-800">Departamento Médico</button>
 </nav>
+
 
     
 
@@ -276,12 +274,14 @@ function calcularVariacoes(ultimo, medias) {
         <option value="todos">Todos</option>
       </select>
     </div>
-    <div>
-      <label class="block font-medium mb-1">Semana</label>
-      <select id="filtroSemana" class="border p-2 rounded w-56 bg-white shadow-sm">
-        <option value="todas">Todas</option>
-      </select>
-    </div>
+    <!--
+<div>
+  <label class="block font-medium mb-1">Semana</label>
+  <select id="filtroSemana" class="border p-2 rounded w-56 bg-white shadow-sm">
+    <option value="todas">Todas</option>
+  </select>
+</div>
+-->
   </div>
 
   <!-- 🔹 CARDS PRINCIPAIS -->
@@ -415,7 +415,13 @@ function calcularVariacoes(ultimo, medias) {
       const saltoPct = ((ultimo.salto - medias.salto) / medias.salto) * 100 || 0;
       const hooperPct = ((ultimo.hooper - medias.hooper) / medias.hooper) * 100 || 0;
       const hooperInvertido = hooperPct * -1;
-const igpPct = (vfcPct + saltoPct + hooperInvertido) / 3;
+// 📊 Cálculo IGP – Modelo Estável (ponderado)
+const pesos = { vfc: 0.4, salto: 0.4, hooper: 0.2 };
+
+const igpPct =
+  (pesos.vfc * vfcPct) +
+  (pesos.salto * saltoPct) -
+  (pesos.hooper * hooperPct);
 
       return { vfcPct, saltoPct, igpPct };
     }
@@ -534,55 +540,126 @@ const igpPct = (vfcPct + saltoPct + hooperInvertido) / 3;
   </script>
 
   <script>
-    function gerarGraficos(nome) {
-      const r = window.__dadosBrutos.filter(d => d.nome_atleta === nome || d.atleta_id === nome)
-        .sort((a, b) => new Date(a.data) - new Date(b.data));
-      if (!r.length) return;
-      const m = {
-        vfc: r.reduce((a, b) => a + (b.vfc || 0), 0) / r.length,
-        salto: r.reduce((a, b) => a + (b.salto || 0), 0) / r.length,
-        hooper: r.reduce((a, b) => a + (b.hooper || 0), 0) / r.length
-      };
-      const l = r.map(x => x.data);
-      const v = r.map(x => ((x.vfc - m.vfc) / m.vfc) * 100);
-      const s = r.map(x => ((x.salto - m.salto) / m.salto) * 100);
-      const h = r.map(x => ((x.hooper - m.hooper) / m.hooper) * 100);
-      const i = v.map((x, j) => ((x + s[j]) / 2) - h[j]);
-      criarMiniGrafico("graficoVFC", l, v, "VFC (%)", "#3b82f6");
-      criarMiniGrafico("graficoSalto", l, s, "Salto (%)", "#10b981");
-      criarMiniGrafico("graficoIGP", l, i, "IGP (%)", "#8b5cf6");
-    }
+  // ✅ Função auxiliar para médias (reutilizada do processamento principal)
+  function calcularMedias(registros) {
+    const n = registros.length || 1;
+    const media = (arr, key) => arr.reduce((a, b) => a + (b[key] || 0), 0) / n;
+    return {
+      vfc: media(registros, "vfc"),
+      salto: media(registros, "salto"),
+      hooper: media(registros, "hooper")
+    };
+  }
 
-    function criarMiniGrafico(id, l, d, t, cor) {
-      const ctx = document.getElementById(id).getContext("2d");
-      const cores = d.map(v => v > 10 ? "#16a34a" : v < -10 ? "#dc2626" : "#3b82f6");
-      new Chart(ctx, {
-        type: "bar",
-        data: { labels: l, datasets: [{ data: d, backgroundColor: cores, borderRadius: 5 }] },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              min: -30, max: 30,
-              title: { display: true, text: "% vs média pessoal" },
-              ticks: {
-                color: "#4b5563", font: { size: 11 },
-                callback: v => (v > 0 ? "+" + v : v)
-              },
-              grid: { color: "#e5e7eb" }
-            },
-            x: { ticks: { color: "#4b5563", font: { size: 11 } }, grid: { display: false } }
-          },
-          plugins: {
-            legend: { display: false },
-            title: { display: true, text: t, color: "#374151", font: { size: 13, weight: "bold" } },
-            tooltip: { callbacks: { label: c => (c.parsed.y >= 0 ? "+" : "") + c.parsed.y.toFixed(1) + "%" } }
+  // ✅ Geração dos gráficos
+  function gerarGraficos(nome) {
+    const registros = window.__dadosBrutos
+      .filter(d => d.nome_atleta === nome || d.atleta_id === nome)
+      .sort((a, b) => new Date(a.data) - new Date(b.data));
+    if (!registros.length) return;
+
+    const l = registros.map(x => x.data);
+    const v = registros.map(x => x.vfc);     // VFC bruto (ms)
+    const s = registros.map(x => x.salto);   // Salto bruto (cm)
+
+    // 🔹 Calcula variações para o IGP com a mesma fórmula da tabela
+    const medias = calcularMedias(registros);
+    const i = registros.map(x => {
+      const vfcPct = ((x.vfc - medias.vfc) / medias.vfc) * 100 || 0;
+      const saltoPct = ((x.salto - medias.salto) / medias.salto) * 100 || 0;
+      const hooperPct = ((x.hooper - medias.hooper) / medias.hooper) * 100 || 0;
+      const hooperInvertido = hooperPct * -1;
+      return (vfcPct + saltoPct + hooperInvertido) / 3;
+    });
+
+    // 🔹 Renderiza gráficos
+    criarMiniGraficoBruto("graficoVFC", l, v, "VFC (ms)", "#3b82f6");
+    criarMiniGraficoBruto("graficoSalto", l, s, "Altura do Salto (cm)", "#10b981");
+    criarMiniGraficoPercentual("graficoIGP", l, i, "IGP (%)", "#8b5cf6");
+  }
+
+  // ===============================
+  // 📈 Gráficos de valores brutos
+  // ===============================
+  function criarMiniGraficoBruto(id, l, d, t, cor) {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: l,
+        datasets: [{
+          label: t,
+          data: d,
+          borderColor: cor,
+          backgroundColor: cor + "33",
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true,
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+  min: 0,
+  max: 100,
+  title: { display: true, text: t, color: "#374151", font: { size: 12 } },
+  ticks: { color: "#4b5563", font: { size: 11 }, stepSize: 10 },
+  grid: { color: "#e5e7eb" }
+},
+          x: {
+            ticks: { color: "#4b5563", font: { size: 11 } },
+            grid: { display: false }
           }
+        },
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: t, color: "#374151", font: { size: 13, weight: "bold" } },
+          tooltip: { callbacks: { label: c => `${c.parsed.y.toFixed(1)}` } }
         }
-      });
-    }
-  </script>
+      }
+    });
+  }
+
+  // ===============================
+  // 📊 Gráfico percentual do IGP (-30% a +30%)
+  // ===============================
+  function criarMiniGraficoPercentual(id, l, d, t, cor) {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const cores = d.map(v => v > 10 ? "#16a34a" : v < -10 ? "#dc2626" : "#3b82f6");
+    new Chart(ctx, {
+      type: "bar",
+      data: { labels: l, datasets: [{ data: d, backgroundColor: cores, borderRadius: 5 }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            min: -30, max: 30,
+            title: { display: true, text: "% vs média pessoal" },
+            ticks: {
+              color: "#4b5563", font: { size: 11 },
+              callback: v => (v > 0 ? "+" + v : v)
+            },
+            grid: { color: "#e5e7eb" }
+          },
+          x: { ticks: { color: "#4b5563", font: { size: 11 } }, grid: { display: false } }
+        },
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: t, color: "#374151", font: { size: 13, weight: "bold" } },
+          tooltip: { callbacks: { label: c => (c.parsed.y >= 0 ? "+" : "") + c.parsed.y.toFixed(1) + "%" } }
+        }
+      }
+    });
+  }
+</script>
 </section>
 
 <!-- ================================================= -->
@@ -696,6 +773,51 @@ const igpPct = (vfcPct + saltoPct + hooperInvertido) / 3;
         };
       });
       preencherFiltrosCarga(dados);
+  // ===============================
+  // 🎯 Filtro de Semana (Sxx)
+  // ===============================
+  const filtroSemanaCarga = document.getElementById("filtroSemanaCarga");
+
+  // Gera lista de semanas únicas (ex: S40, S41)
+  const semanasUnicas = [...new Set(dados.map(d => {
+    if (!d.data) return null;
+    const dt = new Date(d.data + "T00:00:00");
+    const target = new Date(dt.valueOf());
+    const dayNr = (dt.getDay() + 6) % 7;
+    target.setDate(target.getDate() - dayNr + 3);
+    const firstThursday = new Date(target.getFullYear(), 0, 4);
+    const diff = target - firstThursday;
+    return "S" + (1 + Math.round(diff / (7 * 24 * 60 * 60 * 1000)));
+  }).filter(Boolean))];
+
+  // Preenche o select
+  filtroSemanaCarga.innerHTML = `<option value="todas">Todas</option>` +
+    semanasUnicas.map(s => `<option value="${s}">${s}</option>`).join("");
+
+  // Evento: atualiza cards ao mudar semana
+  filtroSemanaCarga.addEventListener("change", () => {
+    const sel = filtroSemanaCarga.value;
+    let filtrados = dados;
+
+    if (sel !== "todas") {
+      filtrados = dados.filter(d => {
+        if (!d.data) return false;
+        const dt = new Date(d.data + "T00:00:00");
+        const target = new Date(dt.valueOf());
+        const dayNr = (dt.getDay() + 6) % 7;
+        target.setDate(target.getDate() - dayNr + 3);
+        const firstThursday = new Date(target.getFullYear(), 0, 4);
+        const diff = target - firstThursday;
+        const semana = "S" + (1 + Math.round(diff / (7 * 24 * 60 * 60 * 1000)));
+        return semana === sel;
+      });
+    }
+
+    // Atualiza apenas os cards
+    const resumo = [...new Set(filtrados.map(d => d.nome_atleta))]
+      .map(a => calcularCargaAtleta(a, filtrados));
+    renderCardsCarga(resumo);
+  });
       setTimeout(() => atualizarPainelCarga(dados), 300);
     }
 
@@ -789,55 +911,119 @@ const igpPct = (vfcPct + saltoPct + hooperInvertido) / 3;
     }
 
     // ===============================
-    // 🔹 MODAL DETALHES (cards + gráfico + resumo)
-    // ===============================
-    let chartCarga = null;
-    function mostrarDetalhesAtleta(nome, dados) {
-      const atletaDados = dados.filter(d => d.nome_atleta === nome).sort((a,b)=>a.data.localeCompare(b.data));
-      tituloAtletaCarga.innerText = nome;
+// 🔹 MODAL DETALHES (cards + gráfico + resumo)
+// ===============================
+let chartCarga = null;
+function mostrarDetalhesAtleta(nome) {
+  // 🔹 Usa todos os dados brutos de carga
+  const atletaDados = (window.__dadosCarga || [])
+    .filter(d => d.nome_atleta === nome)
+    .sort((a, b) => a.data.localeCompare(b.data));
 
-      // 🧾 Cria os cards
-      const linhas = atletaDados.map(d => {
-        const carga = (d.pse * d.tempo).toFixed(0);
-        return `
-          <div class="bg-gray-100 rounded-lg shadow-sm p-2 w-[110px] text-center">
-            <p class="text-xs text-gray-500">${d.data}</p>
-            <p class="text-xs">PSE: <span class="font-semibold">${d.pse}</span></p>
-            <p class="text-xs">Tempo: <span class="font-semibold">${d.tempo}</span></p>
-            <p class="text-xs text-blue-600 font-semibold">${carga}</p>
-          </div>
-        `;
-      }).join("");
-      dadosBrutosCarga.innerHTML = linhas;
-      modalDetalhesCarga.classList.remove("hidden");
+  tituloAtletaCarga.innerText = nome;
 
-      // 📊 Gráfico de barras
-      const ctx1 = document.getElementById("graficoCargaDiaria");
-      if (chartCarga) chartCarga.destroy();
-      const cargas = atletaDados.map(d => d.pse * d.tempo);
-      chartCarga = new Chart(ctx1, {
-        type: "bar",
-        data: {
-          labels: atletaDados.map(d => d.data),
-          datasets: [{ label: "Carga (PSE×Tempo)", data: cargas, backgroundColor: "#3b82f6" }]
+  // 🧾 Cria os cards (histórico completo)
+  const linhas = atletaDados.map(d => {
+    const carga = (d.pse * d.tempo).toFixed(0);
+    return `
+      <div class="bg-gray-100 rounded-lg shadow-sm p-2 w-[110px] text-center">
+        <p class="text-xs text-gray-500">${d.data}</p>
+        <p class="text-xs">PSE: <span class="font-semibold">${d.pse}</span></p>
+        <p class="text-xs">Tempo: <span class="font-semibold">${d.tempo}</span></p>
+        <p class="text-xs text-blue-600 font-semibold">${carga}</p>
+      </div>
+    `;
+  }).join("");
+
+  dadosBrutosCarga.innerHTML = linhas;
+  modalDetalhesCarga.classList.remove("hidden");
+
+  // 📊 Gráfico de barras (histórico completo)
+  const ctx1 = document.getElementById("graficoCargaDiaria");
+  if (chartCarga) chartCarga.destroy();
+
+  const cargas = atletaDados.map(d => d.pse * d.tempo);
+  const labels = atletaDados.map(d => d.data);
+  const pse = atletaDados.map(d => d.pse);
+
+  chartCarga = new Chart(ctx1, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Carga (PSE×Tempo)",
+          data: cargas,
+          backgroundColor: "#10b98188",
+          borderColor: "#10b981",
+          borderWidth: 1,
+          yAxisID: "y1"
         },
-        options: {
-          scales: { y: { min: 0, max: 1500 } },
-          plugins: { legend: { display: false } }
+        {
+          label: "PSE",
+          data: pse,
+          type: "line",
+          borderColor: "#f59e0b",
+          backgroundColor: "#f59e0b55",
+          borderWidth: 2,
+          tension: 0.3,
+          yAxisID: "y2"
         }
-      });
-
-      // 📈 Resumo (total e média)
-      const total = cargas.reduce((s, x) => s + x, 0);
-      const media = total / cargas.length;
-      resumoCarga.innerHTML = `
-        <p><span class="font-semibold">Carga Total:</span> ${total.toFixed(0)} &nbsp;|&nbsp; 
-           <span class="font-semibold">Média Diária:</span> ${media.toFixed(0)}</p>
-      `;
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      stacked: false,
+      plugins: {
+        legend: { position: "top" },
+        title: {
+          display: true,
+          text: "Histórico Completo de Carga",
+          font: { size: 14, weight: "bold" }
+        }
+      },
+      scales: {
+        y1: {
+          type: "linear",
+          display: true,
+          position: "left",
+          beginAtZero: true,
+          title: { display: true, text: "Carga (PSE×Tempo)" }
+        },
+        y2: {
+          type: "linear",
+          display: true,
+          position: "right",
+          beginAtZero: true,
+          min: 0,
+          max: 10,
+          grid: { drawOnChartArea: false },
+          title: { display: true, text: "PSE (0–10)" }
+        },
+        x: {
+          ticks: { autoSkip: true, maxTicksLimit: 10 },
+          title: { display: true, text: "Data da Coleta" }
+        }
+      }
     }
+  });
 
-    document.getElementById("fecharModalCarga").addEventListener("click", ()=>modalDetalhesCarga.classList.add("hidden"));
-    document.addEventListener("DOMContentLoaded", carregarCargaPainel);
+  // 📈 Resumo (total e média)
+  const total = cargas.reduce((s, x) => s + x, 0);
+  const media = total / cargas.length;
+  resumoCarga.innerHTML = `
+    <p><span class="font-semibold">Carga Total:</span> ${total.toFixed(0)} &nbsp;|&nbsp;
+       <span class="font-semibold">Média Diária:</span> ${media.toFixed(0)}</p>
+  `;
+}
+
+document.getElementById("fecharModalCarga").addEventListener("click", () =>
+  modalDetalhesCarga.classList.add("hidden")
+);
+document.addEventListener("DOMContentLoaded", carregarCargaPainel);
+
   </script>
 
   <!-- Importa Chart.js -->
@@ -1608,11 +1794,15 @@ function atualizarGrafico(campo, fisico) {
 
   // --- Observa e renderiza lista em tempo real
   onSnapshot(query(colCasos, orderBy("data_diagnostico", "desc")), (qsnap) => {
-    const casos = qsnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderResumoStatus(casos);
-    preencherFiltrosSemanaEquipe(casos); // só equipes aqui; (semana não é usado)
-    aplicarFiltrosERender(casos);
-  });
+  const casos = qsnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // 🔹 Torna os dados do DM acessíveis globalmente para o Dashboard
+  window.__dadosMedico = casos;
+
+  renderResumoStatus(casos);
+  preencherFiltrosSemanaEquipe(casos); // só equipes aqui; (semana não é usado)
+  aplicarFiltrosERender(casos);
+});
 
   // --- Resumo dos cards por status
   function renderResumoStatus(casos) {
@@ -1825,244 +2015,263 @@ function atualizarGrafico(campo, fisico) {
 </section>
 
 <!-- ================================================= -->
-<!-- 📊 ABA DASHBOARD – CIENTE IE (versão final sem VFC) -->
+<!-- 📊 DASHBOARD - CIENTE IE (Versão Final Integrada) -->
 <!-- ================================================= -->
 <section id="abaDashboard" class="aba">
 
-  <div class="max-w-6xl mx-auto space-y-10">
-
-    <!-- ================================================= -->
-    <!-- 🏥 DEPARTAMENTO MÉDICO -->
-    <!-- ================================================= -->
-    <div>
-      <h2 class="text-2xl font-bold text-blue-800 text-center mb-4">🏥 Departamento Médico</h2>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Afastados -->
-        <div class="bg-red-50 border-l-8 border-red-600 rounded-xl shadow p-5">
-          <h3 class="text-lg font-semibold text-red-700 mb-3">🩸 Afastados (Em Tratamento)</h3>
-          <ul id="listaAfastados" class="text-gray-700 space-y-2 text-sm">
-            <li class="text-gray-400 italic">Carregando...</li>
-          </ul>
-        </div>
-
-        <!-- Transição -->
-        <div class="bg-orange-50 border-l-8 border-orange-500 rounded-xl shadow p-5">
-          <h3 class="text-lg font-semibold text-orange-700 mb-3">🔄 Em Transição</h3>
-          <ul id="listaTransicao" class="text-gray-700 space-y-2 text-sm">
-            <li class="text-gray-400 italic">Carregando...</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- ================================================= -->
-    <!-- 🧠 PRONTIDÃO -->
-    <!-- ================================================= -->
-    <div>
-      <h2 class="text-2xl font-bold text-blue-800 text-center mb-6">🧠 Prontidão – Estado Atual</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Crítico -->
-        <div class="bg-red-50 border-l-8 border-red-600 rounded-xl shadow p-5">
-          <h3 class="text-xl font-semibold text-red-700 mb-3">🚫 Crítico – Considerar não treinar</h3>
-          <ul id="listaCritico" class="text-gray-700 space-y-2 text-sm">
-            <li class="text-gray-400 italic">Carregando...</li>
-          </ul>
-        </div>
-
-        <!-- Atenção -->
-        <div class="bg-yellow-50 border-l-8 border-yellow-500 rounded-xl shadow p-5">
-          <h3 class="text-xl font-semibold text-yellow-700 mb-3">⚠️ Atenção – Monitorar possível fadiga</h3>
-          <ul id="listaAtencao" class="text-gray-700 space-y-2 text-sm">
-            <li class="text-gray-400 italic">Carregando...</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- ================================================= -->
-    <!-- 🏋️ CARGA -->
-    <!-- ================================================= -->
-    <div>
-      <h2 class="text-2xl font-bold text-blue-800 text-center mb-4">🏋️ Carga – Distribuição</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white rounded-2xl shadow p-5 flex flex-col items-center">
-          <h3 class="text-lg font-semibold text-gray-700 text-center mb-3">📊 Média da Carga por Dia</h3>
-          <div class="w-full max-w-md h-48">
-            <canvas id="graficoMediaPorDia"></canvas>
-          </div>
-        </div>
-        <div class="bg-white rounded-2xl shadow p-5 flex flex-col items-center">
-          <h3 class="text-lg font-semibold text-gray-700 text-center mb-3">📈 Total da Carga por Semana</h3>
-          <div class="w-full max-w-md h-48">
-            <canvas id="graficoTotalPorSemana"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ================================================= -->
-    <!-- 🦶 RODAPÉ -->
-    <!-- ================================================= -->
-    <p class="text-center text-xs text-gray-500 mt-10 mb-5">
-      Powered by <strong>Ciente Inteligência Esportiva</strong>
-    </p>
-
+  <div class="max-w-6xl mx-auto mb-8 text-center">
+    <h2 class="text-2xl font-bold text-blue-800">📊 Dashboard - Ciente IE</h2>
+    <p class="text-sm text-gray-500">Visão integrada do Departamento Médico, Prontidão e Carga</p>
   </div>
 
-  <!-- ================================================= -->
-  <!-- ⚙️ SCRIPT DASHBOARD -->
-  <!-- ================================================= -->
-  <script type="module">
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-    const db = getFirestore();
+  <!-- 🏥 DEPARTAMENTO MÉDICO -->
+  <div class="max-w-6xl mx-auto mb-10">
+    <h3 class="text-lg font-semibold text-gray-700 mb-3">🏥 Departamento Médico</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-red-50 border-l-4 border-red-600 rounded-xl p-4 shadow">
+        <h4 class="text-red-700 font-semibold mb-2">🩹 Em tratamento</h4>
+        <ul id="listaTratamento" class="text-sm text-gray-800 space-y-1"></ul>
+      </div>
+      <div class="bg-yellow-50 border-l-4 border-yellow-400 rounded-xl p-4 shadow">
+        <h4 class="text-yellow-700 font-semibold mb-2">🔄 Em transição</h4>
+        <ul id="listaTransicao" class="text-sm text-gray-800 space-y-1"></ul>
+      </div>
+    </div>
+  </div>
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      const hoje = new Date();
+  <!-- 🧠 PRONTIDÃO - ESTADO ATUAL -->
+  <div class="max-w-6xl mx-auto mb-10">
+    <h3 class="text-lg font-semibold text-gray-700 mb-3">🧠 Prontidão - Estado Atual (Hoje)</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-red-50 border-l-4 border-red-600 rounded-xl p-4 shadow">
+        <h4 class="text-red-700 font-semibold mb-2">🔴 Estado Crítico</h4>
+        <ul id="listaCritico" class="text-sm text-gray-800 space-y-1"></ul>
+      </div>
+      <div class="bg-yellow-50 border-l-4 border-yellow-500 rounded-xl p-4 shadow">
+        <h4 class="text-yellow-700 font-semibold mb-2">🟡 Atenção</h4>
+        <ul id="listaAtencao" class="text-sm text-gray-800 space-y-1"></ul>
+      </div>
+    </div>
+  </div>
 
-      // =====================================================
-      // 🏥 DEPARTAMENTO MÉDICO
-      // =====================================================
-      const snapMedico = await getDocs(collection(db, "departamento_medico"));
-      const medico = snapMedico.docs.map(d => d.data());
+  <!-- 🏋️‍♂️ CARGA -->
+  <div class="max-w-6xl mx-auto mb-10">
+    <h3 class="text-lg font-semibold text-gray-700 mb-3">🏋️ Carga - Semana Atual</h3>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div class="bg-white rounded-2xl shadow p-4">
+        <h4 class="text-center text-gray-700 font-semibold mb-2">📅 Carga média diária (semana atual)</h4>
+        <canvas id="graficoCargaDiaria" height="160"></canvas>
+      </div>
+      <div class="bg-white rounded-2xl shadow p-4">
+        <h4 class="text-center text-gray-700 font-semibold mb-2">📈 Carga média semanal (últimas semanas)</h4>
+        <canvas id="graficoCargaSemanas" height="160"></canvas>
+      </div>
+    </div>
+  </div>
 
-      const diasDecorridos = (obj) => {
-        const camposData = ["data", "data_diagnostico", "inicio_tratamento", "data_inicio"];
-        for (let campo of camposData) {
-          if (obj[campo]) {
-            const dt = new Date(obj[campo] + "T00:00:00");
-            const diff = Math.floor((hoje - dt) / (1000 * 60 * 60 * 24));
-            return diff > 0 ? diff : 0;
-          }
-        }
-        return 0;
-      };
-
-      const afastados = medico.filter(d => d.status === "Em tratamento");
-      const transicao = medico.filter(d => d.status === "Transição");
-
-      const renderLista = (dados, id) => {
-        const ul = document.getElementById(id);
-        ul.innerHTML = dados.length
-          ? dados.map(a => `
-              <li class="border-b border-gray-200 pb-1">
-                <strong>${a.atleta || "Sem nome"}</strong> – ${a.equipe_id || "-"}<br>
-                <span class="text-xs text-gray-500">Dias no status: ${diasDecorridos(a)}</span>
-              </li>
-            `).join("")
-          : "<li class='text-gray-400 italic'>Nenhum atleta</li>";
-      };
-
-      renderLista(afastados, "listaAfastados");
-      renderLista(transicao, "listaTransicao");
-
-      // =====================================================
-      // 🧠 PRONTIDÃO
-      // =====================================================
-      const atualizarProntidao = () => {
-        const dados = window.__dadosResumo || [];
-        if (!dados.length) return;
-
-        const critico = dados.filter(d => d.igpPct < -10 || d.hooper > 17);
-        const atencao = dados.filter(d =>
-          (d.igpPct >= -10 && d.igpPct < -5) || (d.hooper >= 12 && d.hooper <= 17)
-        );
-
-        const gerar = lista => lista.length
-          ? lista.map(d => `
-              <li class="border-b border-gray-200 pb-1">
-                <strong>${d.atleta}</strong> – ${d.equipe}<br>
-                <span class="text-xs text-gray-500">
-                  IGP: ${d.igpPct?.toFixed(1) || "-"}% | Hooper: ${d.hooper?.toFixed(0) || "-"}
-                </span>
-              </li>
-            `).join("")
-          : "<li class='text-gray-400 italic'>Nenhum atleta</li>";
-
-        listaCritico.innerHTML = gerar(critico);
-        listaAtencao.innerHTML = gerar(atencao);
-      };
-
-      const checar = setInterval(() => {
-        if (window.__dadosResumo) {
-          clearInterval(checar);
-          atualizarProntidao();
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const delay = setInterval(() => {
+        if (window.__dadosResumo && window.__dadosCarga && window.__dadosMedico) {
+          clearInterval(delay);
+          carregarDashboard();
         }
       }, 1000);
+    });
 
-      // =====================================================
-      // 🏋️ CARGA – GRÁFICOS
-      // =====================================================
-      const snapCarga = await getDocs(collection(db, "carga"));
-      const carga = snapCarga.docs.map(d => d.data());
+    // =====================================================
+    // 🔹 Função principal
+    // =====================================================
+    function carregarDashboard() {
+      renderDM();
+      renderProntidao();
+      renderGraficosCarga();
+    }
+
+    // =====================================================
+    // 🏥 DEPARTAMENTO MÉDICO
+    // =====================================================
+    function renderDM() {
+      const dados = window.__dadosMedico || [];
+      if (!dados.length) {
+        document.getElementById("listaTratamento").innerHTML = `<li class='text-gray-500 italic'>Nenhum atleta em tratamento</li>`;
+        document.getElementById("listaTransicao").innerHTML = `<li class='text-gray-500 italic'>Nenhum atleta em transição</li>`;
+        return;
+      }
+
+      function diasAfastado(c) {
+        const d1 = c.data_diagnostico ? new Date(c.data_diagnostico) : null;
+        const d2 = c.liberado_em ? new Date(c.liberado_em) : new Date();
+        if (!d1) return "-";
+        const diff = Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
+        return diff > 0 ? `${diff} dias` : "0";
+      }
+
+      const trat = dados.filter(d => (d.status || "").toLowerCase().includes("tratamento"));
+      const trans = dados.filter(d => (d.status || "").toLowerCase().includes("transi"));
+
+      document.getElementById("listaTratamento").innerHTML = trat.length
+        ? trat.map(a => `<li class="text-red-600 font-medium">• ${a.atleta} — ${a.equipe} (${diasAfastado(a)})</li>`).join("")
+        : `<li class='text-gray-500 italic'>Nenhum atleta em tratamento</li>`;
+
+      document.getElementById("listaTransicao").innerHTML = trans.length
+        ? trans.map(a => `<li class="text-yellow-600 font-medium">• ${a.atleta} — ${a.equipe} (${diasAfastado(a)})</li>`).join("")
+        : `<li class='text-gray-500 italic'>Nenhum atleta em transição</li>`;
+    }
+
+    // =====================================================
+// 🧠 PRONTIDÃO - ESTADO ATUAL (versão revisada e validada)
+// =====================================================
+function renderProntidao() {
+  const hojeISO = new Date().toISOString().split("T")[0];
+
+  // Filtra apenas atletas com data de hoje (robusto)
+  const dados = (window.__dadosResumo || []).filter(d => {
+    if (!d.data) return false;
+    const dataStr = String(d.data).slice(0, 10);
+    return dataStr === hojeISO;
+  });
+
+  if (!dados.length) {
+    document.getElementById("listaCritico").innerHTML = `<li class='text-gray-500 italic'>Nenhum atleta crítico</li>`;
+    document.getElementById("listaAtencao").innerHTML = `<li class='text-gray-500 italic'>Nenhum atleta em atenção</li>`;
+    return;
+  }
+
+  // Conversão segura de número
+  const toNum = v => parseFloat(String(v).replace("%", "").replace(",", ".").trim()) || 0;
+
+  const critico = [];
+  const atencao = [];
+
+  dados.forEach(d => {
+    // Captura o campo de IGP real (aceita várias variações)
+    const igp = toNum(d.igpPct || d.igp_pct || d.IGP || 0);
+    const hooper = toNum(d.hooper || d.hooper_score || 0);
+
+    // 🔴 Crítico = IGP < -10
+    if (igp < -10) {
+      critico.push(d);
+    }
+    // 🟡 Atenção = IGP entre -10 e -5 ou Hooper 12–17
+    else if ((igp >= -10 && igp < -5) || (hooper >= 12 && hooper <= 17)) {
+      atencao.push(d);
+    }
+  });
+
+  // Renderização final
+  document.getElementById("listaCritico").innerHTML = critico.length
+    ? critico.map(d => `
+      <li>• ${d.atleta || d.nome || "-"} — ${d.equipe || "-"} (${String(d.data).slice(0,10)})</li>
+    `).join("")
+    : `<li class='text-gray-500 italic'>Nenhum atleta crítico</li>`;
+
+  document.getElementById("listaAtencao").innerHTML = atencao.length
+    ? atencao.map(d => `
+      <li>• ${d.atleta || d.nome || "-"} — ${d.equipe || "-"} (${String(d.data).slice(0,10)})</li>
+    `).join("")
+    : `<li class='text-gray-500 italic'>Nenhum atleta em atenção</li>`;
+}
+
+    // =====================================================
+    // 🏋️‍♂️ CARGA - CAMPOS AJUSTADOS
+    // =====================================================
+    function renderGraficosCarga() {
+      const dados = window.__dadosCarga || [];
+      if (!dados.length) return;
 
       const dias = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
-      const somaPorDia = Array(7).fill(0);
-      const contPorDia = Array(7).fill(0);
+      const semanaAtual = {};
+      dias.forEach(d => semanaAtual[d] = []);
 
-      carga.forEach(c => {
-        if (!c.data) return;
-        const dia = new Date(c.data + "T00:00:00").getDay();
-        const idx = (dia + 6) % 7;
-        const pse = Number(c.pse_sessao || c.pse || 0);
-        const tempo = Number(c.duracao_sessao_min || c.tempo || 0);
-        const valor = pse * tempo;
-        somaPorDia[idx] += valor;
-        contPorDia[idx]++;
+      const hoje = new Date();
+      const diaSemana = (hoje.getDay() + 6) % 7;
+      const segunda = new Date(hoje);
+      segunda.setDate(hoje.getDate() - diaSemana);
+      const domingo = new Date(segunda);
+      domingo.setDate(segunda.getDate() + 6);
+      const inicio = segunda.toISOString().split("T")[0];
+      const fim = domingo.toISOString().split("T")[0];
+
+      const daSemana = dados.filter(d => d.data >= inicio && d.data <= fim);
+      daSemana.forEach(d => {
+        const data = new Date(d.data + "T00:00:00");
+        const nomeDia = dias[(data.getDay() + 6) % 7];
+        const carga = (
+          parseFloat(d.pse || d.pse_sessao || 0) *
+          parseFloat(d.tempo || d.duracao_sessao_min || 0)
+        ) || 0;
+        if (semanaAtual[nomeDia]) semanaAtual[nomeDia].push(carga);
       });
 
-      const mediaPorDia = somaPorDia.map((s, i) => contPorDia[i] ? s / contPorDia[i] : 0);
-      const totalSemanal = mediaPorDia.reduce((a, b) => a + b, 0);
+      const mediasDia = dias.map(d => {
+        const arr = semanaAtual[d];
+        return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+      });
 
-      new Chart(document.getElementById("graficoMediaPorDia"), {
+      new Chart(document.getElementById("graficoCargaDiaria"), {
         type: "bar",
         data: {
           labels: dias,
           datasets: [{
-            data: mediaPorDia,
+            label: "Carga média diária",
+            data: mediasDia,
             backgroundColor: "#3b82f6",
-            borderRadius: 5,
-            barPercentage: 0.5,
-            categoryPercentage: 0.6
+            borderRadius: 6
           }]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, title: { display: true, text: "Carga Média" } },
-            x: { title: { display: true, text: "Dia da Semana" } }
-          }
+          scales: { y: { beginAtZero: true } },
+          plugins: { legend: { display: false } }
         }
       });
 
-      new Chart(document.getElementById("graficoTotalPorSemana"), {
-        type: "bar",
+      const semanas = {};
+      dados.forEach(d => {
+        const data = new Date(d.data + "T00:00:00");
+        const semana = getNumeroSemana(data);
+        const carga = (
+          parseFloat(d.pse || d.pse_sessao || 0) *
+          parseFloat(d.tempo || d.duracao_sessao_min || 0)
+        ) || 0;
+        if (!semanas[semana]) semanas[semana] = [];
+        semanas[semana].push(carga);
+      });
+
+      const labels = Object.keys(semanas).slice(-6).map(s => "S" + s);
+      const mediasSem = Object.values(semanas).slice(-6).map(arr => arr.reduce((a,b)=>a+b,0)/arr.length);
+
+      new Chart(document.getElementById("graficoCargaSemanas"), {
+        type: "line",
         data: {
-          labels: ["Semana Atual"],
+          labels,
           datasets: [{
-            data: [totalSemanal],
-            backgroundColor: "#10b981",
-            borderRadius: 5,
-            barPercentage: 0.4,
-            categoryPercentage: 0.6
+            label: "Carga média semanal",
+            data: mediasSem,
+            borderColor: "#10b981",
+            backgroundColor: "#10b98133",
+            tension: 0.3,
+            fill: true
           }]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, title: { display: true, text: "Carga Total" } },
-            x: { title: { display: true, text: "Semana" } }
-          }
+          scales: { y: { beginAtZero: true } },
+          plugins: { legend: { display: false } }
         }
       });
-    });
+    }
+
+    function getNumeroSemana(date) {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
   </script>
 </section>
-
 
 </body>
 </html>
