@@ -883,70 +883,104 @@ const igpPct =
     }
 
     function renderTabelaCarga(resumo, dados) {
-      resumo.sort((a, b) => b.carga - a.carga);
-      tabelaCarga.innerHTML = resumo.map(d => {
-        const cor =
-          d.acwr < 0.8 ? "text-blue-600 font-semibold" :
-          d.acwr <= 1.3 ? "text-green-600 font-semibold" :
-          d.acwr <= 1.5 ? "text-yellow-500 font-semibold" :
-          "text-red-600 font-semibold";
-        const bolinha =
-          d.acwr < 0.8 ? "bg-blue-500" :
-          d.acwr <= 1.3 ? "bg-green-500" :
-          d.acwr <= 1.5 ? "bg-yellow-400" :
-          "bg-red-500";
-        return `
-          <tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="abrirDetalhesCarga('${d.atleta}')">
-            <td class="p-2 font-semibold text-blue-700 flex items-center justify-center gap-2">
-              <span class="inline-block w-3 h-3 rounded-full ${bolinha}"></span>${d.atleta}
-            </td>
-            <td class="p-2">${d.equipe}</td>
-            <td class="p-2">${d.posicao}</td>
-            <td class="p-2">${d.data}</td>
-            <td class="p-2">${d.carga.toFixed(0)}</td>
-            <td class="p-2 ${cor}">${d.acwr.toFixed(2)}</td>
-          </tr>`;
-      }).join("");
-      window.abrirDetalhesCarga = (nome) => mostrarDetalhesAtleta(nome, dados);
-    }
+  resumo.sort((a, b) => b.carga - a.carga);
+  const corpo = document.getElementById("tabelaCarga");
 
-    // ===============================
-// 🔹 MODAL DETALHES (cards + gráfico + resumo)
-// ===============================
-let chartCarga = null;
-function mostrarDetalhesAtleta(nome) {
-  // 🔹 Usa todos os dados brutos de carga
-  const atletaDados = (window.__dadosCarga || [])
-    .filter(d => d.nome_atleta === nome)
-    .sort((a, b) => a.data.localeCompare(b.data));
-
-  tituloAtletaCarga.innerText = nome;
-
-  // 🧾 Cria os cards (histórico completo)
-  const linhas = atletaDados.map(d => {
-    const carga = (d.pse * d.tempo).toFixed(0);
+  corpo.innerHTML = resumo.map(d => {
+    const cor =
+      d.acwr < 0.8 ? "text-blue-600 font-semibold" :
+      d.acwr <= 1.3 ? "text-green-600 font-semibold" :
+      d.acwr <= 1.5 ? "text-yellow-500 font-semibold" :
+      "text-red-600 font-semibold";
+    const bolinha =
+      d.acwr < 0.8 ? "bg-blue-500" :
+      d.acwr <= 1.3 ? "bg-green-500" :
+      d.acwr <= 1.5 ? "bg-yellow-400" :
+      "bg-red-500";
     return `
-      <div class="bg-gray-100 rounded-lg shadow-sm p-2 w-[110px] text-center">
-        <p class="text-xs text-gray-500">${d.data}</p>
-        <p class="text-xs">PSE: <span class="font-semibold">${d.pse}</span></p>
-        <p class="text-xs">Tempo: <span class="font-semibold">${d.tempo}</span></p>
-        <p class="text-xs text-blue-600 font-semibold">${carga}</p>
-      </div>
+      <tr class="border-b hover:bg-gray-50 cursor-pointer" data-atleta="${d.atleta}">
+        <td class="p-2 font-semibold text-blue-700 flex items-center justify-center gap-2">
+          <span class="inline-block w-3 h-3 rounded-full ${bolinha}"></span>${d.atleta}
+        </td>
+        <td class="p-2">${d.equipe}</td>
+        <td class="p-2">${d.posicao}</td>
+        <td class="p-2">${d.data}</td>
+        <td class="p-2">${d.carga.toFixed(0)}</td>
+        <td class="p-2 ${cor}">${d.acwr.toFixed(2)}</td>
+      </tr>
+      <tr id="linha-${d.atleta.replace(/\s+/g, '_')}" class="hidden bg-gray-50">
+        <td colspan="6" id="conteudo-${d.atleta.replace(/\s+/g, '_')}" class="p-4"></td>
+      </tr>
     `;
   }).join("");
 
-  dadosBrutosCarga.innerHTML = linhas;
-  modalDetalhesCarga.classList.remove("hidden");
+  // 🔹 Evento de clique por atleta
+  corpo.querySelectorAll("tr[data-atleta]").forEach(tr => {
+    tr.addEventListener("click", () => {
+      const nome = tr.dataset.atleta;
+      window.mostrarDetalhesAtletaLinha(nome, dados);
+    });
+  });
+}
 
-  // 📊 Gráfico de barras (histórico completo)
-  const ctx1 = document.getElementById("graficoCargaDiaria");
-  if (chartCarga) chartCarga.destroy();
+// ===============================
+// 🔹 Detalhes expandidos (inline)
+// ===============================
+let chartCarga = null;
+window.mostrarDetalhesAtletaLinha = function (nome, dados) {
+  const idLinha = `linha-${nome.replace(/\s+/g, '_')}`;
+  const idConteudo = `conteudo-${nome.replace(/\s+/g, '_')}`;
+  const linha = document.getElementById(idLinha);
+  const conteudo = document.getElementById(idConteudo);
 
-  const cargas = atletaDados.map(d => d.pse * d.tempo);
+  // Se já está aberto → recolhe
+  if (!linha.classList.contains("hidden")) {
+    linha.classList.add("hidden");
+    conteudo.innerHTML = "";
+    return;
+  }
+
+  // Fecha outros detalhes abertos
+  document.querySelectorAll("[id^='linha-']").forEach(l => {
+    l.classList.add("hidden");
+    const c = l.querySelector("td");
+    if (c) c.innerHTML = "";
+  });
+
+  const atletaDados = dados
+    .filter(d => d.nome_atleta === nome)
+    .sort((a, b) => a.data.localeCompare(b.data));
+  if (!atletaDados.length) return;
+
+  const ultimo = atletaDados[atletaDados.length - 1];
+  const cargaUltima = (ultimo.pse * ultimo.tempo).toFixed(0);
+
+  conteudo.innerHTML = `
+    <div class="bg-white rounded-lg shadow p-3 mb-3">
+      <p class="text-sm text-gray-700">
+        <strong>Data:</strong> ${ultimo.data} &nbsp;|&nbsp;
+        <strong>PSE:</strong> ${ultimo.pse} &nbsp;|&nbsp;
+        <strong>Tempo:</strong> ${ultimo.tempo} min &nbsp;|&nbsp;
+        <strong>Carga:</strong> ${cargaUltima}
+      </p>
+    </div>
+    <div class="w-full h-60 mb-3">
+      <canvas id="grafico-${nome.replace(/\s+/g, '_')}"></canvas>
+    </div>
+    <div id="resumo-${nome.replace(/\s+/g, '_')}" class="text-center text-sm text-gray-700"></div>
+  `;
+
+  linha.classList.remove("hidden");
+
+  // Dados do gráfico
   const labels = atletaDados.map(d => d.data);
+  const cargas = atletaDados.map(d => d.pse * d.tempo);
   const pse = atletaDados.map(d => d.pse);
 
-  chartCarga = new Chart(ctx1, {
+  const ctx = document.getElementById(`grafico-${nome.replace(/\s+/g, '_')}`).getContext("2d");
+  if (chartCarga) chartCarga.destroy();
+
+  chartCarga = new Chart(ctx, {
     type: "bar",
     data: {
       labels,
@@ -956,7 +990,7 @@ function mostrarDetalhesAtleta(nome) {
           data: cargas,
           backgroundColor: "#10b98188",
           borderColor: "#10b981",
-          borderWidth: 1,
+          borderWidth: 1.5,
           yAxisID: "y1"
         },
         {
@@ -975,49 +1009,44 @@ function mostrarDetalhesAtleta(nome) {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
-      stacked: false,
       plugins: {
         legend: { position: "top" },
         title: {
           display: true,
-          text: "Histórico Completo de Carga",
-          font: { size: 14, weight: "bold" }
+          text: "Histórico Diário de Carga",
+          font: { size: 13, weight: "bold" }
         }
       },
       scales: {
+        x: {
+          title: { display: true, text: "Data" },
+          ticks: { autoSkip: true, maxTicksLimit: 10 }
+        },
         y1: {
-          type: "linear",
-          display: true,
-          position: "left",
           beginAtZero: true,
-          title: { display: true, text: "Carga (PSE×Tempo)" }
+          title: { display: true, text: "Carga (PSE×Tempo)" },
+          grid: { color: "#e5e7eb" }
         },
         y2: {
-          type: "linear",
-          display: true,
-          position: "right",
           beginAtZero: true,
           min: 0,
           max: 10,
-          grid: { drawOnChartArea: false },
-          title: { display: true, text: "PSE (0–10)" }
-        },
-        x: {
-          ticks: { autoSkip: true, maxTicksLimit: 10 },
-          title: { display: true, text: "Data da Coleta" }
+          title: { display: true, text: "PSE (0–10)" },
+          position: "right",
+          grid: { drawOnChartArea: false }
         }
       }
     }
   });
 
-  // 📈 Resumo (total e média)
+  // 📈 Resumo
   const total = cargas.reduce((s, x) => s + x, 0);
   const media = total / cargas.length;
-  resumoCarga.innerHTML = `
-    <p><span class="font-semibold">Carga Total:</span> ${total.toFixed(0)} &nbsp;|&nbsp;
-       <span class="font-semibold">Média Diária:</span> ${media.toFixed(0)}</p>
+  document.getElementById(`resumo-${nome.replace(/\s+/g, '_')}`).innerHTML = `
+    <p><strong>Carga Total:</strong> ${total.toFixed(0)} &nbsp;|&nbsp;
+       <strong>Média Diária:</strong> ${media.toFixed(0)}</p>
   `;
-}
+};
 
 document.getElementById("fecharModalCarga").addEventListener("click", () =>
   modalDetalhesCarga.classList.add("hidden")
