@@ -2083,22 +2083,39 @@ function atualizarGrafico(campo, fisico) {
     </div>
   </div>
 
-  <!-- 🏋️‍♂️ CARGA -->
-  <div class="max-w-6xl mx-auto mb-10">
-    <h3 class="text-lg font-semibold text-gray-700 mb-3">🏋️ Carga - Semana Atual</h3>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div class="bg-white rounded-2xl shadow p-4">
-        <h4 class="text-center text-gray-700 font-semibold mb-2">📅 Carga média diária (semana atual)</h4>
-        <canvas id="graficoCargaDiaria" height="160"></canvas>
-      </div>
-      <div class="bg-white rounded-2xl shadow p-4">
-        <h4 class="text-center text-gray-700 font-semibold mb-2">📈 Carga média semanal (últimas semanas)</h4>
-        <canvas id="graficoCargaSemanas" height="160"></canvas>
-      </div>
-    </div>
+<!-- ============================= -->
+<!-- 📊 GRÁFICO CARGA SEMANAL -->
+<!-- ============================= -->
+<div class="max-w-6xl mx-auto bg-white rounded-2xl shadow p-6 mb-8">
+  <h2 class="text-lg font-semibold text-gray-700 mb-4 text-center">📈 Média de Carga por Dia (PSE x Tempo de Treino)</h2>
+  <div class="h-64">
+    <canvas id="graficoCargaSemanal"></canvas>
   </div>
+</div>
 
-  <script>
+<!-- ============================= -->
+<!-- 📅 INDICADOR DE PLANEJAMENTO -->
+<!-- ============================= -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+
+    <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500">
+        <p class="text-sm font-medium text-gray-500">Sessões Campo (Total)</p>
+        <p class="text-3xl font-bold text-gray-900" id="cardCampo">0</p>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
+        <p class="text-sm font-medium text-gray-500">Sessões Físico (Total)</p>
+        <p class="text-3xl font-bold text-gray-900" id="cardFisico">0</p>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-red-500">
+        <p class="text-sm font-medium text-gray-500">Jogos (Total)</p>
+        <p class="text-3xl font-bold text-gray-900" id="cardJogos">0</p>
+    </div>
+
+</div>
+
+    <script>
     document.addEventListener("DOMContentLoaded", () => {
       const delay = setInterval(() => {
         if (window.__dadosResumo && window.__dadosCarga && window.__dadosMedico) {
@@ -2300,6 +2317,165 @@ function renderProntidao() {
       return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     }
   </script>
+<script type="module">
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+const db = getFirestore();
+
+// ===============================
+// 📈 Gráfico de Média de Carga por DIA (Cor Condicional e Sólida)
+// ===============================
+async function gerarGraficoCargaSemanal() {
+  try {
+    const snap = await getDocs(collection(db, "carga"));
+    const dados = snap.docs.map(d => d.data());
+
+    if (!dados.length) {
+      console.log("Nenhum dado de carga encontrado.");
+      return; 
+    }
+
+    // 1. LÓGICA DE AGRUPAMENTO: Por DIA
+    const dias = {};
+    dados.forEach(d => {
+      if (d.data) {
+        const key = d.data;
+        if (!dias[key]) dias[key] = [];
+        dias[key].push(d);
+      }
+    });
+
+    // 2. CÁLCULO: Média DIÁRIA de carga
+    const labels = Object.keys(dias).sort((a, b) => new Date(a) - new Date(b)); 
+    
+    const medias = labels.map(s => {
+      const dia = dias[s];
+      
+      const total = dia.reduce((sum, x) => {
+        const pse = Number(x.pse) || 0;
+        const tempo = Number(x.tempo) || 0;
+        return sum + (pse * tempo);
+      }, 0);
+      
+      return dia.length > 0 ? total / dia.length : 0; 
+    });
+
+    // 3. LÓGICA DE COR CONDICIONAL
+    const backgroundColors = medias.map(media => {
+      if (media < 600) {
+        return "#3B82F6"; // Azul: Tailwind blue-500
+      } else if (media >= 600 && media <= 799) {
+        return "#F59E0B"; // Laranja: Tailwind amber-500
+      } else { // media >= 800
+        return "#EF4444"; // Vermelho: Tailwind red-500
+      }
+    });
+
+
+    // 4. RENDERIZAÇÃO DO GRÁFICO (Tipo BARRA)
+    const ctx = document.getElementById("graficoCargaSemanal").getContext("2d");
+    
+    if (window.cargaChart) {
+      window.cargaChart.destroy();
+    }
+    
+    window.cargaChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{
+          label: "Carga Média por Sessão no Dia",
+          data: medias,
+          // *** NOVO: Aplica o array de cores ***
+          backgroundColor: backgroundColors, 
+          // *** NOVO: Garante cor sólida e borda correspondente ***
+          borderColor: backgroundColors, 
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: "Carga Média Diária (u.a.)" }
+          },
+          x: {
+              type: 'category', 
+              title: { display: true, text: "Data" },
+              ticks: {
+                  maxRotation: 45,
+                  minRotation: 45,
+                  autoSkip: true,
+              },
+              grid: { display: false }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          title: { display: false }
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Erro ao gerar gráfico de carga:", error);
+  }
+}
+
+// ===============================
+// 🗓️ Indicadores de Planejamento (Contadores Individuais e Totais)
+// ===============================
+async function gerarIndicadoresPlanejamento() {
+  const snap = await getDocs(collection(db, "planejamento"));
+  const dados = snap.docs.map(d => d.data());
+  
+  if (!dados.length) return;
+
+  // Usa TODOS os dados para a contagem total acumulada.
+  const dadosTotais = dados; 
+
+  // 1. Contagem das Sessões
+  const sessoesCampo = dadosTotais.filter(d => d.tipo === "Campo").length;
+  const sessoesFisico = dadosTotais.filter(d => d.tipo === "Físico").length;
+  
+  // 2. Contagem de Jogos
+  const jogos = dadosTotais.filter(d => 
+    Array.isArray(d.objetivo_principal) && 
+    d.objetivo_principal.some(o => o.includes("Jogo"))
+  ).length;
+
+  // 3. ATUALIZAÇÃO DOS NOVOS CARDS (com checagem de existência)
+  
+  // Contador 1: SESSÕES CAMPO
+  const cardCampoElement = document.getElementById("cardCampo");
+  if (cardCampoElement) {
+    cardCampoElement.textContent = sessoesCampo;
+  }
+  
+  // Contador 2: SESSÕES FÍSICO
+  const cardFisicoElement = document.getElementById("cardFisico");
+  if (cardFisicoElement) {
+    cardFisicoElement.textContent = sessoesFisico;
+  }
+
+  // Contador 3: JOGOS
+  const cardJogosElement = document.getElementById("cardJogos");
+  if (cardJogosElement) {
+    cardJogosElement.textContent = jogos;
+  }
+}
+
+// ===============================
+// 🚀 Inicialização no Dashboard
+// ===============================
+document.addEventListener("DOMContentLoaded", async () => {
+  await gerarGraficoCargaSemanal();
+  await gerarIndicadoresPlanejamento();
+});
+</script>
+
+
 </section>
 
 </body>
